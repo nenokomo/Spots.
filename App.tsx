@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>App</Text>
+      <Text style={styles.title}>Spots.</Text>
       <Text style={styles.subtitle}>
         Entdecke, was heute Abend in deiner Nähe passiert.
       </Text>
