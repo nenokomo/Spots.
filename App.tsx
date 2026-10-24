@@ -4,8 +4,12 @@ import { StyleSheet, Text, View } from 'react-native';
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
+      <Text style={styles.title}>App</Text>
+      <Text style={styles.subtitle}>
+        Entdecke, was heute Abend in deiner Nähe passiert.
+      </Text>
+
+      <StatusBar style="light" />
     </View>
   );
 }
@@ -13,8 +17,20 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#120d18',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 24,
+  },
+  title: {
+    color: '#c922ab',
+    fontSize: 36,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  subtitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    textAlign: 'center',
   },
 });
