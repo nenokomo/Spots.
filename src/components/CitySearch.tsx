@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useImperativeHandle, useState, type Ref } from 'react';
 import { ActivityIndicator, Keyboard, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '../constants/theme';
 import { searchCities, type City } from '../services/cities';
 import { Icon } from './Icon';
+import { GlassBackdrop } from './GlassBackdrop';
 
-type Props = { label: string; locating: boolean; onLocate: () => void; onSelect: (city: City) => void };
+export type CitySearchHandle = { dismiss: () => void };
+type Props = { label: string; locating: boolean; onLocate: () => void; onSelect: (city: City) => void; compact?: boolean; ref?: Ref<CitySearchHandle> };
 
-export function CitySearch({ label, locating, onLocate, onSelect }: Props) {
+export function CitySearch({ label, locating, onLocate, onSelect, compact = false, ref }: Props) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -31,14 +33,16 @@ export function CitySearch({ label, locating, onLocate, onSelect }: Props) {
   }, [query, open, requestKey]);
 
   function close() { setOpen(false); setQuery(''); Keyboard.dismiss(); }
+  useImperativeHandle(ref, () => ({ dismiss: close }));
 
   return (
-    <View style={styles.container}>
+    <View onTouchStart={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} style={[styles.container, compact && styles.compactContainer]}>
       <View style={[styles.inputRow, open && styles.focused]}>
-        <Icon name="search" size={16} color={colors.pink} />
+        <GlassBackdrop radius={15} />
+        <Icon name={compact ? 'pin' : 'search'} size={16} color={colors.pink} />
         <TextInput
           accessibilityLabel="Stadt suchen"
-          placeholder={locating ? 'Standort wird gesucht …' : `${label} · Stadt suchen`}
+          placeholder={compact ? label : locating ? 'Standort wird gesucht …' : `${label} · Stadt suchen`}
           placeholderTextColor="#c5adcb"
           value={query}
           onFocus={() => setOpen(true)}
@@ -49,10 +53,12 @@ export function CitySearch({ label, locating, onLocate, onSelect }: Props) {
           style={styles.input}
         />
         {open && query.length > 0 ? <Pressable accessibilityRole="button" accessibilityLabel="Städtesuche schließen" onPress={close} style={styles.action}><Icon name="close" size={16} /></Pressable>
-          : <Pressable accessibilityRole="button" accessibilityLabel="Aktuellen Standort verwenden" disabled={locating} onPress={() => { close(); onLocate(); }} style={styles.action}>{locating ? <ActivityIndicator color={colors.pink} size="small" /> : <Icon name="locate" size={18} color={colors.pink} />}</Pressable>}
+          : compact ? <View pointerEvents="none" style={styles.dropdown}><Icon name="down" size={12} /></View>
+            : <Pressable accessibilityRole="button" accessibilityLabel="Aktuellen Standort verwenden" disabled={locating} onPress={() => { close(); onLocate(); }} style={styles.action}>{locating ? <ActivityIndicator color={colors.pink} size="small" /> : <Icon name="locate" size={18} color={colors.pink} />}</Pressable>}
       </View>
       {open && query.trim().length > 0 && (
-        <View style={styles.results}>
+        <View style={[styles.results, compact && styles.compactResults]}>
+          <GlassBackdrop radius={17} variant="panel" />
           <ScrollView keyboardShouldPersistTaps="handled" style={styles.resultList}>
             {query.trim().length < 3 ? <Text style={styles.hint}>Gib mindestens 3 Buchstaben ein.</Text>
               : loading ? <View style={styles.loading}><ActivityIndicator size="small" color={colors.pink} /><Text style={styles.hint}>Städte werden gesucht …</Text></View>
@@ -69,6 +75,9 @@ export function CitySearch({ label, locating, onLocate, onSelect }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, zIndex: 30 },
+  compactContainer: { maxWidth: 190 },
+  compactResults: { left: -60, right: -48 },
+  dropdown: { paddingRight: 10 },
   inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff07', borderWidth: 1, borderColor: '#ffffff16', borderRadius: 15, paddingLeft: 11, minHeight: 44, gap: 7 },
   focused: { borderColor: '#c922ab80', backgroundColor: '#1b1221' },
   input: { flex: 1, minWidth: 0, minHeight: 44, color: colors.text, fontSize: 12, paddingVertical: 8 },

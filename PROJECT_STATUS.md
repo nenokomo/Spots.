@@ -1,6 +1,122 @@
 ﻿# Projektstatus
 
-Stand: 26.10.2026
+Stand: 29.10.2026
+
+## Aktuell: Automatischer Radar-Standort und Suche schließen
+
+- Radar fragt bei jedem Öffnen/Fokussieren einmalig den Vordergrundstandort ab und zentriert darauf, ohne neuen Radar-Scan oder laufendes Standorttracking. Vorhandene frische Positionen werden weiter genutzt; manuelle Stadtauswahl bleibt während des Radarbesuchs möglich.
+- Erstmalige Standortfreigabe wird angefragt; abgelehnte Freigaben werden bei automatischen Tabbesuchen nicht erneut angefordert. Ohne Freigabe, ausgeschalteten Diensten oder bei Fehlern bleibt die bisherige Karte mit erklärendem Hinweis nutzbar. Manuelle Standorttaste weiterhin verfügbar; eine zwischenzeitliche Stadtauswahl wird nicht von alten Standortantworten überschrieben.
+- Tippen außerhalb der Radar-Städtesuche schließt Tastatur und Ergebnisliste und leert die Suche. Touch-/Pointer-Ereignisse innerhalb der Suche bleiben geschützt, damit Eingabe und Ergebniswahl funktionieren. Auch Verlassen des Radar-Tabs schließt die Suche.
+- Verifiziert im Browser: automatische Zentrierung bei Tab-Rückkehr mit vorübergehend simuliertem Karlsruhe-Standort (Browserfunktionen anschließend wiederhergestellt), Suchfokus und Ergebnisliste nach Klick auf Karte geschlossen. Lint, Typecheck und Editor-Diagnosen erfolgreich. Reale GPS-/Berechtigungsdialoge sowie Bildschirmtastaturen auf iOS/Android noch auf Geräten prüfen.
+
+## Aktuell: Frei schwebende, kompakte Navigation
+
+- Vollbreitenbalken hinter der Navigation entfernt: Die gemeinsame Glas-Kapsel liegt absolut über dem Inhalt, mit 24 px Seitenabstand, 60 px Höhe und sicherem Abstand zur unteren Systemleiste. Plattformgerechte Glas-Ersatzdarstellung bleibt erhalten.
+- „Heute in deiner Nähe“ reicht auf dem Radar bis zum unteren Bildschirmrand; der bisherige Panelverlauf bleibt ohne Glas. Listeninhalt und Demo-Hinweis bleiben oberhalb der Navigation erreichbar.
+- Iconflächen auf 30 × 28 px verkleinert, Beschriftungen direkt darunter. Gemeinsame Abstandsdefinition schützt auch die scrollbaren Inhalte in Entdecken und Profil vor Überdeckung.
+- Verifiziert im Browser bei 375 × 812 und 320 × 640: Panel endet exakt am Bildschirmrand, Kapsel 60 px hoch, kein opaker Navigationsbalken. Alle drei Tabwechsel erfolgreich; Radar-Label rund 2,5 px unter dem Icon. Lint und Typecheck erfolgreich. Native Safe-Area-/Glasdarstellung noch ohne Gerätetest.
+
+## Aktuell: Gemeinsame Glas-Kapsel der Navigation
+
+- Radar, Entdecken und Profil liegen gemeinsam in einer abgerundeten Glas-Kapsel, statt jeweils in einem einzelnen Kreis. Icons und Beschriftungen bleiben getrennt anklickbar; aktive Auswahl weiterhin pink.
+- Gemeinsame Fläche mit seitlichem Abstand und Safe-Area-Abstand unten. iOS verwendet bei Verfügbarkeit natives Liquid Glass, Android/Browser weiterhin die statische Variante ohne Blur.
+- Einzelne Icon-Glasflächen und ihre Ringkonturen entfernt. Partydaten und die 05:00-Nachtregel unverändert.
+
+## Aktuell: Glas-Iconkreise und Partynacht bis 05:00
+
+- Untere Navigation mit je einer 44-px-Glasfläche direkt um Radar-, Entdecken- und Profilicon; aktive Auswahl mit Akzentkontur. Labels und restlicher Navigationshintergrund bleiben ohne Glas. Gemeinsame [GlassTabIcon](src/components/GlassTabIcon.tsx)-Komponente verwendet die vorhandene iOS-/Android-Ersatzlogik.
+- Die zehn Karlsruhe-Demos haben feste neue Termine am **29.10.2026** um 21/22 Uhr, ohne doppelte Events. Sie bleiben ausdrücklich fiktive Beispiele und werden nicht automatisch täglich neu datiert.
+- [partyWindowKey](src/utils/events.ts) definiert die Nachtregel in `Europe/Berlin`: zwischen 00:00 und 04:59 enthält die Heute-Auswahl zusätzlich den vorherigen Veranstaltungstag. Ab 05:00 entfällt der Vortag; Events des aktuellen Kalendertages bleiben enthalten.
+- Radar, Heute-Unterseite und Heute-Schnellfilter in Entdecken nutzen dasselbe Partyfenster. Der normale Monatskalender filtert weiterhin nach exaktem Kalenderdatum. Aktualisierung alle 30 Sekunden und beim Zurückkehren in den Vordergrund.
+- Verifiziert: zehn Karlsruhe-Pins und Listeneinträge, Tabwechsel ohne neuen Scan, Navigation in mobiler Browsergröße. Zeitchecks für Mitternacht, exakt 05:00, Sommer-/Winterzeitwechsel und Jahreswechsel erfolgreich. Lint und Typecheck erfolgreich; native Glasoptik weiterhin ohne Gerätetest.
+
+## Aktuell: Glas-Ausnahmen auf Radar und Navigation
+
+- „Heute in deiner Nähe“ auf dem Radar verwendet wieder den bisherigen violett-pinken Panelverlauf ohne Glas; auch die Eventkarten innerhalb dieses Panels nutzen keine Glasoptik.
+- Untere Navigation (Radar, Entdecken, Profil) wieder mit normalem App-Verlauf statt GlassBackdrop.
+- Kilometeranzeige und Standorttaste auf der Karte wieder mit ihren normalen dunklen Hintergründen, ohne native oder statische Glasdarstellung.
+- Übrige Glasflächen unverändert, insbesondere Suche, Filter-/Kalenderdialoge, Eventdetails und Profil.
+
+## Aktuell: Plattformgerechte Glasgestaltung
+
+- SDK-kompatibles `expo-glass-effect` 58.0.5 über `expo install` ergänzt. Gemeinsame dekorative [GlassBackdrop](src/components/GlassBackdrop.tsx)-Schicht mit separater [iOS-Implementierung](src/components/GlassBackdrop.ios.tsx).
+- Echtes natives Liquid Glass nur bei verfügbarer iOS-26-API/kompatiblem Build und erlaubter Transparenz. Ein zentraler [GlassProvider](src/components/GlassProvider.tsx) berücksichtigt „Transparenz reduzieren“ und Änderungen während der Laufzeit. Bei fehlender API/native Modul wird die statische Ersatzdarstellung genutzt.
+- Android und Browser verwenden ausschließlich die statische [Glasoptik](src/components/GlassFallback.tsx) mit getönten Flächen, sanftem Verlauf und hellen Kanten – kein BlurView, Backdrop-Filter oder Glas-Animation. Die iOS-spezifische native Implementierung wird nicht in Android eingebunden.
+- Eingesetzt in unterer Navigation, Städtesuche, Suchfeld/Kalenderknopf, inaktiven Genrefiltern, Radar-Panel, Radius-/Standorttaste, Filter-/Kalenderdialogen, Eventlisten, Event-Metadaten, Detail-Aktionen/Ticketbereich und Profil-Infokarte. Spots-Farben und sämtliche Interaktionen bleiben erhalten; „Alle ansehen“ bleibt ohne Buttonfläche.
+- Animierte Eventkarten, gedimmte Aktionen und dichte Listen nutzen absichtlich nur die statische Variante. Kein Glas auf den Karten-Pins und keine neue Vollbild-Blur-Ebene.
+- Browser geprüft: Kalenderdatum, Eventnavigation/Detailreiter, Profil, Radar-Filter und 10-km-Minimum. Android- und iOS-Produktionsbundles erfolgreich exportiert. Lint und Typecheck erfolgreich.
+- Native Optik, Barrierefreiheitseinstellungen und FPS noch nicht auf echten Geräten gemessen; keine Garantie identischer Laufzeitperformance. Für native Glasfunktionen ggf. neuen Development-Build erstellen (oder eine passende Expo-Go-Version verwenden); ältere Builds fallen auf statische Flächen zurück.
+
+## Aktuell: Monatskalender, neue Texte und Vorschau per Außentipp
+
+- Kalenderknopf auf Entdecken öffnet einen echten Monatskalender mit Montag als Wochenbeginn, Monatsnavigation, markierten Demo-Eventtagen und deaktivierten vergangenen Tagen. Eigene Komponente [EventCalendar](src/components/EventCalendar.tsx), ohne neue Abhängigkeiten.
+- Datumswahl filtert exakt nach dem Veranstaltungstag von `startsAt` in `Europe/Berlin`. Suchtext und Genre bleiben aktiv; der gewählte Tag ist sichtbar und entfernbar. Schnellfilter entfernen die exakte Datumswahl, „Alle Termine anzeigen“ setzt den Zeitraum zurück.
+- Neuer Entdecken-Text: „Deine Nacht wartet. Finde den Beat, der dich rauszieht.“ Die Heute-Unterseite heißt „Die Nacht ruft.“ mit „Dein Abend. Dein Beat. Deine Spots.“; Heute/Radius bleiben als zusätzliche Orientierung sichtbar.
+- Pin-Vorschau ohne X und ohne Chevron. Eine transparente Fläche hinter der anklickbaren Eventkarte schließt die Vorschau bei Außentipp, ohne das Event versehentlich zu öffnen. Position bleibt am Kartenbereich ausgerichtet; übrige Listen/Navigation unverändert.
+- Browser geprüft: 30.10. → Neon Nights, 06.11. → Club Open Air, 29.10. → leer; Genre-/Suchschnittmenge und deaktivierte Vergangenheit. Kalender bei 320 px Breite bedienbar. Außentipp auf Kopfbereich schließt Vorschau; Tipp auf Vorschau öffnet Eventdetails.
+- Kein nativer Gerätetest; keine Änderungen an den Demo-Terminen oder am einmaligen Startscan.
+
+## Aktuell: Startscan nur einmal, identische Radar-/Heute-Auswahl
+
+- Radar-Intro läuft nur einmal je App-Laufzeit. Kein Neustart bei Stadt-/Radiuswechsel, Tabwechsel, Rückkehr aus Eventdetails oder Hintergrund. Der Sitzungsstatus und bereits freigegebene/animierte Event-IDs bleiben ausschließlich im Arbeitsspeicher; ein vollständiger App-Neustart setzt sie zurück.
+- Ein unterbrochenes Intro wird beendet statt später erneut gestartet. Neue Partys erscheinen weiterhin gestaffelt, ohne vorhandene Ergebnisse für einen neuen Scan zu leeren.
+- Radar-Pins und Heute-Liste verwenden dieselbe nach Datum, Genre und Radius gefilterte Auswahl. Berliner Fixtures sind für 30./31.10. und 06.11.2026 terminiert; am 28.10. gibt es deshalb dort weder heutige Pins noch heutige Listeneinträge. Zukünftige Events bleiben in Entdecken.
+- Karten-Vorschau ohne Chevron-Pfeil, nur mit separatem X. Die ganze Eventkarte bleibt ein Link zu den Details; übrige Listen behalten ihre Pfeile.
+- Lint und Typecheck erfolgreich. Browser-Neuladen ohne Laufzeitfehler, Stadtwechsel nach Karlsruhe ohne neuen Scan und zehn heutige Partys geprüft. Keine nativen Gerätetests.
+
+## Aktuell: Eventdetails und abgestimmte Radar-Einblendung
+
+- Eventdetailseiten nach neuer Bildvorlage: großes Symbolfoto mit Verlauf, Demo-Badge, Titel/Genres, Datum und Ort, Snaps-Vorschau, Ticketbereich, Aktionszeile und funktionierende Reiter Infos/Line-up/Location/Snaps. Gestaltung bleibt in Spots-Farben.
+- Keine erfundenen Besucherzahlen, Ticketpreise oder Snaps. Tickets/Speichern als noch nicht verfügbar gekennzeichnet; für Demo-Koordinaten wird keine echte Veranstaltungsroute angeboten. Teilen öffnet auf bewussten Druck die Systemfunktion mit ausdrücklich als Demo gekennzeichnetem Eventtext; Fehlerzustand vorhanden.
+- Pin-Freigabe ist pro Event-ID statt pro gesamter Ergebnisliste gespeichert. Kartenverschiebung erhält bereits sichtbare Marker und fügt nur neue Events gestaffelt hinzu. Fertig eingeblendete Pins wiederholen ihren Effekt beim erneuten Eintritt in den Radius nicht; neue Stadt/Scan startet die Sequenz weiterhin bewusst neu.
+- Browser-Marker werden nicht mehr nur wegen Überschreiten des sichtbaren Kartenrands ausgehängt; der Kartencontainer schneidet sie ab.
+- „Heute in deiner Nähe“ nutzt dieselbe gestaffelte Freigabe wie die Pins und blendet jede neue Karte mit 280 ms Fade/Slide ein. Während des Scans erscheint ein Ladehinweis statt der fertigen Liste. Bewegungsreduktion überspringt die Effekte.
+- „Alle ansehen“ ist wieder ein gut lesbarer Textlink ohne pinke Buttonfläche, mit 44 px Touchhöhe.
+- Browser geprüft: Detailreiter und schmale Darstellung (320 px); gemessene Pin-/Listenanzahl während Einblendung jeweils identisch (0/0, 1/1, 2/2 usw.); nach Kartenverschiebung bleibt das DOM-Element eines sichtbaren Pins dasselbe. Transparenter Hintergrund von „Alle ansehen“ bestätigt. Native Darstellung und System-Teilen noch nicht auf Geräten geprüft.
+- Prüfstand: Lint vor der abschließenden Pin-Wiederkehrkorrektur erfolgreich; der erneute Lint-Aufruf danach wurde als „rejected by user“ abgelehnt und nicht umgangen. Finaler Typecheck und Editor-Diagnosen erfolgreich.
+
+## Aktuell: Spots, heutige Partys und Suche ab Kartenmitte
+
+Dieser Abschnitt ersetzt die weiter unten dokumentierten älteren Zwischenstände.
+
+- Der Markenname ist **Spots**: Radar-Logo, Browser-Titel, Expo-Anzeigename, Standort-Berechtigungstext und Projektanweisung angepasst. Technischer Slug und URL-Schema bleiben zur Wahrung bestehender Links unverändert. Der native Anzeigename erfordert einen neuen Build.
+- „Heute in deiner Nähe“ ist wieder eine vertikale, scrollbar begrenzte Liste mit kompakten Eventkarten. „Alle ansehen“ ist ein kontrastreicher Akzent-Button mit mindestens 44 px Höhe.
+- Radar-Liste, `/today` und Heute-Filter in Entdecken vergleichen `startsAt` mit dem tatsächlichen Datum in `Europe/Berlin`; keine dauerhaften `isToday`-Flags mehr. Aktualisierung nach Tageswechsel per Timer und bei Rückkehr aus dem Hintergrund.
+- Zehn ausdrücklich fiktive Karlsruhe-Partys hinzugefügt, mit festen Terminen am **28.10.2026**, öffentlichen Gebietskoordinaten und Symbolfotos. Sie werden nicht täglich neu datiert und sind keine echten Veranstaltungen. Die drei Berlin-Beispiele haben feste zukünftige Termine.
+- Radius überall 10–50 km, initial weiterhin 30 km; 5-km-Preset und 5-km-Reglergrenze entfernt.
+- Ortsauswahl/GPS geben nur das anfängliche Kartenziel vor. Nach Verschieben gilt der Umkreis ab der aktuellen Kartenmitte; Kategorie/Entfernung aktualisieren die Kartenmarker und die heutige Liste. `/today` erhält exakt dieselbe Kartenmitte und Filter.
+- iOS/Android melden die neue Mitte bei `onRegionChangeComplete`; Radiuswechsel bleiben an der verschobenen Kartenmitte. Browser-Kacheln bleiben derselbe Anbieter/Stil, unterstützen jetzt Ziehen mit Maus/Touch. Im Browser weiterhin kein freies Pinch-/Mausrad-Zoomen.
+- Verifiziert: Karlsruhe über echte Städtesuche ausgewählt, zehn heutige Partys vertikal angezeigt; Minimum 10 km und kein 5-km-Button. Kartenverschiebung bei 10 km reduziert die Auswahl von zehn auf zwei, `/today` zeigt genau dieselben zwei Events.
+- Datums-/Radiuschecks: zehn Karlsruhe-Fixtures, heute enthalten/morgen ausgeschlossen, deutsche Mitternachtsgrenze und Ein-/Ausschluss durch Entfernung erfolgreich. Lint und Typecheck erfolgreich; native Karten benötigen weiterhin einen Gerätetest.
+
+## Entdecken nach Bildvorlage
+
+- Kompakter Titel „Entdecken“ mit Unterzeile, Suchfeld, Genrefiltern und horizontaler Zeitraumleiste in den bisherigen App-Farben.
+- Große Bild-Empfehlung als Listenheader, weitere Treffer im zweispaltigen Raster. Abgerundete Karten mit Textverlauf, Genre-Tags, Ort, Termin und ehrlichem DEMO-Badge; Eventdetails bleiben verlinkt.
+- Eigene Komponente [ExploreEventCard](src/components/ExploreEventCard.tsx). `FlatList` behält virtualisierte Darstellung; Karten mit Mindesthöhe können bei größerer Schrift wachsen.
+- Kombinierte Suche, Kategorie- und Zeitraumfilter, Trefferzahl, Leerzustand und Zurücksetzen implementiert. Kalenderknopf öffnet eine Zeitraum-Auswahl, keinen vorgetäuschten echten Kalender.
+- Zeitraumfilter nutzen ausschließlich vorhandene Demo-Angaben (Alle, feste Heute-Markierung, Freitag, Samstag, Nächste Woche). Keine erfundenen absoluten Kalenderdaten; echter Heute-/Datumsabgleich bleibt mit einer strukturierten Eventquelle umzusetzen.
+- Keine Favoriten, Live-Status, Besucherzahlen, persönliche Empfehlungen oder Standortdistanzen vorgetäuscht. Keine neuen Abhängigkeiten.
+- Browser bei 375 × 812 und 320 × 640 geprüft: große Karte und Raster, Suche, Genre, Freitag-Filter, Leerzustand, Zurücksetzen, Zeitraumdialog und Eventnavigation funktionieren. Kein nativer Gerätetest.
+
+## Horizontale Radar-Eventkarten
+
+- „Heute in deiner Nähe“ zeigt nach neuer Bildvorlage horizontal wischbare Bildkarten (136 × 140 px bei Standardschrift), abgerundete Ecken und dunklen Textverlauf über dem Symbolfoto.
+- Karten enthalten Titel, Kategorie, aus den Koordinaten berechnete Entfernung zum gewählten Radar-Zentrum und den vorhandenen Demo-Termin. `DEMO` statt eines unbelegten LIVE-Status; keine erfundenen Zeiten oder Distanzen.
+- Kompakter Panelkopf, Einrasten beim Wischen, angeschnittene nächste Karte als Scrollhinweis und Demo-Hinweis am unteren Rand. Kartenhöhe wächst bei vergrößerter Systemschrift.
+- Eigene Komponente [RadarEventCard](src/components/RadarEventCard.tsx); übrige Eventlisten, Kartenanbieter, Filter und `/today` bleiben unverändert. Keine Favoritenfunktion oder dekorativen funktionslosen Herzbuttons ergänzt.
+- Browser bei 320 und 375 px Breite geprüft; Lint und Typecheck erfolgreich. Native Wischgesten noch nicht auf einem Gerät geprüft.
+
+## Kompaktes Radar-Layout nach Bildvorlage
+
+- Kopfzeile mit Logo links, kompakter bearbeitbarer Ortsauswahl mittig und Filtertaste rechts; Kategorien direkt darunter.
+- Bestehende Kartenanbieter und Kartenfarben unverändert. Die Karte erhält mehr Platz, da der Radiusregler jetzt im Filterdialog liegt; über die km-Schaltfläche auf der Karte weiterhin direkt erreichbar.
+- Standorttaste unten rechts auf der Karte; Ortung weiterhin ausschließlich nach bewusster Betätigung.
+- Eventbereich überlappt den unteren Kartenrand um 18 px. Höhenabhängige Panelgröße und kompaktere Eventkarten gelten nur im Radar; andere Listen behalten ihre bisherige Darstellung.
+- Vorhandene Farben, Scan, Filter, Stadt-/Standortsuche, Eventvorschau und die Unterseite `/today` bleiben erhalten. Keine neuen Abhängigkeiten oder erfundenen Live-Events.
+- Browserprüfung bei 375 × 812 und 320 × 640: Kopf, Standorttaste und Eventkarte innerhalb des Bildschirms; House-Filter, Radiuswechsel auf 20 km und Navigation zu `/today` mit übernommenen Filtern erfolgreich geprüft.
+- Expo-Router-Kompatibilität: Styles des Link-Kindes in [EventCard](src/components/EventCard.tsx) werden vor Übergabe mit `StyleSheet.flatten` zusammengeführt.
+- `npx expo lint`, `npx tsc --noEmit` und Editor-Diagnosen erfolgreich. Kein nativer Gerätetest dieses Layouts.
 
 ## Aktueller Stand nach Rücknahme
 
@@ -8,15 +124,19 @@ Auf Wunsch ist die vorletzte Version wiederhergestellt: der Stand unmittelbar vo
 
 ## Implementiert
 
+- Radar-Karte auf iOS/Android frei verschieb- und zoombar; bei Stadt- oder Radiuswechsel wird sie weiterhin automatisch zentriert.
+- Event-Pins auf nativen und Browser-Karten kompakter gestaltet.
+- „Alle ansehen“ unter „Heute in deiner Nähe“ öffnet die separate Router-Seite `/today` mit den aktuellen Radar-Filtern und den heutigen Events, nicht mehr „Entdecken“.
+
 - Dunkler horizontaler violett-pinker Verlauf auf allen Seiten und der unteren Navigation.
 - Radar beim Öffnen mit drei vollständigen Umdrehungen in 5,4 Sekunden und Vibrationsimpulsen auf Mobilgeräten. Zunächst keine Pins; danach blendet sich der Radar aus und Bild-Pins erscheinen mit 320 ms Abstand.
 - Runde Event-Vorschaubilder an Pins, Marker-Vorschau und Eventdetails mit Zurück-Navigation.
 - Filter für Alle, Techno, House, Party und Clubs; Kategorie und Entfernung gelten für Karte und Liste.
-- Kilometer-Schieberegler unter der Karte: 5–50 km, initial 30 km. Aktualisiert die Anzeige beim Ziehen und Karte/Liste beim Loslassen. Presets im Filterdialog bleiben erhalten.
+- Kilometer-Schieberegler im Filterdialog: 5–50 km, initial 30 km. Aktualisiert die Anzeige beim Ziehen und Karte/Liste beim Loslassen. Presets bleiben erhalten.
 - Städtesuche oberhalb der Filter mit echten Vorschlägen über Open-Meteo/GeoNames, Lade-, Leer- und Fehlerzuständen sowie Abbruch veralteter Anfragen. Auswahl zentriert die Karte und startet den Scan erneut.
 - Separater Standortpfeil: Zugriff nur auf bewussten Druck. Ohne Freigabe bleibt die gekennzeichnete Berlin-Demo nutzbar. Eine gewählte Stadt wird nicht durch eine ältere GPS-Anfrage überschrieben.
 - Drei feste, klar gekennzeichnete Berliner Demo-Events: Neon Nights, House Session und Club Open Air. Keine automatisch um den Nutzer erfundenen Marker und keine privaten Adressen.
-- Fester Eventbereich unter Karte und Regler mit scrollbarer Liste. Die Überschrift „Heute in deiner Nähe“ ist Designtext; die Demo-Termine sind derzeit nicht nach dem Tagesdatum gefiltert.
+- Kompakter Eventbereich am unteren Kartenrand mit scrollbarer Liste. Die Radar-Vorschau enthält weiterhin alle passenden Demo-Termine; `/today` nutzt feste Demo-Markierungen für heute, noch keine echten Kalenderdaten.
 - Entdecken mit Suche nach Name, Genre und Ort sowie Kategorieauswahl.
 - Profil-Reiter als ehrlicher Platzhalter; keine Anmeldung oder gespeicherten Events implementiert.
 - Safe Areas und reduzierte Bewegung: Scan und Vibrationen enden beim Verlassen. Bei Bewegungsreduktion erscheinen Pins unmittelbar ohne Scan oder Pop-Effekt.
@@ -45,7 +165,7 @@ Auf Wunsch ist die vorletzte Version wiederhergestellt: der Stand unmittelbar vo
 
 - Alle Events und Termine sind Demo-Daten. Keine echte Live-Verfügbarkeit und aktuell kein echter Heute-Filter.
 - Native Kartenfarben können auf iOS vom Android-/Browser-Stil abweichen. Physische Vibration, native Karten und Bildmarker benötigen weiterhin einen Gerätetest.
-- Internetzugriff für Karten und Städtesuche erforderlich. Kein freies Kartenverschieben und keine Offline-Kacheln.
+- Internetzugriff für Karten und Städtesuche erforderlich. Freies Kartenverschieben/Zoomen auf iOS und Android; Browser-Kacheln weiterhin ohne Gestensteuerung. Keine Offline-Kacheln.
 - Vor Veröffentlichung Google-Maps-Konfiguration für Android sowie kommerziellen Geocoding-Tarif/Anbieter klären.
 - Registrierung, Favoriten, echte Datumsfilter, Veranstalterinformationen, Tickets und Live-Snaps fehlen weiterhin.
 

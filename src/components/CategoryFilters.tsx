@@ -1,11 +1,13 @@
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { categories, colors, type Category } from '../constants/theme';
+import { GlassBackdrop } from './GlassBackdrop';
 
 export function CategoryFilters({ value, onChange }: { value: Category; onChange: (value: Category) => void }) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
       {categories.map((category) => (
         <Pressable key={category} accessibilityRole="button" accessibilityState={{ selected: value === category }} onPress={() => onChange(category)} style={[styles.chip, value === category && styles.active]}>
+          {value !== category && <GlassBackdrop radius={20} native={false} />}
           <Text style={[styles.text, value === category && styles.activeText]}>{category}</Text>
         </Pressable>
       ))}

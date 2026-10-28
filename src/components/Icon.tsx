@@ -1,6 +1,6 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
-export type IconName = 'radar' | 'search' | 'profile' | 'pin' | 'chevron' | 'down' | 'sliders' | 'clock' | 'locate' | 'close' | 'back';
+export type IconName = 'radar' | 'search' | 'profile' | 'pin' | 'chevron' | 'down' | 'sliders' | 'clock' | 'locate' | 'close' | 'back' | 'calendar' | 'share' | 'ticket' | 'camera' | 'bookmark';
 
 export function Icon({ name, size = 22, color = '#d4bcd8' }: { name: IconName; size?: number; color?: string }) {
   return (
@@ -16,6 +16,11 @@ export function Icon({ name, size = 22, color = '#d4bcd8' }: { name: IconName; s
       {name === 'locate' && <Path d="m21 3-7 18-3-8-8-3Z" />}
       {name === 'close' && <Path d="m6 6 12 12M6 18 18 6" />}
       {name === 'back' && <Path d="m14 5-7 7 7 7M7 12h14" />}
+      {name === 'calendar' && <Path d="M7 3v4M17 3v4M4 10h16M6 5h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z M8 14h2" />}
+      {name === 'share' && <Path d="M12 15V3m-4 4 4-4 4 4M6 10H4v11h16V10h-2" />}
+      {name === 'ticket' && <Path d="M3 5h18v5a2 2 0 0 0 0 4v5H3v-5a2 2 0 0 0 0-4V5Zm12 1v2m0 3v2m0 3v2" />}
+      {name === 'camera' && <><Path d="M3 7h4l2-3h6l2 3h4v13H3Z" /><Circle cx="12" cy="13" r="4" /></>}
+      {name === 'bookmark' && <Path d="M6 3h12v18l-6-4-6 4Z" />}
     </Svg>
   );
 }

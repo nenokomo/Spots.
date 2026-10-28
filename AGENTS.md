@@ -49,7 +49,7 @@ We are developing a mobile application that helps people discover parties, clubs
 
 The app focuses on spontaneity, real-time event discovery, and making nightlife easier to explore, especially in unfamiliar cities.
 
-The app does not have a final brand name yet. Refer to it simply as "App".
+The app's brand name is "Spots". Always refer to it as "Spots".
 
 Our primary design color is approximately `#c922ab`.
 

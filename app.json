@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "meine-app",
+    "name": "Spots",
     "slug": "meine-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -29,7 +29,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Die App verwendet deinen Standort, um die Karte auf deine Umgebung auszurichten."
+          "locationWhenInUsePermission": "Spots verwendet deinen Standort, um die Karte auf deine Umgebung auszurichten."
         }
       ]
     ]

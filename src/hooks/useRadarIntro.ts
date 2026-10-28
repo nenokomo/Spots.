@@ -1,4 +1,3 @@
-import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, AppState, Easing, Platform, Vibration } from 'react-native';
 import type { DemoEvent } from '../data/events';
@@ -7,91 +6,80 @@ export const RADAR_TURN_MS = 1800;
 export const RADAR_TURNS = 3;
 export const PIN_STAGGER_MS = 320;
 
-export function useRadarIntro(scanKey: string, events: DemoEvent[]) {
-  const [rotation] = useState(() => new Animated.Value(0));
-  const [opacity] = useState(() => new Animated.Value(1));
-  const [complete, setComplete] = useState(false);
-  const [reduceMotion, setReduceMotion] = useState(false);
-  const [revealed, setRevealed] = useState({ key: '', count: 0 });
-  const eventKey = events.map((event) => event.id).join(',');
-  const revealKey = `${scanKey}:${eventKey}`;
+// App session only. Navigation/backgrounding must not replay the intro.
+const session = { complete: false, revealed: new Set<string>(), settled: new Set<string>() };
 
-  useFocusEffect(useCallback(() => {
+export function useRadarIntro(events: DemoEvent[]) {
+  const [rotation] = useState(() => new Animated.Value(0));
+  const [opacity] = useState(() => new Animated.Value(session.complete ? 0 : 1));
+  const [complete, setComplete] = useState(() => session.complete);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [revealedIds, setRevealedIds] = useState(() => [...session.revealed]);
+  const [settledIds, setSettledIds] = useState(() => [...session.settled]);
+  const onPinSettled = useCallback((id: string) => {
+    session.settled.add(id);
+    setSettledIds((previous) => previous.includes(id) ? previous : [...previous, id]);
+  }, []);
+
+  useEffect(() => {
     let disposed = false;
-    let preferenceKnown = false;
-    let reduced = false;
-    let generation = 0;
     let animation: Animated.CompositeAnimation | undefined;
-    let vibrationTimers: ReturnType<typeof setTimeout>[] = [];
+    const vibrationTimers: ReturnType<typeof setTimeout>[] = [];
 
     function stop() {
-      generation++;
       animation?.stop();
       vibrationTimers.forEach(clearTimeout);
-      vibrationTimers = [];
       if (Platform.OS !== 'web') Vibration.cancel();
     }
 
-    function start() {
-      stop();
-      setComplete(false);
-      setRevealed({ key: `${scanKey}:scanning`, count: 0 });
-      rotation.setValue(0);
-      opacity.setValue(1);
-      if (disposed || !preferenceKnown || AppState.currentState === 'background' || AppState.currentState === 'inactive') return;
+    function finish() {
+      session.complete = true;
+      opacity.setValue(0);
+      if (!disposed) setComplete(true);
+    }
+
+    function initialize(reduced: boolean) {
+      if (disposed) return;
       setReduceMotion(reduced);
-      if (reduced) {
-        opacity.setValue(0);
-        setComplete(true);
-        return;
-      }
-      const currentGeneration = generation;
+      if (session.complete || reduced || AppState.currentState === 'background' || AppState.currentState === 'inactive') { finish(); return; }
       if (Platform.OS !== 'web') {
         Vibration.vibrate(45);
-        for (let turn = 1; turn < RADAR_TURNS; turn++) {
-          vibrationTimers.push(setTimeout(() => Vibration.vibrate(45), turn * RADAR_TURN_MS));
-        }
+        for (let turn = 1; turn < RADAR_TURNS; turn++) vibrationTimers.push(setTimeout(() => Vibration.vibrate(45), turn * RADAR_TURN_MS));
       }
       animation = Animated.sequence([
-        // One continuous 0 → 1080° rotation, followed by the radar fading out.
         Animated.timing(rotation, { toValue: RADAR_TURNS, duration: RADAR_TURN_MS * RADAR_TURNS, easing: Easing.linear, useNativeDriver: Platform.OS !== 'web', isInteraction: false }),
         Animated.timing(opacity, { toValue: 0, duration: 280, useNativeDriver: Platform.OS !== 'web', isInteraction: false }),
       ]);
-      animation.start(({ finished }) => {
-        if (!disposed && finished && generation === currentGeneration) {
-          if (Platform.OS !== 'web') Vibration.cancel();
-          setComplete(true);
-        }
-      });
+      animation.start(({ finished }) => { if (!disposed && finished) { stop(); finish(); } });
     }
 
-    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (disposed) return;
-      reduced = enabled;
-      preferenceKnown = true;
-      start();
-    }).catch(() => { if (!disposed) { preferenceKnown = true; start(); } });
-    const motion = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => { reduced = enabled; preferenceKnown = true; start(); });
+    void AccessibilityInfo.isReduceMotionEnabled().then(initialize).catch(() => initialize(false));
+    const motion = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+      setReduceMotion(enabled);
+      if (enabled) { stop(); finish(); }
+    });
     const appState = AppState.addEventListener('change', (state) => {
-      if (state === 'active') start();
-      else { stop(); setComplete(false); setRevealed({ key: '', count: 0 }); }
+      if (state !== 'active') { stop(); finish(); }
     });
     return () => {
       disposed = true;
       stop();
-      setComplete(false);
-      setRevealed({ key: '', count: 0 });
+      session.complete = true;
       motion.remove();
       appState.remove();
     };
-  }, [scanKey, rotation, opacity]));
+  }, [rotation, opacity]);
 
   useEffect(() => {
     if (!complete || reduceMotion) return;
-    const timers = events.map((_, index) => setTimeout(() => setRevealed({ key: revealKey, count: index + 1 }), 80 + index * PIN_STAGGER_MS));
+    const pending = events.filter((event) => !session.revealed.has(event.id));
+    const timers = pending.map((event, index) => setTimeout(() => {
+      session.revealed.add(event.id);
+      setRevealedIds((previous) => previous.includes(event.id) ? previous : [...previous, event.id]);
+    }, 80 + index * PIN_STAGGER_MS));
     return () => timers.forEach(clearTimeout);
-  }, [complete, reduceMotion, revealKey, events]);
+  }, [complete, reduceMotion, events]);
 
-  const visibleEvents = complete ? reduceMotion ? events : revealed.key === revealKey ? events.slice(0, revealed.count) : [] : [];
-  return { scanning: !complete, rotation, opacity, reduceMotion, visibleEvents };
+  const visibleEvents = complete ? reduceMotion ? events : events.filter((event) => revealedIds.includes(event.id)) : [];
+  return { scanning: !complete, rotation, opacity, reduceMotion, visibleEvents, settledIds, onPinSettled };
 }

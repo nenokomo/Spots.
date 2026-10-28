@@ -2,7 +2,7 @@ import { colors } from '../constants/theme';
 import type { RadiusControlProps } from './RadiusControl.types';
 
 export default function RadiusControl({ value, onValueChange, onSlidingComplete }: RadiusControlProps) {
-  return <input type="range" aria-label="Gewünschter Radius in Kilometern" aria-valuetext={`${value} Kilometer`} min={5} max={50} step={1} value={value}
+  return <input type="range" aria-label="Gewünschter Radius in Kilometern" aria-valuetext={`${value} Kilometer`} min={10} max={50} step={1} value={value}
     onChange={(event) => onValueChange(Number(event.currentTarget.value))}
     onPointerUp={(event) => onSlidingComplete(Number(event.currentTarget.value))}
     onPointerCancel={(event) => onSlidingComplete(Number(event.currentTarget.value))}

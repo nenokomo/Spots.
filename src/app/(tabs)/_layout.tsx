@@ -1,9 +1,10 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { Tabs } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Icon } from '../../components/Icon';
+import { GlassTabIcon } from '../../components/GlassTabIcon';
 import { colors } from '../../constants/theme';
+import { GlassBackdrop } from '../../components/GlassBackdrop';
+import { floatingTabBar } from '../../constants/navigation';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -12,13 +13,19 @@ export default function TabLayout() {
       headerShown: false,
       tabBarActiveTintColor: colors.pink,
       tabBarInactiveTintColor: colors.muted,
-      tabBarStyle: { backgroundColor: 'transparent', borderTopWidth: 1, borderTopColor: '#ffffff12', elevation: 0, height: 65 + Math.max(insets.bottom, 8), paddingTop: 7, paddingBottom: Math.max(insets.bottom, 8) },
-      tabBarLabelStyle: { fontSize: 10, marginTop: 3 },
-      tabBarBackground: () => <LinearGradient colors={colors.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />,
+      tabBarStyle: { position: 'absolute', left: 24, right: 24, bottom: Math.max(insets.bottom, floatingTabBar.bottomGap), backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0, height: floatingTabBar.height, borderRadius: 30, paddingTop: 6, paddingBottom: 4 },
+      tabBarIconStyle: { width: 30, height: 28 },
+      tabBarLabelPosition: 'below-icon',
+      tabBarLabelStyle: { fontSize: 10, marginTop: 0 },
+      tabBarBackground: () => <View pointerEvents="none" testID="navigation-glass-capsule" style={styles.capsule}><GlassBackdrop radius={30} /></View>,
     }}>
-      <Tabs.Screen name="index" options={{ title: 'Radar', tabBarIcon: ({ focused }) => <Icon name="radar" color={focused ? colors.pink : colors.muted} size={25} /> }} />
-      <Tabs.Screen name="explore" options={{ title: 'Entdecken', tabBarIcon: ({ focused }) => <Icon name="search" color={focused ? colors.pink : colors.muted} size={23} /> }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: ({ focused }) => <Icon name="profile" color={focused ? colors.pink : colors.muted} size={23} /> }} />
+      <Tabs.Screen name="index" options={{ title: 'Radar', tabBarIcon: ({ focused }) => <GlassTabIcon name="radar" focused={focused} /> }} />
+      <Tabs.Screen name="explore" options={{ title: 'Entdecken', tabBarIcon: ({ focused }) => <GlassTabIcon name="search" focused={focused} /> }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: ({ focused }) => <GlassTabIcon name="profile" focused={focused} /> }} />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  capsule: { ...StyleSheet.absoluteFill, borderRadius: 30 },
+});

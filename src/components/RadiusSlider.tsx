@@ -10,7 +10,7 @@ export function RadiusSlider({ value, onChange }: { value: number; onChange: (va
     <View style={styles.container}>
       <View style={styles.heading}><Text style={styles.label}>Dein Umkreis</Text><Text style={styles.value}>{displayValue} km</Text></View>
       <View style={styles.track}>
-        <Text style={styles.limit}>5 km</Text>
+        <Text style={styles.limit}>10 km</Text>
         <RadiusControl value={displayValue} onValueChange={setDraft} onSlidingComplete={(next) => { setDraft(null); onChange(next); }} />
         <Text style={styles.limit}>50 km</Text>
       </View>

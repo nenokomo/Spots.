@@ -1,5 +1,5 @@
 import * as Location from 'expo-location';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { City } from '../services/cities';
 
 export const berlinCenter = { latitude: 52.52, longitude: 13.405 };
@@ -21,13 +21,18 @@ export function useLocation() {
     setMessage(`${city.name} · Eventdaten sind Beispiele`);
   }
 
-  async function locate() {
+  const locate = useCallback(async ({ automatic = false }: { automatic?: boolean } = {}) => {
     if (requesting.current) return;
     requesting.current = true;
     const currentRevision = ++revision.current;
     setLoading(true);
     try {
-      const permission = await Location.requestForegroundPermissionsAsync();
+      let permission = await Location.getForegroundPermissionsAsync();
+      if (currentRevision !== revision.current) return;
+      // Ask on first use; do not repeat a denied permission prompt on each tab visit.
+      if (permission.status === 'undetermined' || (!automatic && permission.status !== 'granted' && permission.canAskAgain)) {
+        permission = await Location.requestForegroundPermissionsAsync();
+      }
       if (currentRevision !== revision.current) return;
       if (permission.status !== 'granted') {
         setMessage('Keine Freigabe · Demo-Karte bleibt nutzbar');
@@ -54,7 +59,7 @@ export function useLocation() {
         setLoading(false);
       }
     }
-  }
+  }, []);
 
   return { center, label, message, loading, locate, selectCity };
 }
