@@ -10,4 +10,5 @@ Quelle: Unsplash. Es gilt die [Unsplash-Lizenz](https://unsplash.com/license). V
 ## Vom Nutzer bereitgestelltes Headerbild
 
 - `today-hero.png`: vom Nutzer am 29.10.2026 bereitgestelltes Partyfoto für den Kopfbereich der Heute-Unterseite. Kein Foto eines zugeordneten Demo-Events. Herkunft und Nutzungsrechte wurden nicht unabhängig verifiziert; die Unsplash-Angaben oben gelten nicht für dieses Bild.
-- `today-hero-party.png`: vom Nutzer bereitgestelltes alternatives Partyfoto, aktuell im Kopfbereich der Heute-Unterseite. Herkunft und Nutzungsrechte wurden nicht unabhängig verifiziert.
+- `today-hero-party.png`: vom Nutzer bereitgestelltes alternatives Partyfoto. Herkunft und Nutzungsrechte wurden nicht unabhängig verifiziert.
+- `today-hero-dj.png`: vom Nutzer bereitgestelltes DJ-Foto, aktuell im Kopfbereich der Heute-Unterseite. Herkunft und Nutzungsrechte wurden nicht unabhängig verifiziert.

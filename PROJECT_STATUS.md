@@ -2,6 +2,89 @@
 
 Stand: 29.10.2026
 
+## Aktuell: Kartenraster für Entdecken
+
+- Als Alternative zur einspaltigen Liste zeigt Entdecken Events in einem zweispaltigen, dunklen Kartenraster mit Bild und kompakten Informationen. Suche, Filter, Kalender und Eventlinks bleiben bestehen; einzelne letzte Karten bleiben halbbreit.
+
+## Aktuell: Kalenderbutton in der Entdecken-Kopfzeile entfernt
+
+- Das Kalender-Icon oben rechts ist entfernt; der Kalender bleibt über „Datum wählen“ erreichbar.
+
+## Aktuell: Entdecken neu gestaltet
+
+- Entdecken als ruhigere, einspaltige Eventliste überarbeitet: zurückhaltende dunkle Karten mit kleinen Symbolfotos, klaren Metadaten und dezenten Spots-Akzenten statt großformatiger, farbintensiver Kacheln.
+- Suche, kompakter Genre-Filter, Zeitraum-Schnellfilter und Kalender mit exakter Datumsauswahl bleiben verfügbar. Inhalte scrollen als eine Liste; die untere Navigation und ihr Schutzabstand bleiben erhalten. Demo-Kennzeichnung und Event-Detailnavigation bleiben bestehen.
+- Bestehende Demo-Daten und bestehende Filtersemantik unverändert; Speicherung ist weiterhin nicht implementiert.
+- Browserprüfung bei 320 × 640 und 375 × 812: Suche, Genreauswahl, Datum 30.10., Eventdetail und Tabwechsel funktionieren. Lint, Typecheck und Editor-Diagnosen erfolgreich; native Gerätetests stehen aus.
+
+## Aktuell: Überschrift leicht angehoben
+
+- Überschrift und Unterzeile auf „Alle Spots“ um 8 px nach oben versetzt; die Position von Filter und Eventliste bleibt gleich.
+
+## Aktuell: Vereinfachte obere Leiste
+
+- Auf der „Alle Spots“-Seite wurden der kleine Text „Deine Nacht“ und der Kartenbutton rechts entfernt. Der Radar-Zurückbutton links bleibt erhalten.
+
+## Aktuell: Filter an der Eventliste
+
+- Abstand zum Titelbild liegt nun vor dem Filter statt zwischen Filter und Liste. Der Filter sitzt somit direkt über dem Demo-Hinweis und den Eventkarten; das Öffnen von Kategorie- und Umkreisauswahl bleibt unverändert.
+
+## Aktuell: Mehr Platz für das Titelbild
+
+- Die Eventliste inklusive Demo-Hinweis beginnt ungefähr eine Kartenhöhe weiter unten. Überschrift und Filter bleiben an ihrer Position; beim Scrollen bleibt die Liste vollständig erreichbar.
+
+## Aktuell: Umkreis im Filterbereich
+
+- Die ausgeschriebene Umkreiszeile auf „Alle Spots“ entfernt. Der bestehende Filter öffnet nun Kategorieauswahl und Umkreisregler gemeinsam; der Bereich bleibt nach einer Kategorieauswahl offen und lässt sich über den Filterbutton schließen. Auswahl und Umkreis wirken weiterhin auf die Liste.
+
+## Aktuell: Feinschliff zurückgenommen
+
+- Auf Nutzerwunsch die Änderungen des letzten Feinschliffs zurückgenommen: ursprüngliche Abstände, Kartenfarben und Anordnung von Umkreis und Filter wiederhergestellt. Das zuvor bestätigte DJ-Bild und alle Funktionen bleiben unverändert.
+
+## Aktuell: Feinschliff für „Alle Spots“
+
+- Bestehendes DJ-Foto, Bildausschnitt und grundsätzlichen Seitenaufbau beibehalten. Titel in der oberen Leiste unabhängig von den unterschiedlich breiten Tasten zentriert, Abstände und Kontraste verfeinert.
+- Kategorie und Umkreis als kompakte nebeneinanderliegende Bedienelemente mit klaren 44-px-Touchflächen; bei wenig Platz umbrechend. Neue Listenüberschrift und separate Demo-Kennzeichnung verdeutlichen die Hierarchie.
+- Eventkarten dezent abgedunkelt und Abstände optimiert, genreabhängige Akzentfarben und Herz bleiben erhalten. Bestehende Filter, Umkreis und Eventnavigation unverändert.
+
+## Aktuell: DJ-Foto ohne Seitenränder
+
+- Foto-Hintergrund passt seine Höhe proportional an das Seitenverhältnis des DJ-Bildes (768 × 960) an, sodass es bildschirmbreit und ohne seitliche Balken vollständig eingepasst wird. Die Liste liegt weiterhin darüber; dunkle Verläufe sorgen für Lesbarkeit.
+
+## Aktuell: Tatsächliche Verkleinerung des DJ-Fotos
+
+- Bildfläche explizit auf Breite und Höhe des Kopfbereichs begrenzt. Damit überschreiben im Browser die ursprünglichen Bildabmessungen die Einpassung nicht mehr; das vollständige Motiv wird mit `contain` skaliert. Die vorherige Änderung des Resize-Modus allein war im Browser nicht ausreichend.
+
+## Aktuell: DJ-Foto vollständig eingepasst
+
+- Das DJ-Foto im Kopfbereich der „Alle ansehen“-Seite wird proportional vollständig eingepasst, statt als stark vergrößerter Ausschnitt dargestellt. Der dunkle Hintergrund und der Verlauf für lesbare Schrift bleiben erhalten.
+
+## Aktuell: Neues DJ-Bild im Kopfbereich
+
+- Das neu vom Nutzer bereitgestellte DJ-Foto `today-hero-dj.png` wird probeweise im Kopfbereich der „Alle ansehen“-Seite verwendet. Layout, Abdunklung, Filter und Eventkarten unverändert; bisherige Fotos bleiben erhalten.
+
+## Aktuell: Kompakter Kategoriefilter
+
+- In „Alle Spots in deiner Nähe“ ist nur „Spots“ pink; der restliche Überschriftentext ist weiß.
+- Die dauerhaft sichtbare Kategorie-Leiste wurde durch einen Filterbutton ersetzt. Ein aufklappbarer Bereich bietet weiterhin alle bestehenden Kategorien als Einzelauswahl; nach der Auswahl schließt er sich und der Button zeigt einen aktiven Filter. Umkreis und Radar-Kontext bleiben unabhängig erhalten.
+
+## Aktuell: Herzsymbol auf Eventkarten
+
+- Auf der „Alle ansehen“-Liste ersetzt ein Herz ohne Beschriftung das Lesezeichen mit „bald“. Die Anzeige ist weiterhin keine Speicherfunktion; die gesamte Karte öffnet wie bisher die Eventdetails.
+
+## Aktuell: Überschrift und vorheriges Kartendesign
+
+- Überschrift auf „Alle Spots in deiner Nähe“ geändert. Eventkarten verwenden auf Wunsch wieder ihre vorherigen genreabhängigen Verläufe und Akzent-Chips; das zuletzt ausgewählte Headerbild bleibt unverändert.
+
+## Aktuell: Ruhigere „Deine Nacht“-Seite
+
+- Das zuvor vom Nutzer bereitgestellte Partyfoto `today-hero.png` ersetzt das Symbolfoto im oberen Kopfbereich; die übrige Seite behält den dunklen Hintergrund der ursprünglichen Gestaltung.
+- Eventkarten verwenden denselben zurückhaltenden dunklen Violettverlauf und neutrale Genre-Chips statt genreabhängig wechselnder Farben. Aufbau, Spots-Akzente, Filter und Eventfunktionen bleiben erhalten.
+
+## Aktuell: Ursprüngliche „Alle ansehen“-Gestaltung wiederhergestellt
+
+- Auf Nutzerwunsch die erste Gestaltung der neuen „Deine Nacht“-Seite wiederhergestellt: ursprüngliches `nightlife.jpg` nur im Kopfbereich, dunkle Verläufe und genreabhängig getönte Karten wie in der ersten Version. Ganzseitiges Foto und nachträglich hinzugefügte Glaskarten entfernt; die hochgeladenen Fotos bleiben als Assets erhalten.
+
 ## Aktuell: Hintergrundbild verschoben
 
 - Das ganzseitige Foto auf „Alle ansehen“ ist nach links verschoben; es füllt den Hintergrund weiterhin ohne freie Ränder. Karten und Lesbarkeitsverlauf bleiben unverändert.
