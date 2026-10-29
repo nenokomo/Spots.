@@ -1,6 +1,6 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
-export type IconName = 'radar' | 'search' | 'profile' | 'pin' | 'chevron' | 'down' | 'sliders' | 'clock' | 'locate' | 'close' | 'back' | 'calendar' | 'share' | 'ticket' | 'camera' | 'bookmark';
+export type IconName = 'radar' | 'search' | 'profile' | 'pin' | 'chevron' | 'down' | 'sliders' | 'clock' | 'locate' | 'close' | 'back' | 'calendar' | 'share' | 'ticket' | 'camera' | 'bookmark' | 'map' | 'grid' | 'headphones' | 'wave' | 'cocktail';
 
 export function Icon({ name, size = 22, color = '#d4bcd8' }: { name: IconName; size?: number; color?: string }) {
   return (
@@ -21,6 +21,11 @@ export function Icon({ name, size = 22, color = '#d4bcd8' }: { name: IconName; s
       {name === 'ticket' && <Path d="M3 5h18v5a2 2 0 0 0 0 4v5H3v-5a2 2 0 0 0 0-4V5Zm12 1v2m0 3v2m0 3v2" />}
       {name === 'camera' && <><Path d="M3 7h4l2-3h6l2 3h4v13H3Z" /><Circle cx="12" cy="13" r="4" /></>}
       {name === 'bookmark' && <Path d="M6 3h12v18l-6-4-6 4Z" />}
+      {name === 'map' && <Path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15" />}
+      {name === 'grid' && <><Circle cx="6" cy="6" r="2.5" /><Circle cx="18" cy="6" r="2.5" /><Circle cx="6" cy="18" r="2.5" /><Circle cx="18" cy="18" r="2.5" /></>}
+      {name === 'headphones' && <Path d="M4 14v-3a8 8 0 0 1 16 0v3M4 12h3v8H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1Zm16 0h-3v8h3a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1Z" />}
+      {name === 'wave' && <Path d="M2 12h4l3-8 4 16 3-12 2 4h4" />}
+      {name === 'cocktail' && <Path d="m3 3 9 10 9-10H3Zm9 10v8m-5 0h10M6 6h12" />}
     </Svg>
   );
 }

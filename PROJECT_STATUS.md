@@ -2,6 +2,39 @@
 
 Stand: 29.10.2026
 
+## Aktuell: Hintergrundbild verschoben
+
+- Das ganzseitige Foto auf „Alle ansehen“ ist nach links verschoben; es füllt den Hintergrund weiterhin ohne freie Ränder. Karten und Lesbarkeitsverlauf bleiben unverändert.
+
+## Aktuell: Ganzseitiges Foto und Glaskarten auf „Alle ansehen“
+
+- Nutzerfoto liegt bildschirmfüllend hinter der Heute-Unterseite und bleibt beim Scrollen fest stehen; durch proportionalen Cover-Zuschnitt können Bildränder abgeschnitten werden. Ein dunkler Verlauf schützt die Lesbarkeit.
+- Eventkarten verwenden wiederverwendbares GlassBackdrop mit ruhiger, dunkler Tönung: natives Liquid Glass auf unterstützten iOS-Geräten, statischer Glaseffekt ohne Blur auf Android und im Browser. Inhalte, Genre-Chips und Eventnavigation unverändert.
+- Browserprüfung: Hintergrund über vollständige 375 × 812 Ansicht, House-Filter drei Treffer und Eventdetails erreichbar. Lint und Typecheck erfolgreich; native Glasdarstellung und Performance noch nicht auf Geräten geprüft.
+
+## Aktuell: Ruhigeres „Alle ansehen“-Design
+
+- Headerfoto wird proportional eingepasst, sodass mehr vom gesamten Bild statt eines stark vergrößerten Ausschnitts sichtbar ist; der dunkle Lesbarkeitsverlauf bleibt erhalten.
+- Eventkarten und ihre Genre-Chips auf ein einheitliches dunkles Farbschema umgestellt; genreabhängige bunte Hintergründe entfernt. Eventbilder, Inhalte und Aktionen bleiben unverändert.
+- Browserprüfung: Headerfoto geladen und alle zehn Demo-Eventkarten mit derselben Hintergrundfarbe. Lint und Typecheck erfolgreich; native Darstellung nicht auf Geräten geprüft.
+
+## Aktuell: Ausgetauschtes Headerbild
+
+- Das neu vom Nutzer bereitgestellte Partyfoto `assets/events/today-hero-party.png` ersetzt das vorherige Headerbild auf der „Alle ansehen“-Seite; der dunkle Verlauf bleibt erhalten. Das vorherige Foto bleibt als Asset erhalten.
+
+## Aktuell: Eigenes Headerbild für „Alle ansehen“
+
+- Vom Nutzer bereitgestelltes Partyfoto als lokale `assets/events/today-hero.png` eingebunden, ausschließlich im Kopfbereich der Heute-Unterseite. Dunkle Lesbarkeitsverläufe bleiben erhalten; Eventbilder und Filter unverändert.
+- Browser bestätigt erfolgreich geladenes Headerbild (564 × 847 Pixel). Lint und Typecheck erfolgreich. Bildherkunft in der Asset-Dokumentation separat von Unsplash vermerkt.
+
+## Aktuell: Neue „Deine Nacht“-Liste nach Designvorlage
+
+- Radar → „Alle ansehen“ öffnet eine neu gestaltete Heute-Seite mit vorhandenem Party-Symbolfoto als abgedunkeltem Hintergrund, eigener Safe-Area-Kopfleiste, Radar-Zurückknopf, Kartenknopf und „Die Nacht ruft.“ mit Spots-Akzentfarbe.
+- Horizontale Genre-Chips mit SVG-Icons und aufklappbarer Umkreisregler (10–50 km). Änderungen bleiben in den URL-Parametern dieser Liste; Radar-Zentrum und anfängliche Filter werden weiterhin vom Radar übernommen. Heute-/05:00-Nachtregel unverändert, Demo-Hinweis und Leerzustand vorhanden.
+- Eigene kompakte Eventkarten: Bild links, Kategorien oberhalb des Titels, Datum/Ort, dezente farbige Verläufe und Detailpfeil. Lesezeichen ausdrücklich als „bald“ markiert; keine nicht vorhandene Speicherfunktion vorgetäuscht. Bestehende Eventkarten auf Radar/anderen Seiten unverändert.
+- Route delegiert an TodayEventsScreen außerhalb des Routenordners; TodayEventCard als kleine separate Komponente. Keine neuen Abhängigkeiten oder Eventdaten/Bilder ergänzt, statische Verläufe statt zusätzlicher Blur-Ebenen auf Android.
+- Browserprüfung bei 320 × 640 und 375 × 812: Karten 108 px hoch, zehn Karlsruhe-Demos, House-Filter drei Treffer, Umkreis auf 10 km, Eventdetails und Kartenrückkehr erfolgreich. Lint und Typecheck erfolgreich; native Darstellung weiterhin ohne Gerätetest.
+
 ## Aktuell: Automatischer Radar-Standort und Suche schließen
 
 - Radar fragt bei jedem Öffnen/Fokussieren einmalig den Vordergrundstandort ab und zentriert darauf, ohne neuen Radar-Scan oder laufendes Standorttracking. Vorhandene frische Positionen werden weiter genutzt; manuelle Stadtauswahl bleibt während des Radarbesuchs möglich.
