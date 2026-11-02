@@ -16,7 +16,8 @@ export default function ProfileScreen() {
         <View style={styles.avatar}><Icon name="profile" color={colors.pink} size={43} /></View>
         <Text style={styles.title}>Dein Abend. Dein Ding.</Text>
         <Text style={styles.text}>Entdecke erst einmal, was die Nacht zu bieten hat.</Text>
-        <View style={styles.note}><GlassBackdrop radius={20} variant="panel" /><Text style={styles.noteTitle}>Ein privater Platz für dich.</Text><Text style={styles.text}>Anmeldung und gespeicherte Events sind noch in Entwicklung. Dein Profil bleibt minimal und privat.</Text></View>
+        <View style={styles.note}><GlassBackdrop radius={20} variant="panel" /><Text style={styles.noteTitle}>Ein privater Platz für dich.</Text><Text style={styles.text}>Deine gemerkten Events bleiben auf diesem Gerät. Eine Anmeldung ist noch in Entwicklung. Dein Profil bleibt minimal und privat.</Text></View>
+        <Link href="/saved" asChild><Pressable style={styles.button}><Icon name="heart" color={colors.text} /><Text style={styles.buttonText}>Gemerkte Spots</Text></Pressable></Link>
         <Link href="/" asChild><Pressable style={styles.button}><Icon name="radar" color={colors.text} /><Text style={styles.buttonText}>Zum Radar</Text></Pressable></Link>
       </ScrollView>
     </Screen>

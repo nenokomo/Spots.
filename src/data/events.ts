@@ -14,6 +14,38 @@ export type DemoEvent = {
 
 // Design examples only. Coordinates are public Berlin areas, never private addresses.
 export const demoEvents: DemoEvent[] = [
+  // Explicit test parties with fixed dates and public-area example coordinates.
+  // They are fictional and never move forward automatically with the current date.
+  {
+    id: 'test-midnight-pulse',
+    title: 'Midnight Pulse · Testparty',
+    categories: ['Techno', 'Party'],
+    date: '02.11.2026 · ab 21:00',
+    startsAt: '2026-11-02T21:00:00+01:00',
+    location: 'Karlsruhe · Beispielort',
+    image: require('../../assets/events/nightlife.jpg'),
+    coordinate: { latitude: 49.009, longitude: 8.404 },
+  },
+  {
+    id: 'test-velvet-house',
+    title: 'Velvet House · Testparty',
+    categories: ['House', 'Party'],
+    date: 'Freitag, 06.11.2026 · ab 22:00',
+    startsAt: '2026-11-06T22:00:00+01:00',
+    location: 'Karlsruhe · Beispielort',
+    image: require('../../assets/events/club.jpg'),
+    coordinate: { latitude: 49.004, longitude: 8.389 },
+  },
+  {
+    id: 'test-neon-club',
+    title: 'Neon Club · Testparty',
+    categories: ['Clubs', 'Party'],
+    date: 'Samstag, 07.11.2026 · ab 23:00',
+    startsAt: '2026-11-07T23:00:00+01:00',
+    location: 'Berlin · Beispielort',
+    image: require('../../assets/events/nightlife.jpg'),
+    coordinate: { latitude: 52.486, longitude: 13.465 },
+  },
   {
     id: 'neon-nights',
     title: 'Neon Nights',

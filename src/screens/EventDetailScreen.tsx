@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '../components/Icon';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Screen } from '../components/Screen';
+import { SaveEventButton } from '../components/SaveEventButton';
 import { colors } from '../constants/theme';
 import { demoEvents } from '../data/events';
 
@@ -70,7 +71,7 @@ export default function EventDetailScreen() {
             </View>
 
             <View style={styles.actions}>
-              <View accessibilityLabel="Speichern ist noch nicht verfügbar" style={[styles.action, styles.disabled]}><GlassBackdrop radius={13} native={false} /><Icon name="bookmark" size={17} /><Text style={styles.actionText}>Speichern · bald</Text></View>
+              <SaveEventButton id={event.id} title={event.title} label />
               <Pressable accessibilityRole="button" onPress={() => setTab('Location')} style={styles.action}><GlassBackdrop radius={13} /><Icon name="pin" size={17} /><Text style={styles.actionText}>Location</Text></Pressable>
               <Pressable accessibilityRole="button" accessibilityLabel="Event teilen" onPress={() => void share()} style={styles.action}><GlassBackdrop radius={13} /><Icon name="share" size={17} /><Text style={styles.actionText}>Teilen</Text></Pressable>
             </View>

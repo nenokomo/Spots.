@@ -4,11 +4,12 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../constants/theme';
 import type { DemoEvent } from '../data/events';
 import { Icon } from './Icon';
+import { SaveEventButton } from './SaveEventButton';
 
 export function TodayEventCard({ event }: { event: DemoEvent }) {
   const house = event.categories.includes('House');
   return (
-    <Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
+    <View><Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
       <Pressable accessibilityLabel={`${event.title}, Demo-Event, Details öffnen`} style={styles.card}>
         <LinearGradient pointerEvents="none" colors={house ? ['#262632', '#192632', '#17111d'] : ['#3b1b36', '#2e192b', '#17111d']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
         <Image source={event.image} style={styles.image} accessibilityLabel="Symbolfoto einer Veranstaltung" />
@@ -20,14 +21,14 @@ export function TodayEventCard({ event }: { event: DemoEvent }) {
         </View>
         <View style={styles.trailing}>
           <Icon name="chevron" size={19} />
-          <View accessibilityLabel="Speichern ist noch nicht verfügbar" style={styles.bookmark}><Icon name="heart" size={19} color="#d4bcd8" /></View>
         </View>
       </Pressable>
-    </Link>
+    </Link><View style={styles.save}><SaveEventButton id={event.id} title={event.title} /></View></View>
   );
 }
 
 const styles = StyleSheet.create({
+  save: { position: 'absolute', right: 4, bottom: 4 },
   card: { flexDirection: 'row', alignItems: 'center', padding: 7, gap: 12, borderRadius: 17, borderWidth: 1, borderColor: '#e6b3df26', overflow: 'hidden', minHeight: 108 },
   image: { width: 82, height: 92, borderRadius: 11, backgroundColor: colors.surface },
   content: { flex: 1, gap: 5, paddingVertical: 2 },
@@ -38,6 +39,5 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 15, lineHeight: 19, fontWeight: '700', letterSpacing: -0.2 },
   meta: { flexDirection: 'row', gap: 7, alignItems: 'center' },
   metaText: { color: colors.muted, fontSize: 11, flexShrink: 1 },
-  trailing: { alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', width: 24, paddingTop: 29, paddingBottom: 2 },
-  bookmark: { alignItems: 'center', opacity: 0.7 },
+  trailing: { alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', width: 40, paddingTop: 12, paddingBottom: 2 },
 });

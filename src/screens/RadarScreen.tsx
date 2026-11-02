@@ -22,7 +22,7 @@ import { distanceKm, happensToday, type Coordinate } from '../utils/events';
 
 export default function RadarScreen() {
   const [category, setCategory] = useState<Category>('Alle');
-  const [radius, setRadius] = useState(30);
+  const [radius, setRadius] = useState(10);
   const [filterOpen, setFilterOpen] = useState(false);
   const [preview, setPreview] = useState<DemoEvent | null>(null);
   const [mapLayout, setMapLayout] = useState({ y: 100, height: 300 });

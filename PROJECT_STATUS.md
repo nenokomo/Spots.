@@ -1,6 +1,26 @@
 ﻿# Projektstatus
 
-Stand: 29.10.2026
+Stand: 02.11.2026
+
+## Aktuell: Glaskarten und Testpartys auf Gemerkt
+
+- Nur die Eventkarten auf Gemerkt nutzen jetzt die bestehende GlassBackdrop-Komponente (Variante card): natives Liquid Glass auf unterstützten iOS-Geräten mit Berücksichtigung reduzierter Transparenz; bestehender statischer Glasverlauf auf Android/Web. Kopf- und Infobereich erhalten keinen zusätzlichen Glaseffekt. Herz oben rechts entfernt; ausgefülltes Herz ersetzt das Lesezeichen neben „Deine Spots. Für später.“.
+- Drei ausdrücklich fiktive Testpartys mit festen Terminen ergänzt: Midnight Pulse (Karlsruhe, 02.11.2026), Velvet House (Karlsruhe, 06.11.2026) und Neon Club (Berlin, 07.11.2026). Sie stehen in Entdecken und den jeweils passenden Radar-/Datumsfiltern bereit. Keine echten Veranstaltungsorte oder privaten Adressen; Termine rollen nicht automatisch weiter.
+- Alle drei Testpartys über die regulären Merkbuttons in der laufenden Browser-Vorschau auf Port 8081 gespeichert; keine automatische Befüllung anderer Geräte oder Wiederherstellung nach manuellem Entfernen.
+- Verifiziert: drei gespeicherte Testpartys nach Neuladen, Suche und Detailnavigation bei 320/375 px. Lint und Typecheck erfolgreich. Native Liquid-Glass-Darstellung weiterhin auf einem iPhone zu prüfen.
+
+## Aktuell: Gemerkt und lokale Merkfunktion
+
+- Neuer Reiter „Gemerkt“ zwischen Entdecken und Profil: dunkle Eventliste im Spots-Design, Anzahl, Suche nach Name/Ort/Genre, Such-Leerzustand mit Zurücksetzen sowie initialer Leerzustand mit Link zu Entdecken. Eventkarten öffnen die bestehenden Detailseiten. Vergangene Termine sind anhand des Berliner Kalendertags gekennzeichnet; die Liste zeigt absolute Termine.
+- Funktionierende Herzen auf Entdecken-Karten, der Heute-Liste und Eventdetails. Entfernen direkt in der Merkliste; zusätzlicher Zugang über das Profil. Radar bleibt unverändert, seine Events können über die Details gemerkt werden.
+- Gemeinsamer SavedEventsProvider oberhalb des Router-Stacks; Speicherung ausschließlich von Event-IDs unter `spots.saved-events.v1` mit dem über `npx expo install` eingebundenen SDK-kompatiblen Async Storage 2.2.0. Keine Anmeldung, kein Backend und keine Synchronisation zwischen Geräten. Die frühere Aussage „Speicherung nicht implementiert“ in älteren Einträgen ist damit überholt.
+- Speichervorgänge sind gegen parallele Betätigungen gesperrt; die sichtbare Auswahl wird erst nach erfolgreichem Schreiben geändert. Lade- und Schreibfehler erhalten sichtbare Hinweise und Wiederholungsmöglichkeiten. Gespeicherte Daten werden beim Laden validiert; unbekannte Event-IDs werden nicht als erfundene Events dargestellt.
+- Browserprüfung bei 375 × 812 und 320 × 640: Merken in Entdecken, Wechsel zu Gemerkt, Erhalt nach Neuladen, Suche ohne Treffer/Zurücksetzen, Eventdetail öffnen, Entfernen/erneutes Merken in Details und Entfernen bis zum Leerzustand erfolgreich. `npx expo lint`, `npx tsc --noEmit` und Editor-Diagnosen erfolgreich.
+- Grenzen: ausschließlich bestehende, fiktive Events; keine echten Veranstaltungsdaten. Native Geräte und native Speicherung noch nicht geprüft. Bestehende eigene Development Builds müssen für das neue native Modul neu gebaut werden. Als Nächstes native Bedienung/Persistenz und Speicherfehler auf Geräten prüfen; später echte Eventquelle und optional Kontosynchronisierung ergänzen.
+
+## Aktuell: Radar startet mit 10 km
+
+- Der Radar startet beim App-Start mit einem Umkreis von 10 km; der Radius ist weiterhin über den Filter einstellbar und wird an die „Alle ansehen“-Seite übergeben.
 
 ## Aktuell: Kartenraster für Entdecken
 

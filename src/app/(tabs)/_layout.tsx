@@ -21,6 +21,7 @@ export default function TabLayout() {
     }}>
       <Tabs.Screen name="index" options={{ title: 'Radar', tabBarIcon: ({ focused }) => <GlassTabIcon name="radar" focused={focused} /> }} />
       <Tabs.Screen name="explore" options={{ title: 'Entdecken', tabBarIcon: ({ focused }) => <GlassTabIcon name="search" focused={focused} /> }} />
+      <Tabs.Screen name="saved" options={{ title: 'Gemerkt', tabBarIcon: ({ focused }) => <GlassTabIcon name="heart" focused={focused} /> }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: ({ focused }) => <GlassTabIcon name="profile" focused={focused} /> }} />
     </Tabs>
   );

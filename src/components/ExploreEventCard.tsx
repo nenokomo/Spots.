@@ -3,9 +3,10 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../constants/theme';
 import type { DemoEvent } from '../data/events';
 import { Icon } from './Icon';
+import { SaveEventButton } from './SaveEventButton';
 
 export function ExploreEventCard({ event }: { event: DemoEvent }) {
-  return <Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
+  return <View style={styles.wrapper}><Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
     <Pressable accessibilityLabel={`${event.title}, Demo-Event, Details öffnen`} style={styles.card}>
       <Image source={event.image} style={styles.image} accessibilityLabel="Symbolfoto einer Veranstaltung" />
       <View style={styles.content}>
@@ -15,10 +16,12 @@ export function ExploreEventCard({ event }: { event: DemoEvent }) {
         <View style={styles.meta}><Icon name="pin" size={14} color="#ad9bb2" /><Text numberOfLines={1} style={styles.metaText}>{event.location}</Text></View>
       </View>
     </Pressable>
-  </Link>;
+  </Link><View style={styles.save}><SaveEventButton id={event.id} title={event.title} /></View></View>;
 }
 
 const styles = StyleSheet.create({
+  wrapper: { flex: 1 },
+  save: { position: 'absolute', top: 7, right: 7 },
   card: { flex: 1, overflow: 'hidden', borderRadius: 15, borderWidth: 1, borderColor: '#ffffff12', backgroundColor: '#1c1621' },
   image: { width: '100%', height: 112, backgroundColor: colors.surface },
   content: { flex: 1, gap: 6, minWidth: 0, padding: 11 },
