@@ -19,21 +19,19 @@ export function SaveEventButton({ id, title, label = false }: { id: string; titl
         if (!ready) { reload(); return; }
         setFailed(!await toggle(id));
       }}
-      style={({ pressed }) => [styles.button, label && styles.labeled, saved && styles.saved, (pressed || busy) && styles.pressed]}
+      style={({ pressed }) => [styles.button, label && styles.labeled, pressed && styles.pressed]}
     >
       <Icon name="heart" size={19} color={saved ? colors.pink : colors.muted} filled={saved} />
-      {label && <Text style={[styles.text, saved && styles.active]}>{saved ? 'Gemerkt' : 'Merken'}</Text>}
+      {label && <Text style={styles.text}>{saved ? 'Gemerkt' : 'Merken'}</Text>}
     </Pressable>
     {failed && <Text accessibilityRole="alert" style={styles.error}>Fehler. Erneut versuchen.</Text>}
   </View>;
 }
 
 const styles = StyleSheet.create({
-  button: { minWidth: 44, minHeight: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#211827', borderWidth: 1, borderColor: colors.border },
-  labeled: { flexDirection: 'row', gap: 7, paddingHorizontal: 12 },
-  saved: { backgroundColor: '#c922ab22', borderColor: '#c922ab55' },
+  button: { width: 44, height: 44, flexShrink: 0, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#211827', borderWidth: 1, borderColor: colors.border },
+  labeled: { width: 112, flexDirection: 'row', gap: 7, paddingHorizontal: 12 },
   pressed: { opacity: 0.55 },
   text: { color: colors.muted, fontSize: 11, fontWeight: '600' },
-  active: { color: colors.pink },
   error: { color: colors.pink, fontSize: 10, maxWidth: 110, marginTop: 4 },
 });

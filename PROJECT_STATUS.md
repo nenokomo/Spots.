@@ -1,6 +1,96 @@
 ﻿# Projektstatus
 
-Stand: 02.11.2026
+Stand: 04.11.2026
+
+## Übergabe für die nächste Sitzung
+
+- Aktueller Stand auf Nutzerwunsch als gemeinsamer Zwischenstand gesichert: Radar-/Standortsteuerung, dynamischer Kartenumkreis, einheitliche Filter/Kopfzeilen, Deutschland-Städtesuche, Navigation, Profil und ruhige Herzbuttons sowie bildschirmfüllender Radar-Logo-Startscreen.
+- Letzter TypeScript-Check erfolgreich; Lint vor der abschließenden reinen Vollbild-Stylekorrektur erfolgreich. Native GPS-, Kartenanimations- und Layoutprüfung weiterhin auf dem iPhone erforderlich.
+- Nächster sinnvoller Schritt: Vollständigen App-Neustart auf dem Handy prüfen (Vollbild-Logo, Übergang zum Radar, 30-km-Start und Standorttaste). Native Splash-Konfiguration benötigt neuen Build. Fiktive Events bleiben fest auf ihre jeweiligen Termine datiert und rollen nicht automatisch auf den 04.11. weiter.
+
+## Aktuell: Bildschirmfüllendes Logo im Startscreen
+
+- Radarbild füllt den gesamten In-App-Startscreen proportional mit Cover-Zuschnitt. Separate Wortmarke und Claim entfernt; Ladeindikator bleibt darüber sichtbar. Auf hochkantigen Geräten werden seitliche Bildteile abgeschnitten, ohne das Motiv zu verzerren.
+
+## Aktuell: Radar-Logo aus Nutzervorlage im Ladescreen
+
+- Nutzervorlage mit pinkem Radarstrahl und dunklem Straßenkartenmotiv per Bildgenerierung verfeinert, als assets/spots-radar-logo.png gespeichert und in den Startscreen eingebunden. Zentrale Logo-Abbildung mit Spots.-Wortmarke, Claim und zurückhaltendem Ladeindikator ersetzt die bisherigen dekorativen Ringe und Zusatztexte.
+- App-Launcher-Icon und native Splash-Konfiguration bewusst unverändert; die neue Grafik betrifft den gestalteten In-App-Startscreen. Native Darstellung noch auf Gerät zu prüfen.
+
+## Aktuell: Gleichmäßige Radar-Kartenfläche
+
+- Karte und Heute-Panel ausdrücklich auf dieselbe volle verfügbare Breite gesetzt, seitliche 5-px-Ränder entfernt. Beide schließen links und rechts bündig innerhalb des Safe-Area-Containers ab.
+- Negative 18-px-Überlappung des Heute-Panels entfernt. Die Karte endet jetzt oberhalb des Panels, damit native Maps-Logos und Quellenangaben am Kartenboden nicht halb verdeckt werden. Standortsteuerung und Zoom unverändert. Native Darstellung noch auf dem betroffenen Handy zu prüfen.
+
+## Aktuell: Navigation beidseitig verbreitert
+
+- Maximale Breite der mittig ausgerichteten Navigationskapsel von 292 auf 360 px erhöht. Links und rechts bleiben auf schmalen Geräten mindestens 16 px Abstand.
+
+## Aktuell: Einheitliche Markenkopfzeilen und zentrierte Navigation
+
+- Radar, Entdecken, Gemerkt und Profil verwenden dieselbe 25-px-Marken-Typografie der Startseite. Kopfzeilen schreiben „Spots.“ mit Punkt und ergänzen außerhalb des Radars den Seitenkontext.
+- Navigation zentriert über symmetrische horizontale Ränder statt gleichzeitiger fester Breite und linker/rechter Positionsangaben. Kompakte Maximalbreite von 292 px bleibt erhalten. Native Darstellung noch zu prüfen.
+
+## Aktuell: Einheitliche Events, Filter und kompakte Navigation
+
+- Sichtbare Kategorie „Party“ sowie Party-/Testparty-Texte auf „Events“/„Testevent“ umgestellt; Event-IDs und bestehende Merkliste bleiben erhalten. Interne Nachtfenster-Funktionsnamen unverändert.
+- Alle Kategoriewahlen in Radar, Entdecken und Heute verwenden dieselbe CategoryFilters-Komponente mit identischer Auswahl, aktiver Gestaltung und umbrechenden 44-px-Touchflächen.
+- Schwebende Navigation auf maximal 292 px begrenzt, mittig und auf schmalen Geräten mit mindestens 16 px Außenabstand.
+- Städtesuche über Open-Meteo mit countryCode=DE eingeschränkt und Antwort zusätzlich auf deutschen Ländercode und bewohnte Orte (PPL-Featurecodes) geprüft. Keine internationalen Suchergebnisse.
+- Profil-Kopfzeile „Spots. / Dein Profil“ linksbündig im Stil der anderen Seiten. Native Layoutdarstellung noch auf Gerät zu prüfen.
+
+## Aktuell: Spots-Startbildschirm
+
+- Neuer codebasierter Startscreen: dunkler Violettverlauf, dezente Radarringe, weißes Spots-Logo mit pinkem Punkt, Markenclaim und Ladeindikator. Keine neuen Bildassets nötig.
+- Einmalige kurze Marken-Einblendung (850 ms Mindestdauer) beim Mounten; wartet auf Abschluss des lokalen Merklistenladens, auch Fehler lassen die App anschließend öffnen. Kein erneutes Einblenden beim Merken oder Tabwechsel. Radar startet erst danach, damit der Scan sichtbar bleibt.
+- expo-splash-screen SDK-kompatibel eingebunden; native Startfläche auf Spots-Dunkel gesetzt und beim ersten Layout an den gestalteten Screen übergeben. Native Konfiguration erfordert neuen Build; Expo Go zeigt vor dem JavaScript-Start weiterhin seine eigene Startdarstellung. Native Release-Darstellung noch nicht geprüft.
+
+## Aktuell: Sanfte Standort-Rückkehr
+
+- Nach der ersten Karteneinrichtung erfolgen Zentrierung und Rückzoom auf 30 km mit nativer Kartenanimation statt abruptem Sprung. Kilometeranzeige folgt der laufenden Bewegung statt sofort auf 30 km zu wechseln.
+- Standorttaste wartet vor dem Radius-Reset auf die Standortabfrage, um getrennte Zoom-/Zentriersprünge zu vermeiden. Bei aktivierter Bewegungsreduktion bleibt die Rückkehr ohne Animation. Native Animationsqualität noch auf Gerät zu prüfen.
+
+## Aktuell: Ruhige Herzbuttons beim Speichern
+
+- Globalen Busy-Zustand aus der Deckkraft der Merkbuttons entfernt: Das Speichern eines Events lässt andere Herzen nicht mehr gemeinsam flackern. Schreibsperre bleibt erhalten; nur der tatsächlich gedrückte Button erhält Touch-Feedback.
+- Feste 44 × 44 px für Iconbuttons und konstante Breite für beschriftete Merkbuttons verhindern Layoutsprünge beim Wechsel zwischen „Merken“ und „Gemerkt“.
+
+## Aktuell: Nur das gemerkte Herz wird pink
+
+- Gemeinsamer Merkbutton behält beim Speichern den dunklen Hintergrund, neutralen Rahmen und die neutrale Textfarbe. Nur das Herz wird pink und ausgefüllt; Speicherfunktion unverändert.
+
+## Aktuell: Radar-Start und freies Zoomen getrennt
+
+- Fehler entfernt: Kartenbewegungen setzten versehentlich den Filterradius wieder auf 30 km. Zurücksetzen findet jetzt ausschließlich beim Radar-Fokus und bei expliziter Standortzentrierung statt.
+- Native Zentrierung passt die tatsächlichen Nord-/Südgrenzen von jeweils 30 km mit fitToCoordinates in den fertigen Kartenausschnitt ein, statt einen geschätzten Regions-Seitenfaktor zu verwenden. Berührung der Karte hebt die Startmeldungs-Sperre auf, sodass Zoomanzeigen nicht festhängen können. Standorttaste setzt auch die Anzeige sofort auf 30 km und zentriert nach erfolgreicher GPS-Abfrage neu.
+- TypeScript/Lint werden geprüft; tatsächlicher GPS-Start und Gesten bleiben ohne verfügbares iPhone nicht live verifiziert.
+
+## Aktuell: Initialen nativen Kartenausschnitt korrigiert
+
+- 30-km-Region wird erst nach nativer Kartenbereitschaft und gemessenem Layout gesetzt. Vorher konnte die initiale Region anhand einer temporären Kartengröße angepasst werden und als stark vergrößerter Umkreis (gemeldet: 428 km) zurückkommen.
+- Veraltete Regionsmeldungen werden beim programmgesteuerten Zentrieren ignoriert, bis der angeforderte Ausschnitt erreicht ist. Danach folgt die Anzeige wieder den Zoomgesten. Standort-/Radiuswechsel verwenden dieselbe Initialisierung. Verifikation auf echtem iPhone steht noch aus.
+
+## Aktuell: Fünf heutige Testpartys in Karlsruhe
+
+- Auf Nutzerwunsch fünf ausdrücklich fiktive Testpartys für den 03.11.2026 um 21/22 Uhr ergänzt: Fächerstadt Beats, Karlsruhe House Lights, Südstadt Session, Weststadt After Dark und Oststadt Frequenz. Eindeutige IDs, feste Termine, öffentliche Beispielkoordinaten ohne echte Veranstaltungsadressen. Verfügbar in Radar/Heute bei passender Kartenmitte und Filterauswahl sowie in Entdecken; keine automatische Speicherung in der Merkliste.
+
+## Aktuell: Kilometeranzeige folgt Kartenzoom
+
+- Radar-Badge zeigt jetzt den sichtbaren vertikalen Halbausschnitt ab Kartenmitte statt des Event-Suchradius. Native Karten melden den Radius während und nach Zoombewegungen; Browserzoom aktualisiert die Anzeige ebenfalls. Unter einem Kilometer erfolgt die Anzeige in Metern.
+- Filterradius und Eventauswahl bleiben unabhängig vom Zoom unverändert; Standortzentrierung setzt weiterhin auf den 30-km-Ausschnitt zurück. Native Gesten müssen noch auf einem Gerät geprüft werden.
+
+## Aktuell: Profil wieder im ursprünglichen Design
+
+- Ursprüngliche Profilgestaltung mit Avatar, „Dein Abend. Dein Ding.“ und privater Infokarte wiederhergestellt. Nur die beiden Buttons „Gemerkte Spots“ und „Zum Radar“ bleiben entfernt. Die zuletzt ergänzten Gaststatus-/Merklistenanzeigen und der neue Footer wurden zurückgenommen. Der separate Gemerkt-Tab und gespeicherte Events bleiben unverändert erhalten.
+
+## Aktuell: Radar-Standort, Filter und Profil
+
+- Radar startet mit 30 km Umkreis; Standorttaste und Standortsuche stellen den Radius wieder auf 30 km. Native Karte bleibt ohne zusätzliche Zoombegrenzung frei zoombar. Kartenausschnitt zeigt initial 60 km in vertikaler Richtung statt des zuvor zusätzlich vergrößerten Ausschnitts.
+- Tatsächlich ermittelter Standort wird als blauer Punkt angezeigt, unabhängig von Kartenverschiebung oder Stadtauswahl. Ohne erfolgreiche Standortfreigabe wird kein falscher Standortpunkt dargestellt. Browserkarte erhält außerdem Plus-/Minus-Zoomtasten.
+- Permanente Genre-Leiste auf Radar entfernt; Kategorien und Umkreis sind nur über den oben rechts beschrifteten Button „Filter“ einstellbar. Kilometeranzeige bleibt rein informativ.
+- Entdecken enthält „Beliebte Events“ als ausdrücklich beschriftete Demo-Vorschau kommender, zur Auswahl passender Events. Keine echten Popularitätsdaten oder erfundene Rangfolge; echte Beliebtheitsauswertung benötigt eine Eventquelle mit entsprechenden Daten.
+- Profil: beide Navigationsbuttons entfernt, klarer Gaststatus und tatsächlicher lokaler Merklistenstand ergänzt. Konto bleibt als nicht implementiert gekennzeichnet.
+- Native GPS-Darstellung, Zoomgesten und Layout auf iPhone/Android noch auf Geräten zu prüfen.
 
 ## Aktuell: Glaskarten und Testpartys auf Gemerkt
 

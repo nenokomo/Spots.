@@ -7,7 +7,7 @@ import { GlassBackdrop } from '../components/GlassBackdrop';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Screen } from '../components/Screen';
 import { tabBarContentInset } from '../constants/navigation';
-import { colors } from '../constants/theme';
+import { brandHeadingStyle, colors } from '../constants/theme';
 import { demoEvents } from '../data/events';
 import { useSavedEvents } from '../hooks/useSavedEvents';
 import { useToday } from '../hooks/useToday';
@@ -37,7 +37,7 @@ export default function SavedEventsScreen() {
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       ListHeaderComponent={<View>
         <View style={styles.heading}>
-          <Text style={styles.eyebrow}>SPOTS / DEINE AUSWAHL</Text>
+          <Text style={styles.eyebrow}>Spots. / Deine Auswahl</Text>
           <Text accessibilityRole="header" style={styles.title}>Gemerkt</Text>
           <Text style={styles.subtitle}>Gute Nächte beginnen mit einem Plan.</Text>
         </View>
@@ -74,7 +74,7 @@ export default function SavedEventsScreen() {
 const styles = StyleSheet.create({
   list: { flexGrow: 1, paddingHorizontal: 18 },
   heading: { paddingTop: 19, paddingBottom: 23 },
-  eyebrow: { color: '#c997bb', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 },
+  eyebrow: { ...brandHeadingStyle, marginBottom: 8 },
   title: { color: colors.text, fontSize: 30, lineHeight: 36, fontWeight: '700', letterSpacing: -0.7 },
   subtitle: { color: '#c4b3c8', fontSize: 12, lineHeight: 19, marginTop: 4 },
   info: { flexDirection: 'row', gap: 13, alignItems: 'center', padding: 17, backgroundColor: '#c922ab0c', borderWidth: 1, borderColor: '#c922ab33', borderRadius: 17 },

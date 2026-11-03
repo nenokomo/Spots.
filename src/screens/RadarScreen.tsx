@@ -12,7 +12,7 @@ import { Icon } from '../components/Icon';
 import RadarMap from '../components/RadarMap';
 import { RadiusSlider } from '../components/RadiusSlider';
 import { Screen } from '../components/Screen';
-import { colors, type Category } from '../constants/theme';
+import { brandHeadingStyle, colors, type Category } from '../constants/theme';
 import { tabBarContentInset } from '../constants/navigation';
 import { demoEvents, matchesCategory, type DemoEvent } from '../data/events';
 import { useLocation } from '../hooks/useLocation';
@@ -22,13 +22,25 @@ import { distanceKm, happensToday, type Coordinate } from '../utils/events';
 
 export default function RadarScreen() {
   const [category, setCategory] = useState<Category>('Alle');
-  const [radius, setRadius] = useState(10);
+  const [radius, setRadius] = useState(30);
+  const [visibleRadius, setVisibleRadius] = useState(30);
+  const onVisibleRadiusChange = useCallback((value: number) => {
+    if (Number.isFinite(value) && value > 0) setVisibleRadius(Math.round(value * 100) / 100);
+  }, []);
+  const visibleRadiusLabel = visibleRadius < 1
+    ? `${Math.max(1, Math.round(visibleRadius * 1000))} m`
+    : `${new Intl.NumberFormat('de-DE', { maximumFractionDigits: visibleRadius < 10 ? 1 : 0 }).format(visibleRadius)} km`;
   const [filterOpen, setFilterOpen] = useState(false);
   const [preview, setPreview] = useState<DemoEvent | null>(null);
   const [mapLayout, setMapLayout] = useState({ y: 100, height: 300 });
   const location = useLocation();
   const citySearch = useRef<CitySearchHandle>(null);
   const { locate } = location;
+  const locateAtThirty = useCallback(async () => {
+    setPreview(null);
+    await locate();
+    setRadius(30);
+  }, [locate]);
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const navigationInset = tabBarContentInset(insets.bottom);
@@ -45,6 +57,8 @@ export default function RadarScreen() {
 
   useFocusEffect(useCallback(() => {
     setPreview(null);
+    setRadius(30);
+    setVisibleRadius(30);
     void locate({ automatic: true });
     return () => citySearch.current?.dismiss();
   }, [locate]));
@@ -59,20 +73,15 @@ export default function RadarScreen() {
       <View style={styles.content} onTouchStart={() => citySearch.current?.dismiss()} onPointerDown={() => citySearch.current?.dismiss()}>
       <View style={styles.header}>
         <Text numberOfLines={1} style={styles.logo}>Spots<Text style={styles.logoDot}>.</Text></Text>
-        <CitySearch ref={citySearch} compact label={location.label} locating={location.loading} onLocate={() => { setPreview(null); void location.locate(); }} onSelect={(city) => { setPreview(null); location.selectCity(city); }} />
-        <Pressable accessibilityRole="button" accessibilityLabel="Filter und Umkreis einstellen" onPress={() => setFilterOpen(true)} style={styles.filterButton}><Icon name="sliders" size={23} /></Pressable>
-      </View>
-      <View style={styles.filters}>
-        <View style={styles.filterChips}><CategoryFilters value={category} onChange={changeCategory} /></View>
+        <CitySearch ref={citySearch} compact label={location.label} locating={location.loading} onLocate={locateAtThirty} onSelect={(city) => { setPreview(null); location.selectCity(city); }} />
+        <Pressable accessibilityRole="button" accessibilityLabel="Filter" onPress={() => setFilterOpen(true)} style={styles.filterButton}><Icon name="sliders" size={19} /><Text style={styles.filterText}>Filter</Text></Pressable>
       </View>
 
       <View style={styles.map} onLayout={(event) => setMapLayout({ y: event.nativeEvent.layout.y, height: event.nativeEvent.layout.height })}>
-        <RadarMap center={location.center} radius={radius} events={radar.visibleEvents} onSelect={setPreview} onCenterChange={onCenterChange} scan={radar} />
-        <View pointerEvents="none" style={styles.demoBadge}><View style={styles.demoDot} /><Text style={styles.demoBadgeText}>{todayEvents.length} Demo-Partys heute</Text></View>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Umkreis ${radius} Kilometer, ändern`} onPress={() => setFilterOpen(true)} style={styles.radiusBadge}>
-          <Icon name="locate" size={14} color={colors.pink} /><Text style={styles.radiusText}>{radius} km</Text><Icon name="down" size={12} />
-        </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Aktuellen Standort verwenden" disabled={location.loading} onPress={() => { setPreview(null); void location.locate(); }} style={[styles.locateButton, location.loading && styles.locating]}><Icon name="locate" size={22} color={colors.text} /></Pressable>
+        <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={setPreview} onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} />
+        <View pointerEvents="none" style={styles.demoBadge}><View style={styles.demoDot} /><Text style={styles.demoBadgeText}>{todayEvents.length} Demo-Events heute</Text></View>
+        <View accessibilityLabel={`Sichtbarer Kartenumkreis ${visibleRadiusLabel}`} style={styles.radiusBadge}><Icon name="locate" size={14} color={colors.pink} /><Text style={styles.radiusText}>{visibleRadiusLabel} Umkreis</Text></View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Zu meinem Standort, 30 Kilometer Umkreis" disabled={location.loading} onPress={locateAtThirty} style={[styles.locateButton, location.loading && styles.locating]}><Icon name="locate" size={22} color={colors.text} /></Pressable>
         <View pointerEvents="none" style={styles.status}><Text numberOfLines={2} style={styles.statusText}>{radar.scanning ? 'Umgebung wird gescannt …' : location.message}</Text></View>
       </View>
 
@@ -90,7 +99,7 @@ export default function RadarScreen() {
           contentContainerStyle={styles.eventList}
           showsVerticalScrollIndicator={false}
           style={styles.list}
-          ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>{radar.scanning || todayEvents.length > 0 ? 'Deine Umgebung wird entdeckt …' : 'Heute keine Partys in diesem Kartenausschnitt.'}</Text><Text style={styles.emptyText}>{radar.scanning || todayEvents.length > 0 ? 'Die Partys erscheinen gleich zusammen mit den Pins.' : 'Verschiebe die Karte oder ändere Genre und Umkreis.'}</Text></View>}
+          ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>{radar.scanning || todayEvents.length > 0 ? 'Deine Umgebung wird entdeckt …' : 'Heute keine Events in diesem Kartenausschnitt.'}</Text><Text style={styles.emptyText}>{radar.scanning || todayEvents.length > 0 ? 'Die Events erscheinen gleich zusammen mit den Pins.' : 'Verschiebe die Karte oder ändere Genre und Umkreis.'}</Text></View>}
         />
         <Text style={styles.demoNote}>Demo-Events · keine Live-Daten</Text>
       </LinearGradient>
@@ -110,13 +119,13 @@ export default function RadarScreen() {
           <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.sheet}>
             <GlassBackdrop radius={28} variant="panel" />
             <ScrollView contentContainerStyle={styles.sheetContent}>
-              <View style={styles.sheetHeading}><Text style={styles.sheetTitle}>Dein Radar</Text><Pressable onPress={() => setFilterOpen(false)} accessibilityRole="button" accessibilityLabel="Filter schließen" style={styles.closeButton}><Icon name="close" /></Pressable></View>
+              <View style={styles.sheetHeading}><Text style={styles.sheetTitle}>Filter</Text><Pressable onPress={() => setFilterOpen(false)} accessibilityRole="button" accessibilityLabel="Filter schließen" style={styles.closeButton}><Icon name="close" /></Pressable></View>
               <Text style={styles.label}>Worauf hast du Lust?</Text>
               <CategoryFilters value={category} onChange={changeCategory} />
               <Text style={styles.label}>Umkreis</Text>
               <RadiusSlider value={radius} onChange={(value) => { setRadius(value); setPreview(null); }} />
               <View style={styles.radii}>{[10, 20, 30, 50].map((value) => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: radius === value }} onPress={() => { setRadius(value); setPreview(null); }} style={[styles.radiusOption, radius === value && styles.radiusActive]}><Text style={styles.radiusOptionText}>{value} km</Text></Pressable>)}</View>
-              <Text style={styles.sheetHint}>Der Umkreis gilt ab der aktuellen Kartenmitte. Die Liste zeigt nur heutige Demo-Partys; Beispiele gibt es in Berlin und Karlsruhe.</Text>
+              <Text style={styles.sheetHint}>Der Umkreis gilt ab der aktuellen Kartenmitte. Die Liste zeigt nur heutige Demo-Events; Beispiele gibt es in Berlin und Karlsruhe.</Text>
               <Pressable accessibilityRole="button" onPress={() => setFilterOpen(false)} style={styles.apply}><Text style={styles.applyText}>Radar anzeigen</Text></Pressable>
             </ScrollView>
           </SafeAreaView>
@@ -128,26 +137,27 @@ export default function RadarScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { flex: 1 },
+  content: { flex: 1, alignItems: 'stretch' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 2, paddingBottom: 2, minHeight: 52, gap: 12, zIndex: 30 },
-  logo: { color: colors.text, fontSize: 25, fontWeight: '900', letterSpacing: -1.2, width: 80, flexShrink: 0 },
+  logo: { ...brandHeadingStyle, width: 80, flexShrink: 0 },
   logoDot: { color: colors.pink },
   filters: { flexDirection: 'row', alignItems: 'center', paddingBottom: 3 },
   filterChips: { flex: 1 },
-  filterButton: { width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  map: { flex: 1, minHeight: 130, marginHorizontal: 5, borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: 'hidden' },
+  filterButton: { minHeight: 44, flexDirection: 'row', gap: 5, alignItems: 'center', justifyContent: 'center' },
+  filterText: { color: colors.text, fontSize: 12, fontWeight: '600' },
+  map: { flex: 1, minHeight: 130, width: '100%', alignSelf: 'stretch', borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: 'hidden' },
   demoBadge: { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#15121cbb', borderRadius: 12, paddingHorizontal: 9, paddingVertical: 6 },
   demoDot: { height: 5, width: 5, borderRadius: 3, backgroundColor: colors.pink },
   demoBadgeText: { fontSize: 10, color: '#e2c6df', fontWeight: '600' },
   radiusBadge: { position: 'absolute', top: 8, right: 8, flexDirection: 'row', gap: 6, alignItems: 'center', backgroundColor: '#15121cdd', borderRadius: 15, minHeight: 36, paddingHorizontal: 11 },
   radiusText: { color: '#f0e6f1', fontSize: 11 },
-  locateButton: { position: 'absolute', bottom: 37, right: 14, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: '#17101fee', borderWidth: 1, borderColor: '#b872ac40' },
+  locateButton: { position: 'absolute', bottom: 18, right: 14, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: '#17101fee', borderWidth: 1, borderColor: '#b872ac40' },
   locating: { opacity: 0.5 },
   status: { position: 'absolute', bottom: 26, left: 12, right: 67, alignItems: 'flex-start' },
   statusText: { color: '#d8c9db', fontSize: 9, backgroundColor: '#17131dc9', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 4, overflow: 'hidden' },
   previewLayer: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 50 },
   preview: { position: 'absolute', left: 15, right: 15, borderRadius: 15, backgroundColor: colors.surface, borderWidth: 1, borderColor: '#de5ab970' },
-  eventPanel: { marginHorizontal: 5, marginTop: -18, borderTopLeftRadius: 25, borderTopRightRadius: 25, borderWidth: 1, borderBottomWidth: 0, borderColor: '#b872ac50', overflow: 'hidden', paddingTop: 7, paddingBottom: 6, flexShrink: 0 },
+  eventPanel: { width: '100%', alignSelf: 'stretch', marginTop: 0, borderTopLeftRadius: 25, borderTopRightRadius: 25, borderWidth: 1, borderBottomWidth: 0, borderColor: '#b872ac50', overflow: 'hidden', paddingTop: 7, paddingBottom: 6, flexShrink: 0 },
   handle: { height: 3, width: 33, borderRadius: 3, backgroundColor: '#d0a2c05c', alignSelf: 'center', marginBottom: 5 },
   panelHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 13, gap: 6 },
   sectionTitle: { color: colors.text, fontWeight: '700', fontSize: 15, letterSpacing: -0.3, flexShrink: 1 },

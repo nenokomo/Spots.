@@ -18,8 +18,8 @@ export const demoEvents: DemoEvent[] = [
   // They are fictional and never move forward automatically with the current date.
   {
     id: 'test-midnight-pulse',
-    title: 'Midnight Pulse · Testparty',
-    categories: ['Techno', 'Party'],
+    title: 'Midnight Pulse · Testevent',
+    categories: ['Techno', 'Events'],
     date: '02.11.2026 · ab 21:00',
     startsAt: '2026-11-02T21:00:00+01:00',
     location: 'Karlsruhe · Beispielort',
@@ -28,8 +28,8 @@ export const demoEvents: DemoEvent[] = [
   },
   {
     id: 'test-velvet-house',
-    title: 'Velvet House · Testparty',
-    categories: ['House', 'Party'],
+    title: 'Velvet House · Testevent',
+    categories: ['House', 'Events'],
     date: 'Freitag, 06.11.2026 · ab 22:00',
     startsAt: '2026-11-06T22:00:00+01:00',
     location: 'Karlsruhe · Beispielort',
@@ -38,8 +38,8 @@ export const demoEvents: DemoEvent[] = [
   },
   {
     id: 'test-neon-club',
-    title: 'Neon Club · Testparty',
-    categories: ['Clubs', 'Party'],
+    title: 'Neon Club · Testevent',
+    categories: ['Clubs', 'Events'],
     date: 'Samstag, 07.11.2026 · ab 23:00',
     startsAt: '2026-11-07T23:00:00+01:00',
     location: 'Berlin · Beispielort',
@@ -49,7 +49,7 @@ export const demoEvents: DemoEvent[] = [
   {
     id: 'neon-nights',
     title: 'Neon Nights',
-    categories: ['Techno', 'Party'],
+    categories: ['Techno', 'Events'],
     date: 'Freitag ab 21:00',
     startsAt: '2026-10-30T21:00:00+01:00',
     location: 'Berlin · Beispielort',
@@ -59,7 +59,7 @@ export const demoEvents: DemoEvent[] = [
   {
     id: 'house-session',
     title: 'House Session',
-    categories: ['House', 'Party'],
+    categories: ['House', 'Events'],
     date: 'Samstag ab 22:00',
     startsAt: '2026-10-31T22:00:00+01:00',
     location: 'Berlin · Beispielort',
@@ -80,14 +80,14 @@ export const demoEvents: DemoEvent[] = [
 
 // Explicitly fictional fixtures dated 29 October 2026; public-area coordinates,
 // not actual venues or private party addresses. These never roll forward daily.
-const karlsruheParties: { title: string; genre: 'Techno' | 'House' | 'Clubs' | 'Party'; latitude: number; longitude: number }[] = [
+const karlsruheParties: { title: string; genre: 'Techno' | 'House' | 'Clubs' | 'Events'; latitude: number; longitude: number }[] = [
   { title: 'Fächerstadt Beats', genre: 'Techno', latitude: 49.009, longitude: 8.404 },
   { title: 'Karlsruhe House Lights', genre: 'House', latitude: 49.004, longitude: 8.389 },
-  { title: 'Südstadt Session', genre: 'Party', latitude: 48.998, longitude: 8.413 },
+  { title: 'Südstadt Session', genre: 'Events', latitude: 48.998, longitude: 8.413 },
   { title: 'Weststadt After Dark', genre: 'Clubs', latitude: 49.01, longitude: 8.372 },
   { title: 'Oststadt Frequenz', genre: 'Techno', latitude: 49.013, longitude: 8.436 },
   { title: 'Durlach Dance', genre: 'House', latitude: 48.999, longitude: 8.471 },
-  { title: 'Mühlburg Midnight', genre: 'Party', latitude: 49.015, longitude: 8.351 },
+  { title: 'Mühlburg Midnight', genre: 'Events', latitude: 49.015, longitude: 8.351 },
   { title: 'Nordstadt Neon', genre: 'Clubs', latitude: 49.031, longitude: 8.391 },
   { title: 'Rüppurr Rhythm', genre: 'House', latitude: 48.974, longitude: 8.406 },
   { title: 'Knielingen Bass', genre: 'Techno', latitude: 49.034, longitude: 8.337 },
@@ -96,10 +96,23 @@ const karlsruheParties: { title: string; genre: 'Techno' | 'House' | 'Clubs' | '
 demoEvents.push(...karlsruheParties.map((party, index): DemoEvent => ({
   id: `karlsruhe-demo-${index + 1}`,
   title: party.title,
-  categories: party.genre === 'Party' ? ['Party'] : [party.genre, 'Party'],
+  categories: party.genre === 'Events' ? ['Events'] : [party.genre, 'Events'],
   date: `29.10.2026 · ab ${index % 2 === 0 ? '21:00' : '22:00'}`,
   startsAt: `2026-10-29T${index % 2 === 0 ? '21' : '22'}:00:00+01:00`,
   location: 'Karlsruhe · Beispielort',
+  image: index % 2 === 0 ? require('../../assets/events/nightlife.jpg') : require('../../assets/events/club.jpg'),
+  coordinate: { latitude: party.latitude, longitude: party.longitude },
+})));
+
+// User-requested fictional test events for 3 November 2026, not real venues.
+// Fixed dates intentionally do not roll forward on subsequent days.
+demoEvents.push(...karlsruheParties.slice(0, 5).map((party, index): DemoEvent => ({
+  id: `karlsruhe-test-2026-11-03-${index + 1}`,
+  title: `${party.title} · Testevent`,
+  categories: party.genre === 'Events' ? ['Events'] : [party.genre, 'Events'],
+  date: `03.11.2026 · ab ${index % 2 === 0 ? '21:00' : '22:00'}`,
+  startsAt: `2026-11-03T${index % 2 === 0 ? '21' : '22'}:00:00+01:00`,
+  location: 'Karlsruhe · fiktiver Beispielort',
   image: index % 2 === 0 ? require('../../assets/events/nightlife.jpg') : require('../../assets/events/club.jpg'),
   coordinate: { latitude: party.latitude, longitude: party.longitude },
 })));

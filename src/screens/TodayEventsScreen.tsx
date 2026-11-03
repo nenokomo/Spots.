@@ -4,7 +4,8 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View, useWindowDimensions
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { GlassBackdrop } from '../components/GlassBackdrop';
-import { Icon, type IconName } from '../components/Icon';
+import { Icon } from '../components/Icon';
+import { CategoryFilters } from '../components/CategoryFilters';
 import { RadiusSlider } from '../components/RadiusSlider';
 import { TodayEventCard } from '../components/TodayEventCard';
 import { categories, colors, type Category } from '../constants/theme';
@@ -12,7 +13,6 @@ import { demoEvents, matchesCategory } from '../data/events';
 import { usePartyWindow } from '../hooks/useToday';
 import { distanceKm, happensToday } from '../utils/events';
 
-const categoryIcons: Record<Category, IconName> = { Alle: 'grid', Techno: 'headphones', House: 'wave', Party: 'cocktail', Clubs: 'radar' };
 
 function coordinate(value: string | undefined, fallback: number, limit: number) {
   const parsed = Number(value);
@@ -62,16 +62,12 @@ export default function TodayEventsScreen() {
             </View>
             {filterOpen && <View style={styles.filterPanel}>
               <Text style={styles.filterHeading}>Kategorie auswählen</Text>
-              <View style={styles.filters}>
-                {categories.map((item) => <Pressable key={item} accessibilityRole="button" accessibilityState={{ selected: category === item }} onPress={() => router.setParams({ category: item })} style={[styles.filter, category === item && styles.activeFilter]}>
-                  <Icon name={categoryIcons[item]} size={16} color={colors.text} /><Text style={styles.filterText}>{item === 'Party' ? 'Partys' : item}</Text>
-                </Pressable>)}
-              </View>
+              <CategoryFilters value={category} onChange={(item) => router.setParams({ category: item })} />
               <RadiusSlider value={radius} onChange={(value) => router.setParams({ radius: String(value) })} />
             </View>}
             <Text style={styles.demoNote}>{events.length} {events.length === 1 ? 'Demo-Event' : 'Demo-Events'} · keine Live-Daten</Text>
           </View>}
-          ListEmptyComponent={<View style={styles.empty}><Icon name="radar" size={30} color={colors.pink} /><Text style={styles.emptyTitle}>Deine Nacht ist noch offen.</Text><Text style={styles.emptyText}>Hier gibt es gerade keine passenden Partys für heute. Probiere ein anderes Genre oder einen größeren Umkreis.</Text></View>}
+          ListEmptyComponent={<View style={styles.empty}><Icon name="radar" size={30} color={colors.pink} /><Text style={styles.emptyTitle}>Deine Nacht ist noch offen.</Text><Text style={styles.emptyText}>Hier gibt es gerade keine passenden Events für heute. Probiere ein anderes Genre oder einen größeren Umkreis.</Text></View>}
         />
       </SafeAreaView>
     </View>

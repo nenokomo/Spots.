@@ -6,7 +6,8 @@ import { EventCalendar } from '../components/EventCalendar';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Icon } from '../components/Icon';
 import { Screen } from '../components/Screen';
-import { categories, colors, type Category } from '../constants/theme';
+import { brandHeadingStyle, colors, type Category } from '../constants/theme';
+import { CategoryFilters } from '../components/CategoryFilters';
 import { tabBarContentInset } from '../constants/navigation';
 import { demoEvents, matchesCategory, type DemoEvent } from '../data/events';
 import { useToday, usePartyWindow } from '../hooks/useToday';
@@ -45,6 +46,7 @@ export default function ExploreScreen() {
   const dateLabel = activeDate ? new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${activeDate}T12:00:00Z`)) : null;
   const events = demoEvents.filter((event) => matchesCategory(event, category) && (activeDate ? dayKey(new Date(event.startsAt)) === activeDate : matchesPeriod(event, period, partyWindow)) && `${event.title} ${event.categories.join(' ')} ${event.location}`.toLocaleLowerCase('de').includes(search.trim().toLocaleLowerCase('de')));
   function resetFilters() { setSearch(''); setCategory('Alle'); setPeriod('all'); setSelectedDate(null); }
+  const popularPreview = events.filter((event) => dayKey(new Date(event.startsAt)) >= today).slice(0, 3);
 
   return <Screen>
     <FlatList
@@ -61,7 +63,7 @@ export default function ExploreScreen() {
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={<View>
         <View style={styles.heading}>
-          <View style={styles.headingText}><Text style={styles.eyebrow}>SPOTS / ENTDECKEN</Text><Text accessibilityRole="header" style={styles.title}>Entdecken</Text><Text style={styles.subtitle}>Finde den richtigen Spot für deinen Abend.</Text></View>
+          <View style={styles.headingText}><Text style={styles.eyebrow}>Spots. / Entdecken</Text><Text accessibilityRole="header" style={styles.title}>Entdecken</Text><Text style={styles.subtitle}>Finde den richtigen Spot für deinen Abend.</Text></View>
         </View>
         <View style={styles.search}>
           <Icon name="search" size={19} color="#c3b2c6" />
@@ -72,12 +74,14 @@ export default function ExploreScreen() {
           <Pressable accessibilityRole="button" accessibilityLabel={`Genre filtern, aktuell ${category}`} accessibilityState={{ expanded: genresOpen }} onPress={() => setGenresOpen(!genresOpen)} style={styles.control}><Icon name="sliders" size={16} color={colors.text} /><Text style={styles.controlText}>{category === 'Alle' ? 'Alle Genres' : category}</Text><Icon name="down" size={13} /></Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Zeitraum auswählen" onPress={() => setDatesOpen(true)} style={styles.control}><Icon name="calendar" size={16} color={colors.text} /><Text numberOfLines={1} style={styles.controlText}>{dateLabel ?? 'Datum wählen'}</Text><Icon name="down" size={13} /></Pressable>
         </View>
-        {genresOpen && <View style={styles.genrePanel}><Text style={styles.panelLabel}>GENRE AUSWÄHLEN</Text><View style={styles.genreOptions}>{categories.map((item) => <Pressable key={item} accessibilityRole="button" accessibilityState={{ selected: category === item }} onPress={() => { setCategory(item); setGenresOpen(false); }} style={[styles.genreOption, category === item && styles.genreSelected]}><Text style={[styles.genreText, category === item && styles.genreSelectedText]}>{item}</Text></Pressable>)}</View></View>}
+        {genresOpen && <View style={styles.genrePanel}><Text style={styles.panelLabel}>KATEGORIE AUSWÄHLEN</Text><CategoryFilters value={category} onChange={(item) => { setCategory(item); setGenresOpen(false); }} /></View>}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.periods} keyboardShouldPersistTaps="handled">
           {periods.map((item) => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={item.label} accessibilityState={{ selected: !activeDate && period === item.id }} onPress={() => { setPeriod(item.id); setSelectedDate(null); }} style={[styles.period, !activeDate && period === item.id && styles.periodActive]}><Text style={[styles.periodLabel, !activeDate && period === item.id && styles.periodActiveText]}>{item.label}</Text></Pressable>)}
         </ScrollView>
         {activeDate && <Pressable accessibilityRole="button" accessibilityLabel="Datumsfilter entfernen" onPress={() => setSelectedDate(null)} style={styles.selectedDate}><Text style={styles.selectedDateText}>{dateLabel}</Text><Icon name="close" size={14} color={colors.pink} /></Pressable>}
-        <View style={styles.sectionHeading}><View><Text style={styles.section}>{activeDate ? 'Events an diesem Tag' : 'Events entdecken'}</Text><Text style={styles.note}>Demo-Auswahl · keine Live-Daten</Text></View><Text style={styles.count}>{events.length} {events.length === 1 ? 'Event' : 'Events'}</Text></View>
+        <View style={styles.sectionHeading}><View><Text accessibilityRole="header" style={styles.section}>Beliebte Events</Text><Text style={styles.note}>Demo-Vorschau · noch keine Beliebtheitsdaten</Text></View></View>
+        {popularPreview.length > 0 ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.popularList}>{popularPreview.map((event) => <View key={event.id} style={styles.popularCard}><ExploreEventCard event={event} /></View>)}</ScrollView> : <Text style={styles.emptyText}>Keine kommenden Events für diese Auswahl.</Text>}
+        <View style={styles.sectionHeading}><View><Text style={styles.section}>{activeDate ? 'Events an diesem Tag' : 'Alle Events'}</Text><Text style={styles.note}>Demo-Auswahl · keine Live-Daten</Text></View><Text style={styles.count}>{events.length} {events.length === 1 ? 'Event' : 'Events'}</Text></View>
       </View>}
       ListEmptyComponent={<View style={styles.empty}><Icon name="search" size={25} color={colors.pink} /><Text style={styles.emptyTitle}>Keine passenden Events gefunden.</Text><Text style={styles.emptyText}>Passe deine Suche oder deine Filter an.</Text><Pressable accessibilityRole="button" onPress={resetFilters} style={styles.reset}><Text style={styles.resetText}>Filter zurücksetzen</Text></Pressable></View>}
     />
@@ -101,7 +105,7 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 18 },
   heading: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 19, paddingBottom: 21 },
   headingText: { flex: 1 },
-  eyebrow: { color: '#c997bb', fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 },
+  eyebrow: { ...brandHeadingStyle, marginBottom: 8 },
   title: { color: colors.text, fontSize: 30, lineHeight: 36, fontWeight: '700', letterSpacing: -0.7 },
   subtitle: { color: '#c4b3c8', fontSize: 12, lineHeight: 19, marginTop: 4 },
   search: { minHeight: 50, borderRadius: 13, borderWidth: 1, borderColor: '#ffffff1c', backgroundColor: '#1b1521', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 10 },
@@ -129,6 +133,8 @@ const styles = StyleSheet.create({
   count: { color: '#c4b3c8', fontSize: 11 },
   note: { color: '#a993ae', fontSize: 10, marginTop: 5 },
   separator: { height: 9 },
+  popularList: { gap: 12, paddingBottom: 6 },
+  popularCard: { width: 190 },
   gridRow: { gap: 10 },
   gridCell: { flex: 1, maxWidth: '50%' },
   empty: { alignItems: 'center', paddingVertical: 34, paddingHorizontal: 14, gap: 12 },
