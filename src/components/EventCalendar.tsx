@@ -36,10 +36,10 @@ export function EventCalendar({ today, selectedDate, eventDays, onSelect }: Prop
           const selected = key === selectedDate;
           const hasEvents = eventDays.includes(key);
           const label = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(year, monthNumber - 1, day)));
-          return <View key={index} style={styles.cell}><Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={hasEvents ? 'Demo-Events für diesen Tag vorhanden' : 'Events für diesen Tag anzeigen'} accessibilityState={{ selected, disabled }} disabled={disabled} onPress={() => onSelect(key)} style={[styles.day, key === today && styles.today, selected && styles.selected, disabled && styles.disabled]}><Text style={[styles.dayText, selected && styles.selectedText]}>{day}</Text><View style={[styles.dot, hasEvents && !disabled && styles.eventDot, selected && hasEvents && styles.selectedDot]} /></Pressable></View>;
+          return <View key={index} style={styles.cell}><Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={hasEvents ? 'Events für diesen Tag vorhanden' : 'Events für diesen Tag anzeigen'} accessibilityState={{ selected, disabled }} disabled={disabled} onPress={() => onSelect(key)} style={[styles.day, key === today && styles.today, selected && styles.selected, disabled && styles.disabled]}><Text style={[styles.dayText, selected && styles.selectedText]}>{day}</Text><View style={[styles.dot, hasEvents && !disabled && styles.eventDot, selected && hasEvents && styles.selectedDot]} /></Pressable></View>;
         })}
       </View>
-      <Text style={styles.legend}>● Demo-Events vorhanden · vergangene Tage sind deaktiviert</Text>
+      <Text style={styles.legend}>● Events vorhanden · vergangene Tage sind deaktiviert</Text>
     </View>
   );
 }

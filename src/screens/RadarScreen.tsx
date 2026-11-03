@@ -6,6 +6,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CategoryFilters } from '../components/CategoryFilters';
 import { CitySearch, type CitySearchHandle } from '../components/CitySearch';
 import { EventCard } from '../components/EventCard';
+import { EventDataState } from '../components/EventDataState';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { AnimatedEventCard } from '../components/AnimatedEventCard';
 import { Icon } from '../components/Icon';
@@ -14,17 +15,17 @@ import { RadiusSlider } from '../components/RadiusSlider';
 import { Screen } from '../components/Screen';
 import { colors, type Category } from '../constants/theme';
 import { tabBarContentInset } from '../constants/navigation';
-import { demoEvents, matchesCategory, type DemoEvent } from '../data/events';
+import { matchesCategory, type LocatedEvent } from '../types/events';
 import { useLocation } from '../hooks/useLocation';
 import { useRadarIntro } from '../hooks/useRadarIntro';
-import { usePartyWindow } from '../hooks/useToday';
-import { distanceKm, happensToday, type Coordinate } from '../utils/events';
+import { useLiveEvents } from '../hooks/useEvents';
+import { distanceKm, type Coordinate } from '../utils/events';
 
 export default function RadarScreen() {
   const [category, setCategory] = useState<Category>('Alle');
   const [radius, setRadius] = useState(10);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [preview, setPreview] = useState<DemoEvent | null>(null);
+  const [preview, setPreview] = useState<LocatedEvent | null>(null);
   const [mapLayout, setMapLayout] = useState({ y: 100, height: 300 });
   const location = useLocation();
   const citySearch = useRef<CitySearchHandle>(null);
@@ -32,14 +33,14 @@ export default function RadarScreen() {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const navigationInset = tabBarContentInset(insets.bottom);
-  const today = usePartyWindow();
+  const remote = useLiveEvents();
   const [viewport, setViewport] = useState({ source: location.center, center: location.center });
   const searchCenter = viewport.source === location.center ? viewport.center : location.center;
   const onCenterChange = useCallback((center: Coordinate) => {
     setViewport((previous) => previous.source === location.center && distanceKm(previous.center, center) < 0.01 ? previous : { source: location.center, center });
     setPreview(null);
   }, [location.center]);
-  const todayEvents = useMemo(() => demoEvents.filter((event) => happensToday(event, today) && matchesCategory(event, category) && distanceKm(searchCenter, event.coordinate) <= radius), [category, radius, searchCenter, today]);
+  const todayEvents = useMemo(() => remote.events.filter((event) => matchesCategory(event, category) && distanceKm(searchCenter, event.coordinate) <= radius), [category, radius, searchCenter, remote.events]);
   const radar = useRadarIntro(todayEvents);
   const visibleTodayEvents = radar.visibleEvents;
 
@@ -68,7 +69,7 @@ export default function RadarScreen() {
 
       <View style={styles.map} onLayout={(event) => setMapLayout({ y: event.nativeEvent.layout.y, height: event.nativeEvent.layout.height })}>
         <RadarMap center={location.center} radius={radius} events={radar.visibleEvents} onSelect={setPreview} onCenterChange={onCenterChange} scan={radar} />
-        <View pointerEvents="none" style={styles.demoBadge}><View style={styles.demoDot} /><Text style={styles.demoBadgeText}>{todayEvents.length} Demo-Partys heute</Text></View>
+        <View pointerEvents="none" style={styles.demoBadge}><View style={styles.demoDot} /><Text style={styles.demoBadgeText}>{remote.loading ? 'Events werden geladen …' : remote.error ? 'Events nicht verfügbar' : `${todayEvents.length} Events laufen jetzt`}</Text></View>
         <Pressable accessibilityRole="button" accessibilityLabel={`Umkreis ${radius} Kilometer, ändern`} onPress={() => setFilterOpen(true)} style={styles.radiusBadge}>
           <Icon name="locate" size={14} color={colors.pink} /><Text style={styles.radiusText}>{radius} km</Text><Icon name="down" size={12} />
         </Pressable>
@@ -79,8 +80,8 @@ export default function RadarScreen() {
       <LinearGradient testID="radar-today-panel" colors={colors.panelGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.eventPanel, { height: Math.min(290, height * 0.35) + navigationInset, paddingBottom: navigationInset }]}>
         <View style={styles.handle} />
         <View style={styles.panelHeading}>
-          <Text style={styles.sectionTitle}>Heute in deiner Nähe</Text>
-          <Link href={{ pathname: '/today', params: { category, radius: String(radius), latitude: String(searchCenter.latitude), longitude: String(searchCenter.longitude) } }} asChild><Pressable accessibilityLabel="Alle Events von heute in der Nähe ansehen" style={styles.seeAll}><Text style={styles.seeAllText}>Alle ansehen</Text><Icon name="chevron" size={14} color={colors.pink} /></Pressable></Link>
+          <Text style={styles.sectionTitle}>Jetzt in deiner Nähe</Text>
+          <Link href={{ pathname: '/today', params: { category, radius: String(radius), latitude: String(searchCenter.latitude), longitude: String(searchCenter.longitude) } }} asChild><Pressable accessibilityLabel="Alle laufenden Events in der Nähe ansehen" style={styles.seeAll}><Text style={styles.seeAllText}>Alle ansehen</Text><Icon name="chevron" size={14} color={colors.pink} /></Pressable></Link>
         </View>
         <FlatList
           data={visibleTodayEvents}
@@ -90,12 +91,13 @@ export default function RadarScreen() {
           contentContainerStyle={styles.eventList}
           showsVerticalScrollIndicator={false}
           style={styles.list}
-          ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>{radar.scanning || todayEvents.length > 0 ? 'Deine Umgebung wird entdeckt …' : 'Heute keine Partys in diesem Kartenausschnitt.'}</Text><Text style={styles.emptyText}>{radar.scanning || todayEvents.length > 0 ? 'Die Partys erscheinen gleich zusammen mit den Pins.' : 'Verschiebe die Karte oder ändere Genre und Umkreis.'}</Text></View>}
+          ListHeaderComponent={<EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />}
+          ListEmptyComponent={remote.loading || remote.error ? undefined : <View style={styles.empty}><Text style={styles.emptyTitle}>{radar.scanning || todayEvents.length > 0 ? 'Deine Umgebung wird entdeckt …' : 'Gerade keine laufenden Events in diesem Kartenausschnitt.'}</Text><Text style={styles.emptyText}>{radar.scanning || todayEvents.length > 0 ? 'Die Events erscheinen gleich zusammen mit den Pins.' : 'Verschiebe die Karte oder finde kommende Events in Entdecken.'}</Text></View>}
         />
-        <Text style={styles.demoNote}>Demo-Events · keine Live-Daten</Text>
+        <Text style={styles.demoNote}>Laufende Events mit bestätigter Start- und Endzeit</Text>
       </LinearGradient>
 
-      {!radar.scanning && preview && (
+      {!radar.scanning && preview && todayEvents.some((event) => event.id === preview.id) && (
         <View style={styles.previewLayer} pointerEvents="box-none">
           <Pressable accessibilityRole="button" accessibilityLabel="Eventvorschau schließen" onPress={() => setPreview(null)} style={StyleSheet.absoluteFill} />
           <View testID="event-preview" style={[styles.preview, { top: Math.max(mapLayout.y + 50, mapLayout.y + mapLayout.height - 190) }]}>
@@ -116,7 +118,7 @@ export default function RadarScreen() {
               <Text style={styles.label}>Umkreis</Text>
               <RadiusSlider value={radius} onChange={(value) => { setRadius(value); setPreview(null); }} />
               <View style={styles.radii}>{[10, 20, 30, 50].map((value) => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: radius === value }} onPress={() => { setRadius(value); setPreview(null); }} style={[styles.radiusOption, radius === value && styles.radiusActive]}><Text style={styles.radiusOptionText}>{value} km</Text></Pressable>)}</View>
-              <Text style={styles.sheetHint}>Der Umkreis gilt ab der aktuellen Kartenmitte. Die Liste zeigt nur heutige Demo-Partys; Beispiele gibt es in Berlin und Karlsruhe.</Text>
+              <Text style={styles.sheetHint}>Der Umkreis gilt ab der aktuellen Kartenmitte. Sichtbar sind nur veröffentlichte Events, die bereits begonnen haben und noch nicht beendet sind. Ohne gültige Koordinaten oder Endzeit erscheint kein Pin.</Text>
               <Pressable accessibilityRole="button" onPress={() => setFilterOpen(false)} style={styles.apply}><Text style={styles.applyText}>Radar anzeigen</Text></Pressable>
             </ScrollView>
           </SafeAreaView>

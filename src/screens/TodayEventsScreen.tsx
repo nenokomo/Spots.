@@ -7,10 +7,11 @@ import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Icon, type IconName } from '../components/Icon';
 import { RadiusSlider } from '../components/RadiusSlider';
 import { TodayEventCard } from '../components/TodayEventCard';
+import { EventDataState } from '../components/EventDataState';
 import { categories, colors, type Category } from '../constants/theme';
-import { demoEvents, matchesCategory } from '../data/events';
-import { usePartyWindow } from '../hooks/useToday';
-import { distanceKm, happensToday } from '../utils/events';
+import { matchesCategory } from '../types/events';
+import { useLiveEvents } from '../hooks/useEvents';
+import { distanceKm } from '../utils/events';
 
 const categoryIcons: Record<Category, IconName> = { Alle: 'grid', Techno: 'headphones', House: 'wave', Party: 'cocktail', Clubs: 'radar' };
 
@@ -21,14 +22,14 @@ function coordinate(value: string | undefined, fallback: number, limit: number) 
 
 export default function TodayEventsScreen() {
   const params = useLocalSearchParams<{ category?: string; radius?: string; latitude?: string; longitude?: string }>();
-  const today = usePartyWindow();
+  const remote = useLiveEvents();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [filterOpen, setFilterOpen] = useState(false);
   const category: Category = categories.includes(params.category as Category) ? params.category as Category : 'Alle';
   const radius = Math.max(10, Math.min(50, Number(params.radius) || 30));
   const center = { latitude: coordinate(params.latitude, 52.52, 90), longitude: coordinate(params.longitude, 13.405, 180) };
-  const events = demoEvents.filter((event) => happensToday(event, today) && matchesCategory(event, category) && distanceKm(center, event.coordinate) <= radius);
+  const events = remote.events.filter((event) => matchesCategory(event, category) && distanceKm(center, event.coordinate) <= radius);
   const backToRadar = () => router.canGoBack() ? router.back() : router.replace('/');
 
   return (
@@ -50,6 +51,8 @@ export default function TodayEventsScreen() {
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 12 }}
           showsVerticalScrollIndicator={false}
+          refreshing={remote.loading}
+          onRefresh={remote.reload}
           ListHeaderComponent={<View>
             <View style={styles.heading}>
               <Text accessibilityRole="header" style={styles.title}>Alle <Text style={styles.titleAccent}>Spots</Text> in deiner Nähe</Text>
@@ -69,9 +72,10 @@ export default function TodayEventsScreen() {
               </View>
               <RadiusSlider value={radius} onChange={(value) => router.setParams({ radius: String(value) })} />
             </View>}
-            <Text style={styles.demoNote}>{events.length} {events.length === 1 ? 'Demo-Event' : 'Demo-Events'} · keine Live-Daten</Text>
+            <Text style={styles.demoNote}>{events.length} {events.length === 1 ? 'laufendes Event' : 'laufende Events'}</Text>
+            <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
           </View>}
-          ListEmptyComponent={<View style={styles.empty}><Icon name="radar" size={30} color={colors.pink} /><Text style={styles.emptyTitle}>Deine Nacht ist noch offen.</Text><Text style={styles.emptyText}>Hier gibt es gerade keine passenden Partys für heute. Probiere ein anderes Genre oder einen größeren Umkreis.</Text></View>}
+          ListEmptyComponent={remote.loading || remote.error ? undefined : <View style={styles.empty}><Icon name="radar" size={30} color={colors.pink} /><Text style={styles.emptyTitle}>Deine Nacht ist noch offen.</Text><Text style={styles.emptyText}>Hier sind gerade keine passenden Events als laufend bestätigt. Probiere ein anderes Genre, einen größeren Umkreis oder Entdecken für kommende Termine.</Text></View>}
         />
       </SafeAreaView>
     </View>

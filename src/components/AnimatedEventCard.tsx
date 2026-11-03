@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Animated, Platform } from 'react-native';
-import type { DemoEvent } from '../data/events';
+import type { SpotEvent } from '../types/events';
 import { EventCard } from './EventCard';
 
-export function AnimatedEventCard({ event, reduceMotion }: { event: DemoEvent; reduceMotion: boolean }) {
+export function AnimatedEventCard({ event, reduceMotion }: { event: SpotEvent; reduceMotion: boolean }) {
   const [progress] = useState(() => new Animated.Value(reduceMotion ? 1 : 0));
   useEffect(() => {
     if (reduceMotion) { progress.setValue(1); return; }

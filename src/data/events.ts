@@ -12,8 +12,79 @@ export type DemoEvent = {
   coordinate: { latitude: number; longitude: number };
 };
 
-// Design examples only. Coordinates are public Berlin areas, never private addresses.
+// Design examples only. Coordinates are public areas, never private addresses.
 export const demoEvents: DemoEvent[] = [
+  // Fictional parties for 3 November 2026; fixed dates, not real events or venues.
+  {
+    id: 'test-karlsruhe-faechernacht-2026-11-03',
+    title: 'Fächernacht · Testparty',
+    categories: ['Techno', 'Party'],
+    date: '03.11.2026 · ab 21:00',
+    startsAt: '2026-11-03T21:00:00+01:00',
+    location: 'Karlsruhe · Beispielort',
+    image: require('../../assets/events/nightlife.jpg'),
+    coordinate: { latitude: 49.009, longitude: 8.404 },
+  },
+  {
+    id: 'test-karlsruhe-house-glow-2026-11-03',
+    title: 'House Glow · Testparty',
+    categories: ['House', 'Party'],
+    date: '03.11.2026 · ab 22:00',
+    startsAt: '2026-11-03T22:00:00+01:00',
+    location: 'Karlsruhe · Beispielort',
+    image: require('../../assets/events/club.jpg'),
+    coordinate: { latitude: 49.004, longitude: 8.389 },
+  },
+  {
+    id: 'test-karlsruhe-suedstadt-groove-2026-11-03',
+    title: 'Südstadt Groove · Testparty',
+    categories: ['Party'],
+    date: '03.11.2026 · ab 20:00',
+    startsAt: '2026-11-03T20:00:00+01:00',
+    location: 'Karlsruhe · Beispielort',
+    image: require('../../assets/events/nightlife.jpg'),
+    coordinate: { latitude: 48.998, longitude: 8.413 },
+  },
+  {
+    id: 'test-karlsruhe-weststadt-club-2026-11-03',
+    title: 'Weststadt Club Night · Testparty',
+    categories: ['Clubs', 'Party'],
+    date: '03.11.2026 · ab 23:00',
+    startsAt: '2026-11-03T23:00:00+01:00',
+    location: 'Karlsruhe · Beispielort',
+    image: require('../../assets/events/club.jpg'),
+    coordinate: { latitude: 49.01, longitude: 8.372 },
+  },
+  {
+    id: 'test-karlsruhe-oststadt-bass-2026-11-03',
+    title: 'Oststadt Bass · Testparty',
+    categories: ['Techno', 'Party'],
+    date: '03.11.2026 · ab 22:30',
+    startsAt: '2026-11-03T22:30:00+01:00',
+    location: 'Karlsruhe · Beispielort',
+    image: require('../../assets/events/nightlife.jpg'),
+    coordinate: { latitude: 49.013, longitude: 8.436 },
+  },
+  {
+    id: 'test-berlin-spree-pulse-2026-11-03',
+    title: 'Spree Pulse · Testparty',
+    categories: ['Techno', 'Clubs', 'Party'],
+    date: '03.11.2026 · ab 23:00',
+    startsAt: '2026-11-03T23:00:00+01:00',
+    location: 'Berlin · Beispielort',
+    image: require('../../assets/events/nightlife.jpg'),
+    coordinate: { latitude: 52.515, longitude: 13.454 },
+  },
+  {
+    id: 'test-berlin-kreuzberg-house-2026-11-03',
+    title: 'Kreuzberg House Vibes · Testparty',
+    categories: ['House', 'Party'],
+    date: '03.11.2026 · ab 21:30',
+    startsAt: '2026-11-03T21:30:00+01:00',
+    location: 'Berlin · Beispielort',
+    image: require('../../assets/events/club.jpg'),
+    coordinate: { latitude: 52.499, longitude: 13.421 },
+  },
   // Explicit test parties with fixed dates and public-area example coordinates.
   // They are fictional and never move forward automatically with the current date.
   {
