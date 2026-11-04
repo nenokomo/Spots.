@@ -12,7 +12,7 @@ import { Icon } from '../components/Icon';
 import RadarMap from '../components/RadarMap';
 import { RadiusSlider } from '../components/RadiusSlider';
 import { Screen } from '../components/Screen';
-import { brandHeadingStyle, colors, type Category } from '../constants/theme';
+import { brandDotStyle, brandHeadingStyle, colors, type Category } from '../constants/theme';
 import { tabBarContentInset } from '../constants/navigation';
 import { demoEvents, matchesCategory, type DemoEvent } from '../data/events';
 import { useLocation } from '../hooks/useLocation';
@@ -72,7 +72,7 @@ export default function RadarScreen() {
     <Screen>
       <View style={styles.content} onTouchStart={() => citySearch.current?.dismiss()} onPointerDown={() => citySearch.current?.dismiss()}>
       <View style={styles.header}>
-        <Text numberOfLines={1} style={styles.logo}>Spots<Text style={styles.logoDot}>.</Text></Text>
+        <Text numberOfLines={1} style={styles.logo}>SPOTS<Text style={styles.logoDot}>.</Text></Text>
         <CitySearch ref={citySearch} compact label={location.label} locating={location.loading} onLocate={locateAtThirty} onSelect={(city) => { setPreview(null); location.selectCity(city); }} />
         <Pressable accessibilityRole="button" accessibilityLabel="Filter" onPress={() => setFilterOpen(true)} style={styles.filterButton}><Icon name="sliders" size={19} /><Text style={styles.filterText}>Filter</Text></Pressable>
       </View>
@@ -139,8 +139,8 @@ export default function RadarScreen() {
 const styles = StyleSheet.create({
   content: { flex: 1, alignItems: 'stretch' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 2, paddingBottom: 2, minHeight: 52, gap: 12, zIndex: 30 },
-  logo: { ...brandHeadingStyle, width: 80, flexShrink: 0 },
-  logoDot: { color: colors.pink },
+  logo: { ...brandHeadingStyle, fontSize: 15, width: 80, flexShrink: 0 },
+  logoDot: { ...brandDotStyle, fontSize: 15 },
   filters: { flexDirection: 'row', alignItems: 'center', paddingBottom: 3 },
   filterChips: { flex: 1 },
   filterButton: { minHeight: 44, flexDirection: 'row', gap: 5, alignItems: 'center', justifyContent: 'center' },

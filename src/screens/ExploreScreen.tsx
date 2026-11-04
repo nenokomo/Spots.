@@ -6,7 +6,7 @@ import { EventCalendar } from '../components/EventCalendar';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Icon } from '../components/Icon';
 import { Screen } from '../components/Screen';
-import { brandHeadingStyle, colors, type Category } from '../constants/theme';
+import { brandDotStyle, brandHeadingStyle, colors, type Category } from '../constants/theme';
 import { CategoryFilters } from '../components/CategoryFilters';
 import { tabBarContentInset } from '../constants/navigation';
 import { demoEvents, matchesCategory, type DemoEvent } from '../data/events';
@@ -63,7 +63,7 @@ export default function ExploreScreen() {
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={<View>
         <View style={styles.heading}>
-          <View style={styles.headingText}><Text style={styles.eyebrow}>Spots. / Entdecken</Text><Text accessibilityRole="header" style={styles.title}>Entdecken</Text><Text style={styles.subtitle}>Finde den richtigen Spot für deinen Abend.</Text></View>
+          <View style={styles.headingText}><Text style={styles.eyebrow}>SPOTS<Text style={brandDotStyle}>.</Text> / ENTDECKEN</Text><Text accessibilityRole="header" style={styles.title}>Entdecken</Text><Text style={styles.subtitle}>Finde den richtigen Spot für deinen Abend.</Text></View>
         </View>
         <View style={styles.search}>
           <Icon name="search" size={19} color="#c3b2c6" />
@@ -90,11 +90,11 @@ export default function ExploreScreen() {
         <Pressable accessibilityRole="button" accessibilityLabel="Zeitraumauswahl schließen" onPress={() => setDatesOpen(false)} style={StyleSheet.absoluteFill} />
         <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.sheet}>
           <GlassBackdrop radius={26} variant="panel" />
-          <ScrollView contentContainerStyle={styles.sheetContent}>
+          <View style={styles.sheetContent}>
             <View style={styles.sheetHeading}><Text style={styles.section}>Wann möchtest du los?</Text><Pressable accessibilityRole="button" accessibilityLabel="Zeitraumauswahl schließen" onPress={() => setDatesOpen(false)} style={styles.clear}><Icon name="close" /></Pressable></View>
             <EventCalendar key={activeDate ?? today} today={today} selectedDate={activeDate} eventDays={demoEvents.map((event) => dayKey(new Date(event.startsAt)))} onSelect={(date) => { setSelectedDate(date); setDatesOpen(false); }} />
             <Pressable accessibilityRole="button" onPress={() => { setSelectedDate(null); setPeriod('all'); setDatesOpen(false); }} style={styles.reset}><Text style={styles.resetText}>Alle Termine anzeigen</Text></Pressable>
-          </ScrollView>
+          </View>
         </SafeAreaView>
       </View>
     </Modal>
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   reset: { minHeight: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 15, borderRadius: 12, borderWidth: 1, borderColor: '#c922ab88', backgroundColor: '#c922ab22' },
   resetText: { color: '#ffd6f2', fontSize: 12, fontWeight: '700' },
   modal: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#100916b3' },
-  sheet: { maxHeight: '85%', borderTopLeftRadius: 26, borderTopRightRadius: 26 },
-  sheetContent: { padding: 16, gap: 10 },
+  sheet: { height: '85%', borderTopLeftRadius: 26, borderTopRightRadius: 26 },
+  sheetContent: { flex: 1, padding: 16, gap: 10 },
   sheetHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
 });

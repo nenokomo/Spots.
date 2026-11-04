@@ -2,6 +2,76 @@
 
 Stand: 04.11.2026
 
+## Aktuell: Schlanke Startscreen-Wortmarke
+
+- Kursive Variante auf Nutzerwunsch ersetzt: Spots-Wortmarke jetzt aufrecht mit Gewicht 300 und 3 px Zeichenabstand. Schriftgröße, Farben und alle übrigen Startscreen-Elemente unverändert.
+- Lint, TypeScript und Editor-Diagnosen erfolgreich. Native Darstellung noch auf Gerät zu prüfen.
+
+## Aktuell: Markantere Startscreen-Wortmarke
+
+- Ausschließlich die Spots-Wortmarke im Ladescreen auf kräftige kursive Systemschrift (Gewicht 800, Zeichenabstand -2) angepasst. Schriftgröße und Farben samt lila Punkt erhalten; kleiner horizontaler Innenabstand verhindert das Abschneiden kursiver Buchstaben.
+- Radarlogo, Hintergrund, Claim, Ladeanzeige und Vibration unverändert. Lint, TypeScript und Editor-Diagnosen erfolgreich; native Optik noch auf Gerät zu prüfen.
+
+## Aktuell: Neuer Radar-Ladescreen und Vibration pro Kartendrehung
+
+- Bildschirmfüllendes Rasterbild im In-App-Startscreen durch skalierbares SVG-Radarlogo ersetzt: feine Ringe, pinker Suchstrahl und Lichtpunkte auf dunkler Fläche. Separate Spots-Wortmarke mit Markenpunkt, Claim und dezente Ladeanzeige; responsive Logogröße und Safe Areas. Neue RadarLogo-Komponente ohne zusätzliche Abhängigkeiten. Altes Bildasset bleibt ungenutzt erhalten.
+- Kartenradar führt weiterhin drei Drehungen à 1,8 Sekunden aus, löst den Vibrationsimpuls jetzt aber im Abschluss-Callback jeder vollen Drehung aus statt per separatem Start-/Intervalltimer. Keine Web-Vibration; Bewegungsreduktion, Hintergrundwechsel und Unmount stoppen den Scan. Android-Vibrationsberechtigung bereits vorhanden. iOS verwendet den systemseitigen Vibrationsimpuls (dessen Dauer sich über Vibration nicht verkürzen lässt).
+- Native Splash-Konfiguration und die bisherige Mindestanzeigezeit von 850 ms unverändert; Änderung betrifft den In-App-Ladescreen.
+- Lint, TypeScript und Editor-Diagnosen erfolgreich. Vibrationslogik mit simulierten Animationsabschlüssen geprüft: genau drei Impulse; keine Impulse bei reduzierter Bewegung, Hintergrundabbruch und Web. Optik und tatsächliche Vibration auf iPhone/Android noch auf Gerät zu prüfen.
+
+## Aktuell: Kalender-Paging zurückgenommen
+
+- Auf Nutzerwunsch die letzte Änderung vollständig zurückgenommen: wieder frei scrollbare, fortlaufende Monatsliste mit natürlichen Monatshöhen statt Ein-Monats-Seiten und Einrasten. Zusätzliche innere ScrollViews entfernt.
+- Lint, TypeScript und Editor-Diagnosen erfolgreich. Native visuelle Prüfung weiterhin offen.
+
+## Aktuell: Kalender zeigt jeweils einen Monat
+
+- Monatsliste auf vertikale Seiten mit gemessener Höhe des sichtbaren Kalenderbereichs umgestellt. Jede Monatsseite füllt den Bereich vollständig, sodass im Ruhezustand kein Folgemonat sichtbar ist; Wischen rastet am nächsten Monatsanfang ein.
+- Kurze Monate behalten denselben Platz wie lange Monate. Auf kleinen Ansichten oder bei großer Systemschrift bleibt das Monatsraster bei Bedarf innerhalb seiner Seite scrollbar, damit keine Tage abgeschnitten werden.
+- Lint, TypeScript und Editor-Diagnosen erfolgreich. Paging und verschachtelte Gesten bei stark vergrößerter Schrift noch auf nativen Geräten zu prüfen.
+
+## Aktuell: Vertikal scrollbarer Entdecken-Kalender
+
+- Monatspfeile durch fortlaufende vertikale Monatsliste ersetzt: November → Dezember → Januar mit Jahreswechsel. Wochentage bleiben oberhalb der Liste sichtbar, Monatsüberschriften stehen links über dem jeweiligen Raster.
+- Virtualisierte FlatList lädt am Ende jeweils zwölf weitere Monate. Berechnete Monatshöhen berücksichtigen Wochenanzahl und System-Schriftvergrößerung; beim Öffnen wird der ausgewählte Monat angezeigt, zurückscrollbar bis zum aktuellen Monat.
+- Datumsauswahl, Eventpunkte, deaktivierte vergangene Tage und Zurücksetzen auf alle Termine erhalten. Kalenderdialog auf 85 % Höhe mit fester Kopf-/Fußzeile umgestellt, damit nur die Monatsliste scrollt und keine verschachtelten vertikalen ScrollViews entstehen.
+- Lint, TypeScript und Editor-Diagnosen erfolgreich. Monatsfolge, Jahreswechsel und Raster mit 4/5/6 Wochen inklusive Schaltjahr per Node geprüft. Native Scrollgesten, VoiceOver und Darstellung auf iOS/Android noch auf Gerät zu prüfen.
+
+## Aktuell: Feinere Radar-Ortssuche
+
+- Kompakte Radar-Suchleiste mit dünnem Rahmen, ruhigem transparentem Hintergrund und stärker gerundeter Kontur; zusätzliche GlassBackdrop-Schicht dort entfernt, um doppelten Rahmen und kräftigen Glanz zu vermeiden.
+- Dezente kleinere Symbole und 11-px-Schrift mit Gewicht 400. Suchfunktion, Fokuszustand und 44-px-Eingabefläche erhalten.
+- Lint, TypeScript und Editor-Diagnosen erfolgreich. Native visuelle Prüfung noch offen.
+
+## Aktuell: Größere Radar-Wortmarke
+
+- Nur im Radar Schriftgröße der Wortmarke samt lila Punkt von 11 auf 15 px erhöht. Farben, Zeichenabstand und Kopfzeilen der anderen Tabs unverändert.
+- Lint und TypeScript-Check erfolgreich; native Darstellung noch auf Gerät zu prüfen.
+
+## Aktuell: Kopfzeilen enger an die eingekreiste Vorlage angepasst
+
+- Alle vier Tab-Kopfzeilen vollständig in Großbuchstaben, 11 px, Gewicht 800 und 2,4 px Zeichenabstand. Einheitlicher gedeckter Roséton #b58ca9 nach Bildvorlage; Markenpunkt bleibt #c922ab und verwendet dieselbe Schriftgröße, damit er die Zeilenhöhe nicht vergrößert.
+- Vorherige gemischte Groß-/Kleinschreibung und unterschiedliche Textfarben entfernt. Große Seitentitel unverändert.
+- Lint, TypeScript und Editor-Diagnosen erfolgreich. Optischer Abgleich auf dem Nutzergerät steht aus; keine pixelgenaue Geräteprüfung erfolgt.
+
+## Aktuell: Kleine Markenkopfzeilen nach Bildvorlage
+
+- Tab-Kopfzeilen verwenden 12-px-Systemschrift, Gewicht 700 und 2,2 px Zeichenabstand nach der eingekreisten Vorlage. Seitenzusätze in Großbuchstaben und gedeckter Farbe; Spots bleibt in bisheriger Schreibweise und heller Farbe mit lila Punkt.
+- Punkt proportional auf 18 px abgestimmt. Große Seitenüberschriften unverändert.
+- Expo Lint, TypeScript-Check und Editor-Diagnosen erfolgreich. Native visuelle Prüfung noch offen.
+
+## Aktuell: Dezentere Kopfzeilen und fünf heutige Karlsruhe-Testevents
+
+- Gemeinsame Markenschrift auf Gewicht 400 mit normalem Zeichenabstand reduziert. Lila Punkt in allen vier Tab-Kopfzeilen über gemeinsamen Stil auf 32 px vergrößert.
+- Fünf ausdrücklich fiktive Testevents für Karlsruhe am 04.11.2026 um 21/22 Uhr ergänzt; feste Termine, eindeutige IDs, bestehende Symbolbilder und öffentliche Beispielkoordinaten. Bei passender Orts-/Filterauswahl in Radar, Heute und Entdecken verfügbar. Frühere Events unverändert erhalten.
+- Expo Lint und TypeScript-Check erfolgreich. Visuelle Darstellung auf iOS/Android noch auf Gerät zu prüfen.
+
+## Aktuell: Feinere Markenkopfzeilen
+
+- Punkt hinter Spots auf Radar, Entdecken, Gemerkt und Profil einheitlich in der Designfarbe #c922ab.
+- Gemeinsame Kopfzeilen-Typografie von Gewicht 900 auf 500 reduziert und Zeichenabstand auf -0,5 angepasst: feinere, weniger gedrängte Systemschrift ohne zusätzliche Font-Abhängigkeit.
+- Lint und TypeScript-Check erfolgreich. Native Darstellung noch auf Gerät zu prüfen.
+
 ## Übergabe für die nächste Sitzung
 
 - Aktueller Stand auf Nutzerwunsch als gemeinsamer Zwischenstand gesichert: Radar-/Standortsteuerung, dynamischer Kartenumkreis, einheitliche Filter/Kopfzeilen, Deutschland-Städtesuche, Navigation, Profil und ruhige Herzbuttons sowie bildschirmfüllender Radar-Logo-Startscreen.

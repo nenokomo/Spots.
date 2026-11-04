@@ -7,7 +7,7 @@ import { GlassBackdrop } from '../components/GlassBackdrop';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Screen } from '../components/Screen';
 import { tabBarContentInset } from '../constants/navigation';
-import { brandHeadingStyle, colors } from '../constants/theme';
+import { brandDotStyle, brandHeadingStyle, colors } from '../constants/theme';
 import { demoEvents } from '../data/events';
 import { useSavedEvents } from '../hooks/useSavedEvents';
 import { useToday } from '../hooks/useToday';
@@ -37,7 +37,7 @@ export default function SavedEventsScreen() {
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       ListHeaderComponent={<View>
         <View style={styles.heading}>
-          <Text style={styles.eyebrow}>Spots. / Deine Auswahl</Text>
+          <Text style={styles.eyebrow}>SPOTS<Text style={brandDotStyle}>.</Text> / DEINE AUSWAHL</Text>
           <Text accessibilityRole="header" style={styles.title}>Gemerkt</Text>
           <Text style={styles.subtitle}>Gute Nächte beginnen mit einem Plan.</Text>
         </View>

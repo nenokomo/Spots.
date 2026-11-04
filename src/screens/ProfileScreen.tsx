@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { Screen } from '../components/Screen';
-import { brandHeadingStyle, colors } from '../constants/theme';
+import { brandDotStyle, brandHeadingStyle, colors } from '../constants/theme';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tabBarContentInset } from '../constants/navigation';
@@ -11,7 +11,7 @@ export default function ProfileScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarContentInset(insets.bottom) }]}>
-        <Text style={styles.eyebrow}>Spots. / Dein Profil</Text>
+        <Text style={styles.eyebrow}>SPOTS<Text style={brandDotStyle}>.</Text> / DEIN PROFIL</Text>
         <View style={styles.avatar}><Icon name="profile" color={colors.pink} size={43} /></View>
         <Text style={styles.title}>Dein Abend. Dein Ding.</Text>
         <Text style={styles.text}>Entdecke erst einmal, was die Nacht zu bieten hat.</Text>

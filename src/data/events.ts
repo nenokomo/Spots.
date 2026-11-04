@@ -117,6 +117,19 @@ demoEvents.push(...karlsruheParties.slice(0, 5).map((party, index): DemoEvent =>
   coordinate: { latitude: party.latitude, longitude: party.longitude },
 })));
 
+// Five fictional Karlsruhe events for 4 November 2026, using public-area
+// example coordinates. Dates stay fixed rather than moving forward daily.
+demoEvents.push(...karlsruheParties.slice(0, 5).map((party, index): DemoEvent => ({
+  id: `karlsruhe-test-2026-11-04-${index + 1}`,
+  title: `${party.title} · Testevent`,
+  categories: party.genre === 'Events' ? ['Events'] : [party.genre, 'Events'],
+  date: `04.11.2026 · ab ${index % 2 === 0 ? '21:00' : '22:00'}`,
+  startsAt: `2026-11-04T${index % 2 === 0 ? '21' : '22'}:00:00+01:00`,
+  location: 'Karlsruhe · fiktiver Beispielort',
+  image: index % 2 === 0 ? require('../../assets/events/nightlife.jpg') : require('../../assets/events/club.jpg'),
+  coordinate: { latitude: party.latitude, longitude: party.longitude },
+})));
+
 export function matchesCategory(event: DemoEvent, category: Category) {
   return category === 'Alle' || event.categories.includes(category);
 }

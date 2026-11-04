@@ -14,8 +14,15 @@ export const categories = ['Alle', 'Techno', 'House', 'Events', 'Clubs'] as cons
 export type Category = (typeof categories)[number];
 
 export const brandHeadingStyle = {
-  color: colors.text,
-  fontSize: 25,
-  fontWeight: '900',
-  letterSpacing: -1.2,
+  color: '#b58ca9',
+  fontSize: 11,
+  fontWeight: '800',
+  letterSpacing: 2.4,
+  textTransform: 'uppercase',
+} as const;
+
+export const brandDotStyle = {
+  color: colors.accent,
+  fontSize: 11,
+  fontWeight: '800',
 } as const;
