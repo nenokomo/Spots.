@@ -1,6 +1,105 @@
 ﻿# Projektstatus
 
-Stand: 04.11.2026
+Stand: 06.11.2026
+
+## Aktuell: Höherer Bildkopf, gleichmäßige Karten und Wischgalerie
+
+- Headerhöhe von Breite/2,16 auf Breite/1,8 erhöht; mindestens 200 px. Eventname/Bio verbleiben unterhalb des begrenzten Fotos.
+- Beide Informationsspalten erhalten identische berechnete Breiten; beide Reihen dieselbe schriftgrößenabhängige Mindesthöhe. Merken-Karte wächst mit der Zeile.
+- Neue EventPhotoViewer-Komponente: horizontal blätterbare Galerie mit Seiteneinrasten, Start beim gewählten Bild und Zähler. Vertikales Wischen ab 80 px oder schneller kurzer Geste schließt die Großansicht; kurze Gesten federn zurück. Pfeile entfernt, Schließen-Button bleibt als barrierearme Alternative.
+- Bilder bleiben Demo-Symbolfotos. Keine neuen Abhängigkeiten.
+- Expo Lint und TypeScript erfolgreich. Browser: Öffnen des dritten Fotos, korrekter Zähler und Schließen durch vertikale Ziehgeste geprüft. Native horizontale/vertikale Touchgesten auf iPhone/Android noch zu prüfen.
+
+## Aktuell: Fehlerhafte Bildausdehnung und kollabierte Kacheln korrigiert
+
+- Nutzer-Screenshot zeigte überlaufendes Headerbild hinter Bio/Infokarten und zu Linien kollabierte Beitragsbilder.
+- Header mit expliziter, aus gemessener Containerbreite berechneter Höhe und overflow hidden begrenzt. Bilder haben explizit 100 % Breite/Höhe statt ausschließlich absoluteFill mit intrinsischen Bildmaßen.
+- Beitragskacheln erhalten numerische Breite/Höhe aus gemessener Containerbreite, weiterhin drei Spalten und bisherige Proportionen. Layoutmessung berücksichtigt Rotation und Safe Areas.
+- Expo Lint und TypeScript erfolgreich. Mobile Browserprüfung durchgeführt; native iPhone-Prüfung nach Neuladen noch offen.
+
+## Aktuell: Referenzproportionen der Eventseite präzisiert
+
+- Bildkopf wieder im Verhältnis 2,16:1 zur Bildschirmbreite; rundes Profilbild unten links innerhalb des Fotos. Eventname jetzt wie in der hochgeladenen Vorlage direkt unter dem Bild.
+- Abstände, Bio, 2×2-Infokarten und Upload-Feld kompakter auf die Referenz abgestimmt. Spots-Farben und vorhandene Symbole unverändert.
+- Beiträge-Überschrift direkt vor dem dreispaltigen Raster; Demo-Kennzeichnung am Seitenende statt zusätzlicher Zwischenzeile. Foto-Großansicht und alle vorhandenen Aktionen erhalten.
+- Weiterhin nur Symbolfotos, keine erfundenen Video-Laufzeiten oder echten Uploads. Native visuelle Prüfung weiterhin offen.
+- Expo Lint, TypeScript und Editor-Diagnosen erfolgreich.
+
+## Aktuell: Eventdetail nach Referenz vom 06.11.2026
+
+- Größerer Bildkopf mit rundem Profilbild und Eventname innerhalb des Fotos. Bestehende Spots-Farben, Systemschrift und Icons erhalten; Zurück, Teilen und Event-Einstellungen oben.
+- Bio direkt darunter, optionales individuelles Datenfeld biography; ohne hinterlegten Inhalt ehrlicher Leerzustand. Kein Veranstalter-Editor oder Backend vorhanden.
+- Standort mit vollständiger vorhandener Ortsangabe, Datum, Tickets und lokale Merkfunktion als abgestimmtes 2×2-Raster.
+- Pink umrandeter Bereich „BeReel hochladen“ und drei Spalten für Beiträge. Symbolbilder klar als Demo gekennzeichnet; Antippen öffnet eine bildschirmfüllende Fotoansicht mit Vor-/Zurücknavigation und Schließen.
+- Informationen in schließbaren Dialogen statt aufklappender Zwischenbereiche. Einstellungen erläutern den fehlenden Veranstalterzugang.
+- Bestehende Event-Routen aus Radar und Entdecken geprüft und erhalten.
+- Weiterhin offen: echte Foto-/Video-Uploads, Video-Wiedergabe, Veranstalterbeiträge, Bio-Bearbeitung, serverseitiger 24-Stunden-Ablauf, Anmeldung und Moderation. Keine dieser Funktionen wird als implementiert dargestellt.
+- Expo Lint, TypeScript und Editor-Diagnosen erfolgreich. Visuelle Prüfung auf iOS/Android noch offen.
+
+## Aktuell: Eventprofil nach neuer mobiler Bildvorlage
+
+- Titelbild proportional und textfrei; Profilbild links innerhalb des Bildes. Eventname unmittelbar darunter, gefolgt von Bio und den vier Standort-/Datum-/Ticket-/Merken-Feldern.
+- Großer pink umrandeter Snap-Upload-Kasten oberhalb der Beiträge wiederhergestellt; öffnet den ehrlichen Hinweis zum noch nicht verfügbaren Upload.
+- Sechs vorhandene Symbolfoto-Vorschauen mit gerundeten Ecken und Zwischenräumen im 3×2-Raster. Keine erfundenen Videolaufzeiten oder funktionslosen Einstellungsbuttons aus der Vorlage übernommen.
+
+
+## Aktuell: Eventprofil-Raster und sichtbare Aktionsfelder korrigiert
+
+- Standort/Datum und Tickets/Merken stehen in zwei expliziten Reihen. Verschachtelte Merken-Karte mit prozentualer Höhe entfernt; lokale Merkfunktion bleibt erhalten.
+- Tickets öffnen einen eigenen Hinweis zum fehlenden Ticketverkauf. Große permanente Detail-Tabs und initialer Leerraum entfernt; Zusatzinfos erscheinen auf Anforderung.
+- Sechs lokale Symbolfoto-Vorschauen in einem bündigen 3×2-Raster, ohne graue Platzhalter. Bildheader bleibt textfrei; Eventname und Bio stehen darunter.
+- Lint und TypeScript geprüft. Keine laufende Browser-Vorschau auf Port 8081 vorhanden; Darstellung auf Geräten noch nicht visuell verifiziert.
+
+
+## Aktuell: Bildheader ohne Text und ohne Beschreibung
+
+- Hintergrundbild im Eventprofil deutlich verkleinert; es enthält jetzt ausschließlich das Bild und das überlappende Eventlogo, ohne Eventname, Bio, Datum oder Standort.
+- Eventname steht außerhalb unter dem Bild. Der separate Beschreibungstext wurde entfernt; unter dem Eventnamen bleibt nur die Bio.
+
+
+## Aktuell: Profilvorlage an den hochgeladenen Entwurf angenähert
+
+- Eventdetailseite mit großem Bildkopf, überlappendem Eventlogo und Eventname als Profilheader angepasst.
+- Beschreibung und Bio stehen darunter; Standort, Datum, Tickets und Merken erscheinen als gleichartige 2×2-Infofelder.
+- Beiträge sind am Seitenende als sechs große quadratische Kacheln in einem 3×2-Raster angeordnet. Lint und TypeScript erfolgreich.
+
+
+## Aktuell: Eventprofil klar in Bild, Inhalt und Beiträge getrennt
+
+- Eventdetails neu geordnet: Das obere Hintergrundbild enthält nur das Bild, das überlappende Eventlogo und den Eventnamen. Datum, Standort und weitere Informationen liegen nicht mehr im Bildbereich.
+- Unter dem Header stehen zuerst Beschreibung und Bio, danach Datum/Standort, Ticket- und Aktionsbereiche. Das Beiträge-Raster befindet sich am Ende der Seite.
+
+
+## Aktuell: Instagram-artiger Profilkopf und Beitragsraster
+
+- Das Titelbild im Profilkopf ist jetzt bildrein, kompakter und höher am Seitenanfang positioniert; Text und Verläufe liegen nicht mehr über dem Bild.
+- Beiträge werden darunter als größere, randlose quadratische 3-Spalten-Kacheln ohne Text-Overlay dargestellt, näher an einem Instagram-Profilraster.
+
+
+## Aktuell: Veranstalterprofil als Social-Profilvorlage
+
+- Eventdetails auf eine profilartige Veranstalteransicht umgebaut: großes Titelbild oben, überlappendes Eventlogo als Profilbild links, Veranstaltername, Handle und Bio.
+- Datum und Standort stehen jetzt separat unter Eventtitel und Kategorien. Zusätzlich gibt es ein Beiträge-Raster mit drei Demo-Kacheln sowie ein deutliches Snap-Upload-Feld, das zum Snaps-Bereich führt.
+- Die Elemente sind weiterhin eine fiktive Demo-Vorlage; echter Profil-Content, Upload und Veranstalterkonten sind noch nicht angeschlossen.
+
+
+## Aktuell: Veranstalterbereich auf Eventdetails neu gestaltet
+
+- Auf der Eventdetailseite eine neue kompakte Veranstalterkarte ergänzt: klarer „Veranstalter“-Kontext, Initialen-Avatar, Demo-Kennzeichnung, Name, Karlsruhe-Bezug und kurze Beschreibung.
+- Die Darstellung bleibt bewusst rein informativ, da die aktuellen Events fiktiv sind und noch keine echten Veranstalterprofile oder Profilnavigation existieren.
+
+
+## Aktuell: Feste Radius-Buttons aus dem Radarfilter entfernt
+
+- Die redundanten 10/20/30/50-km-Schaltflächen unter dem Umkreis-Slider auf der Startseite entfernt. Der Radius wird jetzt ausschließlich über den Schieberegler und dessen aktuelle km-Anzeige eingestellt.
+- Filterlogik, Wertebereich von 10 bis 50 km und die Weitergabe des gewählten Radius bleiben unverändert.
+
+
+## Aktuell: Fünf weitere Karlsruhe-Testevents
+
+- Fünf ausdrücklich fiktive Karlsruhe-Events für den 05.11.2026 ergänzt: Durlach Dance, Mühlburg Midnight, Nordstadt Neon, Rüppurr Rhythm und Knielingen Bass. Sie verwenden eindeutige IDs, öffentliche Beispielkoordinaten und bestehende Symbolbilder; die Termine bleiben fest und werden nicht automatisch verschoben.
+- Die Events sind über die bestehenden Radar-, Heute- und Entdecken-Filter verfügbar, sofern Datum, Ort und Kategorie passen. Keine echten Veranstaltungsdaten oder privaten Adressen ergänzt.
+
 
 ## Aktuell: Schlanke Startscreen-Wortmarke
 

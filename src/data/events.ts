@@ -4,6 +4,7 @@ import type { Category } from '../constants/theme';
 export type DemoEvent = {
   id: string;
   title: string;
+  biography?: string;
   categories: Exclude<Category, 'Alle'>[];
   date: string;
   startsAt: string;
