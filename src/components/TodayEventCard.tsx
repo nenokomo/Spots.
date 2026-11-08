@@ -9,8 +9,8 @@ import { SaveEventButton } from './SaveEventButton';
 export function TodayEventCard({ event }: { event: DemoEvent }) {
   const house = event.categories.includes('House');
   return (
-    <View><Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
-      <Pressable accessibilityLabel={`${event.title}, Demo-Event, Details öffnen`} style={styles.card}>
+    <View><Link href={{ pathname: '/organizer/[id]', params: { id: event.organizerId } }} asChild>
+      <Pressable accessibilityLabel={`${event.title}, Demo-Event, Veranstalterprofil öffnen`} style={styles.card}>
         <LinearGradient pointerEvents="none" colors={house ? ['#262632', '#192632', '#17111d'] : ['#3b1b36', '#2e192b', '#17111d']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
         <Image source={event.image} style={styles.image} accessibilityLabel="Symbolfoto einer Veranstaltung" />
         <View style={styles.content}>

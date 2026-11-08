@@ -6,8 +6,8 @@ import { Icon } from './Icon';
 import { SaveEventButton } from './SaveEventButton';
 
 export function ExploreEventCard({ event }: { event: DemoEvent }) {
-  return <View style={styles.wrapper}><Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
-    <Pressable accessibilityLabel={`${event.title}, Demo-Event, Details öffnen`} style={styles.card}>
+  return <View style={styles.wrapper}><Link href={{ pathname: '/organizer/[id]', params: { id: event.organizerId } }} asChild>
+    <Pressable accessibilityLabel={`${event.title}, Demo-Event, Veranstalterprofil öffnen`} style={styles.card}>
       <Image source={event.image} style={styles.image} accessibilityLabel="Symbolfoto einer Veranstaltung" />
       <View style={styles.content}>
         <Text numberOfLines={1} style={styles.genre}>{event.categories.join('  ·  ').toLocaleUpperCase('de')}</Text>

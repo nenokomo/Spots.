@@ -1,152 +1,126 @@
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Linking from 'expo-linking';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EventPhotoViewer } from '../components/EventPhotoViewer';
 import { Icon } from '../components/Icon';
-import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Screen } from '../components/Screen';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { colors } from '../constants/theme';
 import { demoEvents } from '../data/events';
+import { demoOrganizers } from '../data/organizers';
+import { useNow } from '../hooks/useNow';
 
-type Detail = 'Standort' | 'Datum' | 'Tickets' | 'BeReel hochladen' | 'Event-Einstellungen';
+type Detail = 'Standort' | 'Tickets' | 'BeReel hochladen' | 'Event-Einstellungen';
 
 export default function EventDetailScreen() {
-  const { width: windowWidth, fontScale } = useWindowDimensions();
+  const { width } = useWindowDimensions();
+  const now = useNow();
   const [layoutWidth, setLayoutWidth] = useState<number | null>(null);
-  const contentWidth = layoutWidth ?? windowWidth;
-  const cardWidth = Math.max(1, (contentWidth - 49) / 2);
-  const cardHeight = Math.max(72, Math.ceil(52 * fontScale + 20));
-  const postWidth = Math.max(1, (contentWidth - 40) / 3);
+  const contentWidth = layoutWidth ?? width;
+  const postWidth = Math.max(1, (contentWidth - 56) / 3);
   const { id } = useLocalSearchParams<{ id: string }>();
-  const event = demoEvents.find((item) => item.id === id);
+  const event = demoEvents.find(item => item.id === id);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [selectedPost, setSelectedPost] = useState<number | null>(null);
+  const [showMore, setShowMore] = useState(false);
+  const [ticketError, setTicketError] = useState(false);
   const [shareError, setShareError] = useState(false);
   const back = () => router.canGoBack() ? router.back() : router.replace('/');
 
   async function share() {
     if (!event) return;
     setShareError(false);
-    try {
-      await Share.share({ title: `${event.title} · Spots`, message: `${event.title} bei Spots\n${event.date}\n${event.location}\nDemo-Event – keine echte Veranstaltung.` });
-    } catch { setShareError(true); }
+    try { await Share.share({ title: `${event.title} · Spots`, message: `${event.title} bei Spots\n${event.date}\n${event.location}\nDemo-Event – keine echte Veranstaltung.` }); }
+    catch { setShareError(true); }
   }
 
-  if (!event) return <Screen><View style={styles.body}><Text style={styles.eventTitle}>Event nicht gefunden</Text><Link href="/" style={styles.textLink}>Zurück zum Radar</Link></View></Screen>;
-
-  // Preview assets only: never present these as actual organizer uploads.
-  const posts = [event.image, require('../../assets/events/club.jpg'), require('../../assets/events/nightlife.jpg'), require('../../assets/events/club.jpg'), require('../../assets/events/nightlife.jpg'), event.image];
+  if (!event) return <Screen><View style={styles.body}><Text style={styles.title}>Event nicht gefunden</Text><Link href="/" style={styles.linkText}>Zurück zum Radar</Link></View></Screen>;
+  const organizer = demoOrganizers.find(item => item.id === event.organizerId);
+  const ticketUrl = event.ticketUrl?.startsWith('https://') ? event.ticketUrl : undefined;
+  async function openTickets() {
+    setTicketError(false);
+    if (!ticketUrl) { setDetail('Tickets'); return; }
+    try { await Linking.openURL(ticketUrl); } catch { setTicketError(true); }
+  }
   const date = new Date(event.startsAt);
-  const day = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: 'short' }).format(date);
+  const day = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).format(date);
   const time = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' }).format(date);
+  const upcoming = date.getTime() >= now;
+  const posts = [event.image, require('../../assets/events/club.jpg'), require('../../assets/events/nightlife.jpg')];
   const details: Record<Detail, string> = {
-    Standort: `${event.location}. Die Markierung zeigt ein Beispielgebiet, keinen bestätigten Veranstaltungsort. Private Adressen werden nicht veröffentlicht.`,
-    Datum: `${event.date} · Zeitzone Europe/Berlin. Dies ist ein Demo-Event, keine bestätigte Veranstaltung.`,
-    Tickets: 'Für dieses Demo-Event sind noch keine Tickets oder Buchungslinks hinterlegt.',
-    'BeReel hochladen': 'Teile die Atmosphäre mit Fotos und kurzen Videos – vorgesehen für 24 Stunden. In dieser Demo ist noch kein Upload möglich. Anmeldung, Medienspeicherung, automatische Ausblendung und Meldefunktionen sind noch nicht angebunden.',
-    'Event-Einstellungen': 'Dies ist ein Demo-Event. Bearbeiten und Veröffentlichen stehen erst mit einem verifizierten Veranstalterkonto zur Verfügung. Deine Merkliste wird lokal auf diesem Gerät gespeichert.',
+    Standort: `${event.location}. Dies ist ein fiktiver Beispielort. Eine bestätigte Adresse ist nicht hinterlegt. Private Adressen werden ohne Freigabe nicht angezeigt.`,
+    Tickets: ticketUrl ? 'Tickets werden über den externen Anbieter verkauft.' : 'Für dieses Demo-Event sind noch keine Tickets oder Buchungslinks hinterlegt.',
+    'BeReel hochladen': 'Fotos und kurze Videos gehören zu diesem konkreten Event und sind für 24 Stunden vorgesehen. Upload, Medienspeicherung und automatische Ausblendung sind in der Demo noch nicht verfügbar.',
+    'Event-Einstellungen': 'Bearbeiten und Veröffentlichen erfordern ein verifiziertes Veranstalterkonto. Diese Demo ist noch nicht mit einem Veranstalterkonto verbunden.',
   };
 
-  return (
-    <Screen>
-      <SafeAreaView edges={['bottom']} style={styles.fill} onLayout={({ nativeEvent }) => setLayoutWidth(nativeEvent.layout.width)}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <View style={[styles.hero, { height: Math.max(200, contentWidth / 1.8) }]}>
-            <Image source={event.image} style={styles.coverImage} resizeMode="cover" accessibilityLabel="Symbolfoto, kein Foto dieses Demo-Events" />
-            <View style={styles.toolbar}>
-              <Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={back} style={styles.roundButton}><GlassBackdrop radius={22} /><Icon name="back" color={colors.text} size={21} /></Pressable>
-              <View style={styles.toolbarRight}>
-                <Pressable accessibilityRole="button" accessibilityLabel="Event teilen" onPress={() => void share()} style={styles.roundButton}><GlassBackdrop radius={22} /><Icon name="share" color={colors.text} size={21} /></Pressable>
-                <Pressable accessibilityRole="button" accessibilityLabel="Event-Einstellungen" onPress={() => setDetail('Event-Einstellungen')} style={styles.roundButton}><GlassBackdrop radius={22} /><Icon name="sliders" color={colors.text} size={21} /></Pressable>
-              </View>
-            </View>
-            <View style={styles.heroIdentity}>
-              <View style={styles.profileAvatar}><Image source={event.image} style={styles.profileAvatarImage} accessibilityLabel="Symbolbild des Demo-Events" /></View>
-            </View>
-          </View>
-
-          <View style={styles.body}>
-            <Text style={styles.eventTitle}>{event.title}</Text>
-            <View style={styles.bioBlock}>
-              <Text style={styles.sectionTitle}>Bio</Text>
-              <Text style={styles.bio}>{event.biography ?? 'Wir kuratieren Nächte, Sounds und Orte für deine nächste spontane Runde. Veranstalter können hier später ihre eigene Bio und ihren Stil hinterlegen.'}</Text>
-            </View>
-            <View style={styles.actionGrid}>
-              <View style={[styles.actionRow, { minHeight: cardHeight }]}>
-                <Pressable accessibilityRole="button" accessibilityLabel="Standort anzeigen" onPress={() => setDetail('Standort')} style={[styles.actionCard, { width: cardWidth }]}><Icon name="pin" size={19} /><View style={styles.actionCopy}><Text style={styles.actionText}>Standort</Text><Text style={styles.actionValue}>{event.location.split(' · ')[0]}</Text></View></Pressable>
-                <Pressable accessibilityRole="button" accessibilityLabel="Datum anzeigen" onPress={() => setDetail('Datum')} style={[styles.actionCard, { width: cardWidth }]}><Icon name="calendar" size={19} /><View style={styles.actionCopy}><Text style={styles.actionText}>Datum</Text><Text style={styles.actionValue}>{day} · {time}</Text></View></Pressable>
-              </View>
-              <View style={[styles.actionRow, { minHeight: cardHeight }]}>
-                <Pressable accessibilityRole="button" accessibilityLabel="Ticketinformationen anzeigen" onPress={() => setDetail('Tickets')} style={[styles.actionCard, { width: cardWidth }]}><Icon name="ticket" size={19} /><View style={styles.actionCopy}><Text style={styles.actionText}>Tickets</Text><Text style={styles.actionValue}>Keine Tickets hinterlegt</Text></View></Pressable>
-                <SaveEventButton id={event.id} title={event.title} label tile />
-              </View>
-            </View>
-            {shareError && <Text accessibilityRole="alert" style={styles.bio}>Teilen ist gerade nicht verfügbar. Bitte versuche es erneut.</Text>}
-            <Pressable accessibilityRole="button" accessibilityLabel="BeReel hochladen – Informationen zur Verfügbarkeit" onPress={() => setDetail('BeReel hochladen')} style={styles.uploadCard}>
-              <Icon name="camera" size={25} color={colors.text} />
-              <Text style={styles.uploadTitle}>BeReel hochladen</Text>
-            </Pressable>
-            <View style={styles.postsSection}>
-              <View style={styles.postsHeading}><Icon name="grid" size={18} /><Text style={styles.sectionTitle}>Beiträge</Text></View>
-              <View style={styles.postsGrid}>
-                {posts.map((image, index) => <Pressable key={index} accessibilityRole="button" accessibilityLabel={`Symbolfoto ${index + 1} in Großansicht öffnen`} onPress={() => setSelectedPost(index)} style={[styles.post, { width: postWidth, height: postWidth / 0.94 }]}><Image source={image} style={styles.coverImage} resizeMode="cover" accessibilityLabel="Symbolfoto – kein echter Veranstalterbeitrag" /></Pressable>)}
-              </View>
-            </View>
-            <Text style={styles.demoNote}>Spots · Demo-Event · Beiträge zeigen Symbolfotos</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-      <Modal visible={detail !== null} transparent animationType="fade" onRequestClose={() => setDetail(null)}>
-        <View style={styles.modalBackdrop}>
-          <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Dialog schließen" onPress={() => setDetail(null)} />
-          <View style={styles.dialog} accessibilityViewIsModal>
-            <View style={styles.dialogHeading}><Text style={styles.sectionTitle}>{detail}</Text><Pressable accessibilityRole="button" accessibilityLabel="Dialog schließen" onPress={() => setDetail(null)} style={styles.closeButton}><Icon name="close" /></Pressable></View>
-            <ScrollView><Text style={styles.description}>{detail && details[detail]}</Text></ScrollView>
-          </View>
+  return <Screen><SafeAreaView edges={['bottom']} style={styles.fill} onLayout={({ nativeEvent }) => setLayoutWidth(nativeEvent.layout.width)}>
+    <ScrollView contentContainerStyle={styles.scroll}>
+      <View style={[styles.hero, { height: Math.max(220, contentWidth / 1.65) }]}>
+        <Image source={event.image} style={styles.cover} resizeMode="cover" accessibilityLabel="Symbolfoto des Demo-Events" />
+        <LinearGradient pointerEvents="none" colors={['#100b1500', '#100b1566']} style={styles.cover} />
+        <View style={styles.toolbar}><Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={back} style={styles.round}><Icon name="back" color={colors.text} /></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Event-Einstellungen" onPress={() => setDetail('Event-Einstellungen')} style={styles.round}><Icon name="sliders" color={colors.text} /></Pressable></View>
+      </View>
+      <View style={styles.body}>
+        <View style={styles.statusRow}>
+          <Text style={styles.status}>{upcoming ? 'Demnächst' : 'Vergangen'}</Text>
+          <View style={styles.tools}><SaveEventButton id={event.id} title={event.title} /><Pressable accessibilityRole="button" accessibilityLabel="Event teilen" onPress={() => void share()} style={styles.iconButton}><Icon name="share" color={colors.text} /></Pressable></View>
         </View>
-      </Modal>
-      <Modal visible={selectedPost !== null} animationType="fade" onRequestClose={() => setSelectedPost(null)}>
-        {selectedPost !== null && <EventPhotoViewer images={posts} initialIndex={selectedPost} onClose={() => setSelectedPost(null)} />}
-      </Modal>
-    </Screen>
-  );
+        <Text style={styles.title}>{event.title}</Text>
+        {organizer && <Link href={{ pathname: '/organizer/[id]', params: { id: organizer.id } }} asChild><Pressable accessibilityRole="button" accessibilityLabel={`Veranstalterprofil von ${organizer.name} öffnen`} style={styles.organizerLink}><Text style={styles.muted}>Veranstaltet von <Text style={styles.organizerName}>{organizer.name}</Text></Text></Pressable></Link>}
+        {shareError && <Text accessibilityRole="alert" style={styles.note}>Teilen ist gerade nicht verfügbar.</Text>}
+
+        <View style={styles.tags}>{event.categories.map(category => <View key={category} style={styles.tag}><Text style={styles.tagText}>{category}</Text></View>)}</View>
+        <View style={styles.facts}>
+          <View style={styles.factRow}><View style={styles.factIcon}><Icon name="calendar" size={22} color={colors.pink} /></View><View style={styles.copy}><Text style={styles.factTitle}>{day}</Text><Text style={styles.muted}>{time} Uhr · Ende noch nicht angegeben</Text></View></View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Standort anzeigen" onPress={() => setDetail('Standort')} style={styles.factRow}><View style={styles.factIcon}><Icon name="pin" size={22} color={colors.pink} /></View><View style={styles.copy}><Text style={styles.factTitle}>{event.location.split(' · ')[0]}</Text><Text style={styles.muted}>Genauer Standort noch nicht hinterlegt</Text></View></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Ticketinformationen anzeigen" onPress={() => void openTickets()} style={styles.factRow}><View style={styles.factIcon}><Icon name="ticket" size={22} color={colors.pink} /></View><View style={styles.copy}><Text style={styles.factTitle}>Tickets</Text><Text style={styles.muted}>{ticketUrl ? 'Beim Ticketanbieter erhältlich' : 'Noch keine Tickets hinterlegt'}</Text></View></Pressable>
+        </View>
+
+        <View style={styles.about}><Text style={styles.heading}>Über das Event</Text><Text style={styles.description}>{event.biography ?? 'Für dieses Demo-Event ist noch keine individuelle Beschreibung hinterlegt.'}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={ticketUrl ? 'Tickets beim Anbieter kaufen' : 'Ticketverfügbarkeit prüfen'} onPress={() => void openTickets()} style={styles.ticketButton}><LinearGradient pointerEvents="none" colors={[colors.accent, '#9b268f']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cover} /><Icon name="ticket" color={colors.text} size={21} /><Text style={styles.ticketLabel}>{ticketUrl ? 'Ticket sichern' : 'Ticketinformationen'}</Text></Pressable>
+          {ticketError && <Text accessibilityRole="alert" style={styles.note}>Der Ticketlink konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Weitere Informationen" accessibilityState={{ expanded: showMore }} onPress={() => setShowMore(value => !value)} style={styles.moreButton}><Text style={styles.heading}>Weitere Informationen</Text><Icon name={showMore ? 'close' : 'down'} size={21} /></Pressable>
+        {showMore && <View style={styles.moreContent}><Text style={styles.muted}>{event.categories.join(' · ')}</Text><Text style={styles.note}>Zeitzone: Europe/Berlin. Fiktives Demo-Event, keine bestätigte Veranstaltung.</Text></View>}
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeading}><Text style={styles.heading}>BeReels</Text><Text style={styles.note}>24 Stunden</Text></View>
+          <Text style={styles.description}>Noch keine BeReels von diesem Event vorhanden.</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="BeReel hochladen – Informationen zur Verfügbarkeit" onPress={() => setDetail('BeReel hochladen')} style={styles.upload}><Icon name="camera" color={colors.pink} /><Text style={styles.uploadLabel}>BeReel hochladen</Text></Pressable>
+          <Text style={styles.note}>Upload in dieser Demo noch nicht verfügbar.</Text>
+        </View>
+        <View style={styles.section}><View style={styles.sectionHeading}><Text style={styles.heading}>Eventmedien</Text><Text style={styles.note}>Symbolfoto-Vorschau</Text></View>
+          <View style={styles.grid}>{posts.map((source, index) => <Pressable key={index} accessibilityRole="button" accessibilityLabel={`Event-Symbolfoto ${index + 1} öffnen`} onPress={() => setSelectedPost(index)} style={[styles.tile, { width: postWidth, height: postWidth / 0.95 }]}><Image source={source} style={styles.cover} resizeMode="cover" /></Pressable>)}</View>
+        </View>
+        <Text style={styles.footer}>Spots · Demo-Event · Symbolfotos</Text>
+      </View>
+    </ScrollView>
+  </SafeAreaView>
+  <Modal visible={detail !== null} transparent animationType="fade" onRequestClose={() => setDetail(null)}><View style={styles.modalBackdrop}><Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Dialog schließen" onPress={() => setDetail(null)} /><View style={styles.dialog} accessibilityViewIsModal><View style={styles.sectionHeading}><Text style={styles.heading}>{detail}</Text><Pressable accessibilityRole="button" accessibilityLabel="Dialog schließen" onPress={() => setDetail(null)} style={styles.iconButton}><Icon name="close" /></Pressable></View><ScrollView><Text style={styles.description}>{detail && details[detail]}</Text></ScrollView></View></View></Modal>
+  <Modal visible={selectedPost !== null} animationType="fade" onRequestClose={() => setSelectedPost(null)}>{selectedPost !== null && <EventPhotoViewer images={posts} initialIndex={selectedPost} onClose={() => setSelectedPost(null)} />}</Modal>
+  </Screen>;
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  scroll: { paddingBottom: 26 },
-  hero: { width: '100%', overflow: 'hidden', backgroundColor: colors.background },
-  coverImage: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
-  toolbar: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', padding: 10 },
-  toolbarRight: { gap: 6 },
-  roundButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: '#100b1555' },
-  heroIdentity: { position: 'absolute', left: 20, bottom: 3 },
-  profileAvatar: { width: 64, height: 64, borderRadius: 34, padding: 2, backgroundColor: colors.background, borderWidth: 2, borderColor: colors.accent },
-  profileAvatarImage: { width: '100%', height: '100%', borderRadius: 30, backgroundColor: colors.surface },
-  eventTitle: { color: colors.text, fontSize: 25, lineHeight: 30, fontWeight: '900', letterSpacing: -0.6, marginBottom: 14 },
-  body: { paddingHorizontal: 20, paddingTop: 3 },
-  bioBlock: { marginBottom: 12 },
-  bio: { color: colors.muted, fontSize: 13, lineHeight: 16, marginTop: 7 },
-  actionGrid: { gap: 6, marginBottom: 10 },
-  actionRow: { flexDirection: 'row', alignItems: 'stretch', gap: 9 },
-  actionCard: { minWidth: 0, minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 9, backgroundColor: '#ffffff09', borderWidth: 1, borderColor: colors.border },
-  actionCopy: { flex: 1, minWidth: 0 },
-  actionText: { color: colors.text, fontSize: 11, fontWeight: '600' },
-  actionValue: { color: colors.muted, fontSize: 11, lineHeight: 14, marginTop: 2 },
-  uploadCard: { minHeight: 56, alignItems: 'center', justifyContent: 'center', gap: 3, padding: 7, borderRadius: 9, borderWidth: 1, borderColor: colors.accent, backgroundColor: '#c922ab15' },
-  uploadTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
-  postsSection: { marginTop: 13, marginBottom: 14 },
-  postsHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
-  postsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 7, marginHorizontal: -7 },
-  post: { overflow: 'hidden', borderRadius: 11, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-  sectionTitle: { color: colors.text, fontSize: 17, fontWeight: '700', flexShrink: 1 },
-  demoNote: { color: colors.muted, fontSize: 10, textAlign: 'center' },
-  textLink: { color: colors.pink, paddingVertical: 20 },
-  modalBackdrop: { flex: 1, backgroundColor: '#000000aa', justifyContent: 'center', padding: 20 },
-  dialog: { maxHeight: '80%', backgroundColor: colors.surface, borderRadius: 22, padding: 20, borderWidth: 1, borderColor: colors.border },
-  dialogHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  description: { color: colors.muted, fontSize: 14, lineHeight: 23, marginTop: 8, paddingBottom: 8 },
-  closeButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  fill: { flex: 1 }, scroll: { paddingBottom: 26 }, hero: { overflow: 'hidden', backgroundColor: colors.surface, marginHorizontal: 12, marginTop: 10, borderRadius: 24 }, cover: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
+  toolbar: { flexDirection: 'row', justifyContent: 'space-between', padding: 12 }, round: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#100b1599', alignItems: 'center', justifyContent: 'center' },
+  body: { paddingHorizontal: 20, paddingTop: 8 }, statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 }, status: { color: colors.pink, fontSize: 11, fontWeight: '700', backgroundColor: '#c922ab18', paddingHorizontal: 11, paddingVertical: 6, borderRadius: 20 },
+  tools: { flexDirection: 'row', alignItems: 'center', gap: 3 }, iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  title: { color: colors.text, fontSize: 28, lineHeight: 34, fontWeight: '800', letterSpacing: -0.7 }, organizerLink: { minHeight: 44, justifyContent: 'center' }, organizerName: { color: colors.muted, fontWeight: '600' },
+  muted: { color: colors.muted, fontSize: 13, lineHeight: 19 }, facts: { paddingHorizontal: 14, paddingVertical: 4, borderWidth: 1, borderColor: colors.border, borderRadius: 20, backgroundColor: '#ffffff06' }, factRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, minHeight: 74 },
+  factIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: '#c922ab16', alignItems: 'center', justifyContent: 'center' },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 20, marginTop: 2 },
+  tag: { backgroundColor: '#ffffff08', borderWidth: 1, borderColor: colors.border, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
+  tagText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
+  copy: { flex: 1, minWidth: 0 }, factTitle: { color: colors.text, fontSize: 14, fontWeight: '600', lineHeight: 20 }, about: { paddingTop: 26 }, heading: { color: colors.text, fontSize: 18, fontWeight: '700', flexShrink: 1 }, description: { color: colors.muted, fontSize: 14, lineHeight: 22, marginTop: 12 },
+  ticketButton: { minHeight: 56, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 16, overflow: 'hidden', backgroundColor: colors.accent, marginTop: 18, padding: 12 }, ticketLabel: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  moreButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 64, gap: 12 }, moreContent: { paddingBottom: 12 }, note: { color: colors.muted, fontSize: 11, lineHeight: 17 },
+  section: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 24, marginTop: 16 }, sectionHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  upload: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 66, borderWidth: 1, borderColor: '#c922ab66', borderRadius: 18, backgroundColor: '#c922ab12', marginTop: 16, marginBottom: 10 }, uploadLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  grid: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }, tile: { overflow: 'hidden', backgroundColor: colors.surface, borderRadius: 12 }, footer: { color: colors.muted, fontSize: 10, textAlign: 'center', marginTop: 20 }, linkText: { color: colors.pink, paddingVertical: 16 },
+  modalBackdrop: { flex: 1, backgroundColor: '#000000aa', justifyContent: 'center', padding: 20 }, dialog: { maxHeight: '80%', backgroundColor: colors.surface, borderRadius: 18, padding: 20 },
 });

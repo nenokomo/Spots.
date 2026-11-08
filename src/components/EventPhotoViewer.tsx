@@ -2,7 +2,6 @@ import { useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Animated, Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, type ImageSourcePropType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../constants/theme';
-import { Icon } from './Icon';
 
 export function EventPhotoViewer({ images, initialIndex, onClose }: { images: ImageSourcePropType[]; initialIndex: number; onClose: () => void }) {
   const { width } = useWindowDimensions();
@@ -20,8 +19,8 @@ export function EventPhotoViewer({ images, initialIndex, onClose }: { images: Im
     onPanResponderTerminate: () => Animated.spring(offset, { toValue: 0, useNativeDriver: true }).start(),
   }), [offset, onClose]);
 
-  return <SafeAreaView style={styles.viewer} accessibilityViewIsModal>
-    <View style={styles.toolbar}><Text style={styles.counter}>Symbolfoto · {index + 1} / {images.length}</Text><Pressable accessibilityRole="button" accessibilityLabel="Großansicht schließen" onPress={onClose} style={styles.close}><Icon name="close" /></Pressable></View>
+  return <SafeAreaView style={styles.viewer} onAccessibilityEscape={onClose} accessibilityViewIsModal>
+    <View style={styles.toolbar}><Text style={styles.counter}>Symbolfoto · {index + 1} / {images.length}</Text><Pressable accessibilityRole="button" accessibilityLabel="Großansicht schließen" onPress={onClose} style={styles.close}><View style={styles.handle} /></Pressable></View>
     <Animated.View style={[styles.fill, { transform: [{ translateY: offset }] }]} {...gesture.panHandlers}>
       <ScrollView ref={pager} horizontal pagingEnabled showsHorizontalScrollIndicator={false} bounces={false} directionalLockEnabled style={styles.fill}
         onLayout={() => pager.current?.scrollTo({ x: index * width, animated: false })}
@@ -38,6 +37,7 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
   counter: { color: colors.text, fontSize: 12 },
+  handle: { width: 28, height: 4, borderRadius: 2, backgroundColor: colors.muted },
   close: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   page: { height: '100%' },
   image: { width: '100%', height: '100%' },

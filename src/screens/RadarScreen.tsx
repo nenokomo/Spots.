@@ -124,7 +124,6 @@ export default function RadarScreen() {
               <CategoryFilters value={category} onChange={changeCategory} />
               <Text style={styles.label}>Umkreis</Text>
               <RadiusSlider value={radius} onChange={(value) => { setRadius(value); setPreview(null); }} />
-              <View style={styles.radii}>{[10, 20, 30, 50].map((value) => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: radius === value }} onPress={() => { setRadius(value); setPreview(null); }} style={[styles.radiusOption, radius === value && styles.radiusActive]}><Text style={styles.radiusOptionText}>{value} km</Text></Pressable>)}</View>
               <Text style={styles.sheetHint}>Der Umkreis gilt ab der aktuellen Kartenmitte. Die Liste zeigt nur heutige Demo-Events; Beispiele gibt es in Berlin und Karlsruhe.</Text>
               <Pressable accessibilityRole="button" onPress={() => setFilterOpen(false)} style={styles.apply}><Text style={styles.applyText}>Radar anzeigen</Text></Pressable>
             </ScrollView>
@@ -177,10 +176,6 @@ const styles = StyleSheet.create({
   sheetTitle: { color: colors.text, fontSize: 24, fontWeight: '800' },
   closeButton: { minHeight: 44, width: 44, alignItems: 'center', justifyContent: 'center' },
   label: { color: colors.text, fontSize: 14, fontWeight: '600' },
-  radii: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  radiusOption: { paddingHorizontal: 15, minHeight: 44, justifyContent: 'center', borderRadius: 15, backgroundColor: '#ffffff0c', borderWidth: 1, borderColor: colors.border },
-  radiusActive: { backgroundColor: colors.accent, borderColor: colors.pink },
-  radiusOptionText: { color: colors.text, fontSize: 13 },
   sheetHint: { color: colors.muted, fontSize: 12, lineHeight: 19 },
   apply: { backgroundColor: colors.accent, borderRadius: 16, alignItems: 'center', padding: 16, marginTop: 3 },
   applyText: { color: colors.text, fontWeight: '700', fontSize: 15 },

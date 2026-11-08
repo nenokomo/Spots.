@@ -7,8 +7,8 @@ import { GlassBackdrop } from './GlassBackdrop';
 
 export function EventCard({ event, compact = false, showChevron = true, glass = true }: { event: DemoEvent; compact?: boolean; showChevron?: boolean; glass?: boolean }) {
   return (
-    <Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
-      <Pressable accessibilityLabel={`${event.title}, Demo-Event, Details öffnen`} style={StyleSheet.flatten([styles.card, compact && styles.compactCard])}>
+    <Link href={{ pathname: '/organizer/[id]', params: { id: event.organizerId } }} asChild>
+      <Pressable accessibilityLabel={`${event.title}, Demo-Event, Veranstalterprofil öffnen`} style={StyleSheet.flatten([styles.card, compact && styles.compactCard])}>
         {glass && <GlassBackdrop native={false} variant="card" radius={compact ? 12 : 15} />}
         <Image source={event.image} style={[styles.image, compact && styles.compactImage]} accessibilityLabel="Symbolfoto einer Veranstaltung" />
         <View style={[styles.content, compact && styles.compactContent]}>

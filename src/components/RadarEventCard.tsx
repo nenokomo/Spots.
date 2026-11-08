@@ -8,9 +8,9 @@ type Props = { event: DemoEvent; distance: number; height: number };
 
 export function RadarEventCard({ event, distance, height }: Props) {
   return (
-    <Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
+    <Link href={{ pathname: '/organizer/[id]', params: { id: event.organizerId } }} asChild>
       <Pressable
-        accessibilityLabel={`${event.title}, Demo-Event, ${distance.toFixed(1).replace('.', ',')} Kilometer entfernt, Details öffnen`}
+        accessibilityLabel={`${event.title}, Demo-Event, ${distance.toFixed(1).replace('.', ',')} Kilometer entfernt, Veranstalterprofil öffnen`}
         style={StyleSheet.flatten([styles.card, { height }])}
       >
         <Image source={event.image} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel="Symbolfoto einer Veranstaltung" />

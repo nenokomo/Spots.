@@ -1,6 +1,65 @@
 ﻿# Projektstatus
 
-Stand: 06.11.2026
+Stand: 08.11.2026
+
+## Aktuell: Profilbild im Header und vereinfachte Beiträge
+
+- Hauptprofil-Titelbild etwas vergrößert (Breite/1,85, mindestens 200 px). Profilbild unten links innerhalb des Fotos, Name und Bio weiterhin darunter.
+- „Events ansehen“ und „Kontakt“ entfernt. Stattdessen Instagram-/TikTok-Links als gekennzeichnete Demo-Plattformlinks zu den Plattformstartseiten; keine fremden oder erfundenen Veranstalteraccounts verlinkt.
+- „Nächstes Event“ und zugehörige Terminübersicht unverändert.
+- Beitragsansicht mit abgerundeten Karten. Im Autorenkopf nur Veranstaltername und Avatar; Stadt-/Demo-Unterzeile entfernt. Demo-Hinweis bleibt unter der Caption.
+- Beitragsbilder sind statisch, öffnen keine zusätzliche Foto-Großansicht mehr. Profilkacheln öffnen weiterhin den Beitrag mit Bildunterschrift. Beitragsansicht weiterhin per Rechtswischen schließbar.
+- Expo Lint und TypeScript erfolgreich. Browser: Social-Linkziele, entfernte Buttons, Avatarposition, keine Bildvergrößerung nach Antippen sowie Rechtswischen geprüft. Native Geräteprüfung weiterhin offen.
+
+## Aktuell: Beiträge per Wischen schließen
+
+- Beitragsliste lässt sich durch horizontales Wischen nach rechts schließen; vertikales Scrollen der Beiträge bleibt erhalten. Kurze Gesten federn zurück.
+- Sichtbare X-Symbole aus Beitragsliste und Foto-Großansicht entfernt. Kleine Griffmarkierung als zusätzliche antippbare und für Screenreader beschriftete Schließen-Möglichkeit; Accessibility-Escape unterstützt.
+- Foto-Großansicht weiterhin vertikal per Wischen schließbar; horizontales Blättern erhalten.
+- Expo Lint und TypeScript erfolgreich. Browser: Beitragsliste durch Rechtswischen geschlossen. Native Touchgesten weiterhin auf Geräten zu prüfen.
+
+## Aktuell: Veranstalterbeiträge und modernisierte Party-Detailseite
+
+- Profilraster und bestätigter Hauptaufbau bleiben bestehen. Kacheln öffnen jetzt eine Instagram-artige Beitragsliste mit Veranstalteravatar/-name, Stadt, Bild und Bildunterschrift. Keine Likes, Kommentare oder erfundenen Zeitstempel.
+- Eigenes OrganizerPost-Datenmodell mit stabiler Beitrags-ID und organizerId; vorhandene lokale Symbolbilder als ausdrücklich gekennzeichnete Demo-Beiträge. Kein Backend oder Erstellen/Publizieren von Beiträgen implementiert.
+- Virtualisierte OrganizerPostFeed-Liste öffnet beim gewählten Beitrag; Beitragshöhen berücksichtigen Bildschirmbreite und Schriftvergrößerung. Foto-Großansicht mit vorhandenen Wischgesten bleibt zusätzlich erreichbar.
+- Partyseite visuell verfeinert: abgerundetes größeres Titelbild, fein auslaufender Bildverlauf, kräftiger Titel, Genre-Chips, zusammenhängender Infoblock mit getönten Icon-Flächen, Ticketaktion mit Spots-Verlauf und größerer BeReel-Bereich. Reihenfolge und Profil-/Termin-Trennung unverändert; Text bleibt unter dem Titelbild.
+- Expo Lint, TypeScript und Editor-Diagnosen erfolgreich. Browser bei 390/320 px: Öffnen des dritten Beitrags samt Caption, Foto-Großansicht und beide Schließen-Aktionen, Profil → Termin, Standort- und Ticketdialog geprüft. Native Geräteprüfung weiterhin offen.
+
+## Aktuell: Profil und Terminseite nach den zwei Nutzervorlagen
+
+- Veranstalterprofil wie Bild 1: breites textfreies Titelbild, kompakter Profilbereich mit eckig gerundetem Avatar, Name/Stadt und tatsächlicher Demo-Terminanzahl; Bio und zwei Aktionen. Keine erfundenen Followerzahlen oder Social-Follow-Funktion: „Events ansehen“ öffnet die Terminübersicht, „Kontakt“ erklärt fehlende Kontaktdaten.
+- „Nächstes Event“ als kompakte horizontale Bild-/Infokarte mit Datum, Uhrzeit und Stadt. „Alle Events“ blendet weitere kommende und klar getrennte vergangene Termine ein.
+- Beiträge-Raster mit drei ausdrücklich gekennzeichneten lokalen Symbolfoto-Vorschauen; Wischgalerie bleibt zum Öffnen/Schließen verfügbar.
+- Terminseite wie Bild 2: großes Foto, zeitabhängiger Demnächst-/Vergangen-Hinweis, Merken/Teilen, Titel und Veranstalterlink; schlichte Datum-/Ort-/Ticketzeilen, Beschreibung und breite Ticketaktion. Weitere Informationen als aufklappbarer Bereich. BeReels und Eventmedien folgen und gehören zum konkreten Termin.
+- Radar-, Entdecken- und Heute-Karten öffnen jetzt zuerst das Veranstalter-Hauptprofil. Erst dessen Termin-Karten öffnen die spezifische Eventseite. Gespeicherte Events bleiben direkt mit ihrem gespeicherten Termin verknüpft.
+- Keine echten Ticketverkäufe, Kontaktdaten, Adressen oder Uploads vorgetäuscht. Vorhandene HTTPS-Ticketlinks werden unterstützt; Fixtures enthalten keine.
+- Expo Lint, TypeScript und Editor-Diagnosen erfolgreich. Browser bei 390 und 320 px: Entdecken → Profil → Termin, Ticketdialog, weitere Infos, Terminübersicht und Foto-Großansichten geprüft. Native Geräteprüfung weiterhin offen.
+
+## Aktuell: Veranstalterprofil und einzelne Events getrennt
+
+- Neue Profilroute /organizer/[id] mit eigenem dauerhaften Demo-Veranstalterprofil, Bio, Stadt, Bereich für Veranstalterbeiträge und hervorgehobener Karte „Nächstes Event“.
+- Explizite organizerId je Event. Wiederkehrende Karlsruhe-Demoausgaben teilen eine feste Veranstalter-ID. Demo-Profile werden aus diesen vorhandenen Fixtures erzeugt; keine echten Veranstalterdaten vorgetäuscht.
+- Nächstes Event ist der früheste Termin mit startsAt >= jetzt; weitere zukünftige Termine separat. Aktualisierung alle 30 Sekunden und bei Rückkehr in den Vordergrund. Ohne künftigen Termin ehrlicher Leerzustand, keine automatische Neudatierung.
+- Eventkarten des Profils öffnen /event/[id]. Eventseite verlinkt über „Veranstaltet von“ zurück zum Hauptprofil. Radar/Entdecken öffnen weiterhin direkt das konkrete Event.
+- Eventbezogenes optionales ticketUrl-Feld: vorhandene HTTPS-Links öffnen extern, Fehlerhinweis bei fehlgeschlagenem Öffnen. Ohne Link nur Ticketinformationen; bestehende Fixtures enthalten keine echten Ticketlinks.
+- Eventseite behält Standort, Datum, Merken, Mediengalerie und BeReel-Bereich. Echter Ticketverkauf, Authentifizierung, BeReel-Upload/-Abruf, 24-h-Ablauf und Backend weiterhin nicht angeschlossen. Veranstalterbeiträge zeigen einen Leerzustand.
+- Expo Lint und TypeScript erfolgreich. Datenchecks: Zuordnung aller Events, eindeutige Profile, chronologische Terminauswahl, abgelaufene Termine und unbekannte Veranstalter. Browser: Profil → nächstes Event → Ticketdialog → Profil sowie Profil ohne nächsten Termin geprüft. Native Geräteprüfung offen.
+
+## Aktuell: Eventdetail mit Fokus auf Termin, Ort und Aktionen
+
+- Auf Wunsch strukturell neu gestaltet: Bildkopf ohne Text; Profilbild, Eventtitel, Demo-Kennzeichnung und Genre-Tags darunter. Teilen/Einstellungen stehen nebeneinander oben rechts.
+- Bisheriges 2×2-Raster ersetzt durch einen gemeinsamen Informationsblock mit Termin und Ort in zwei vollständigen Zeilen. Darunter gleich breite Ticketinfo-/Merken-Aktionen; Ticketverfügbarkeit transparent ausgewiesen.
+- Bio folgt als „Über das Event“, danach eigener BeReels-Bereich mit horizontalem Upload-Feld und Verfügbarkeitshinweis, anschließend Beiträge mit linksbündiger Überschrift und dreispaltigem Raster.
+- Spots-Farben und bestehende Interaktionen erhalten, Wischgalerie unverändert. Keine neuen Abhängigkeiten oder vorgetäuschten Uploads.
+- Browser bei 320 und 375 px geprüft: Ticketdialog, Beitrags-Großansicht/Schließen und gleich breite Aktionsbuttons. Native Geräteprüfung weiterhin offen.
+
+## Aktuell: Fünf Karlsruhe-Testevents für den 08.11.2026
+
+- Fächerstadt Beats, Karlsruhe House Lights, Südstadt Session, Weststadt After Dark und Oststadt Frequenz als ausdrücklich fiktive Testevents für den 08.11.2026 hinzugefügt, abwechselnd ab 21 oder 22 Uhr.
+- Eindeutige datumsbezogene IDs, vorhandene Symbolfotos und öffentliche Beispielkoordinaten. Termine bleiben fest; bestehende Events unverändert.
+- Bestehende Heute-/Kategorie-/Radiusfilter und Detailrouten werden verwendet.
+- Expo Lint und TypeScript erfolgreich. Fünf eindeutige IDs, Heute-Filter für den 08.11.2026 und Lage im 30-km-Radius Karlsruhe geprüft.
 
 ## Aktuell: Höherer Bildkopf, gleichmäßige Karten und Wischgalerie
 

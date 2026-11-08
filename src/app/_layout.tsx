@@ -29,6 +29,7 @@ function StartupContent() {
   return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
     <Stack.Screen name="(tabs)" />
     <Stack.Screen name="event/[id]" />
+    <Stack.Screen name="organizer/[id]" />
   </Stack>;
 }
 
