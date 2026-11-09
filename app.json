@@ -24,6 +24,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      ["expo-splash-screen", { "backgroundColor": "#100b15", "dark": { "backgroundColor": "#100b15" } }],
       "expo-status-bar",
       "expo-router",
       [

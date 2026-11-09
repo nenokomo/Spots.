@@ -2,6 +2,8 @@
 
 ## Aktuelle Einstiege
 
+- [Design-/Datenintegration](DESIGN_INTEGRATION.md): lokaler Integrationsbranch, Konfliktentscheidungen und tatsächliche Browser-/Testnachweise.
+
 - [Projektstatus](../PROJECT_STATUS.md): aktueller Funktions- und Betriebsstand, Grenzen, nächste Schritte.
 - [Supabase-App-Anbindung](../SUPABASE_SETUP.md): Schema, öffentliche Client-Konfiguration und Lesezugriff.
 - [Goabase-Synchronisierung](../GOABASE_SYNC.md): Importer, Statusbehandlung, SQL und lokale Tests.

@@ -1,6 +1,16 @@
 # Projektstatus – Spots
 
-Stand: 09.11.2026. Bereinigung ausschließlich lokal; kein Commit, Push, Merge oder Remote-Eingriff.
+Stand: 09.11.2026. Lokale Design-/Datenintegration; kein Push und kein Merge nach main, keine produktiven Backend-Änderungen.
+
+## Aktuell: Design und echte Eventdaten zusammengeführt
+
+- Neuer lokaler Branch **integration/spots-supabase-design**, Basis origin/main **7d5f654**. Zuerst origin/Jacint-branch **ee0c270**, anschließend aktueller Design-Branch origin/noyan-design **c8f0217** integriert. origin/Noyan-branch-design **3c0732d** ist ein älterer Vorfahr, nicht der aktuelle Designstand. Bestehende Branches unverändert.
+- 14 Konfliktdateien einzeln aufgelöst: Startscreen/Provider, Kalender, vier Eventkarten, Kartentypen, fünf Screens, Projektstatus und gelöschte Demo-Datei. Neues Layout, Farben, Navigation, Kalender und Kartensteuerung erhalten; echte Services, UUID-Routen, Lade-/Leer-/Fehlerzustände und Live-Zeitfilter weiterverwendet. src/data/events.ts bleibt gelöscht.
+- Browserprüfung bei 390 × 844: **28 echte kommende Events**, Navigation zur UUID und neue Eventdetails mit Titel/Zeit/Quelle, Original-Link und Goabase-Backlink erfolgreich. Radar korrekt **0 laufende Events**, keine zukünftigen Events als live. Ausschließlich Supabase-GETs, keine Schreibanfrage; keine JavaScript-Fehler oder untersuchten React-Prop-Warnungen im abschließenden Durchlauf.
+- Lokal alle bisherigen **67 Tests** plus **3 neue Design-/Datenintegrationsprüfungen** bestanden, nichts übersprungen. Expo-Lint ohne Cache und Typecheck erfolgreich. Native Geräte-/Release-Prüfung steht noch aus, insbesondere Splashscreen/Map-Gesten.
+- Function, SQL/Cron, Backend-Skripte und App-Lese-Service gegenüber Jacint-branch unverändert. .env.local per Hash identisch. expo-splash-screen aus dem Design-Branch SDK-kompatibel installiert; keine Backend-Deployments/Imports/SQL-Ausführungen.
+- Fachliche Grenze dokumentiert: public.events enthält keine bestätigte Veranstalterrelation und keine Besucher-/Veranstaltermedien. Deshalb keine aus Demo-Titeln erfundenen Profile oder Beiträge; Profilroute zeigt ehrlich fehlende Verfügbarkeit, Layout bleibt erhalten. Eventkarten öffnen echte Eventdetails. „Demnächst“ ersetzt unbelegte Beliebtheitsbehauptung. Vollständiger Design-Zwischenstand im Archiv erhalten.
+- [Integrationsbericht mit Konfliktentscheidungen und Prüfgrenzen](docs/DESIGN_INTEGRATION.md). Kombinierter Stand für einen Pull-Request-Review vorbereitet; lokaler Integrationsbranch noch nicht veröffentlicht. Weder main noch fremde Branches verändert.
 
 ## Implementiert und Architektur
 

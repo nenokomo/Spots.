@@ -6,6 +6,7 @@ export const berlinCenter = { latitude: 52.52, longitude: 13.405 };
 
 export function useLocation() {
   const [center, setCenter] = useState(berlinCenter);
+  const [userCoordinate, setUserCoordinate] = useState<typeof berlinCenter | null>(null);
   const [label, setLabel] = useState('Berlin');
   const [message, setMessage] = useState('Kartenmitte · Berlin');
   const [loading, setLoading] = useState(false);
@@ -48,7 +49,9 @@ export function useLocation() {
       const position = await Location.getLastKnownPositionAsync({ maxAge: 60_000 })
         ?? await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       if (currentRevision !== revision.current) return;
-      setCenter({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+      const coordinate = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+      setUserCoordinate(coordinate);
+      setCenter(coordinate);
       setLabel('Dein Standort');
       setMessage('Standort gefunden · Umkreis ab Kartenmitte');
     } catch {
@@ -61,5 +64,5 @@ export function useLocation() {
     }
   }, []);
 
-  return { center, label, message, loading, locate, selectCity };
+  return { center, userCoordinate, label, message, loading, locate, selectCity };
 }

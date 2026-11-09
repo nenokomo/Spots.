@@ -10,5 +10,19 @@ export const colors = {
   surface: '#25172d',
 };
 
-export const categories = ['Alle', 'Techno', 'House', 'Party', 'Clubs'] as const;
+export const categories = ['Alle', 'Techno', 'House', 'Events', 'Clubs'] as const;
 export type Category = (typeof categories)[number];
+
+export const brandHeadingStyle = {
+  color: '#b58ca9',
+  fontSize: 11,
+  fontWeight: '800',
+  letterSpacing: 2.4,
+  textTransform: 'uppercase',
+} as const;
+
+export const brandDotStyle = {
+  color: colors.accent,
+  fontSize: 11,
+  fontWeight: '800',
+} as const;

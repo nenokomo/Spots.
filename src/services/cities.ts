@@ -1,4 +1,4 @@
-export type City = { id: number; name: string; latitude: number; longitude: number; country?: string; admin1?: string };
+export type City = { id: number; name: string; latitude: number; longitude: number; country?: string; country_code?: string; feature_code?: string; admin1?: string };
 
 function isCity(value: unknown): value is City {
   if (!value || typeof value !== 'object') return false;
@@ -11,9 +11,9 @@ function isCity(value: unknown): value is City {
 }
 
 export async function searchCities(query: string, signal: AbortSignal): Promise<City[]> {
-  const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query.trim())}&count=6&language=de&format=json`, { signal });
+  const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query.trim())}&count=20&language=de&format=json&countryCode=DE`, { signal });
   if (!response.ok) throw new Error('Ortssuche nicht verfügbar');
   const data: { results?: unknown; error?: boolean } = await response.json();
   if (data.error || (data.results !== undefined && !Array.isArray(data.results))) throw new Error('Ungültige Suchantwort');
-  return Array.isArray(data.results) ? data.results.filter(isCity) : [];
+  return Array.isArray(data.results) ? data.results.filter(isCity).filter((city) => city.country_code === 'DE' && typeof city.feature_code === 'string' && city.feature_code.startsWith('PPL')).slice(0, 6) : [];
 }

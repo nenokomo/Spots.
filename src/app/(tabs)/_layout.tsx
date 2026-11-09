@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassTabIcon } from '../../components/GlassTabIcon';
 import { colors } from '../../constants/theme';
@@ -8,12 +8,15 @@ import { floatingTabBar } from '../../constants/navigation';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const barWidth = Math.min(360, width - 32);
+  const sideInset = (width - barWidth) / 2;
   return (
     <Tabs screenOptions={{
       headerShown: false,
       tabBarActiveTintColor: colors.pink,
       tabBarInactiveTintColor: colors.muted,
-      tabBarStyle: { position: 'absolute', left: 24, right: 24, bottom: Math.max(insets.bottom, floatingTabBar.bottomGap), backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0, height: floatingTabBar.height, borderRadius: 30, paddingTop: 6, paddingBottom: 4 },
+      tabBarStyle: { position: 'absolute', left: 0, right: 0, marginHorizontal: sideInset, bottom: Math.max(insets.bottom, floatingTabBar.bottomGap), backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0, height: floatingTabBar.height, borderRadius: 30, paddingTop: 6, paddingBottom: 4 },
       tabBarIconStyle: { width: 30, height: 28 },
       tabBarLabelPosition: 'below-icon',
       tabBarLabelStyle: { fontSize: 10, marginTop: 0 },

@@ -11,13 +11,17 @@ function project(latitude: number, longitude: number, zoom: number) {
 }
 
 // react-native-maps is native-only. Render real map tiles for browser previews.
-export default function RadarMap({ center, radius, events, onSelect, onCenterChange, scan }: RadarMapProps) {
+export default function RadarMap({ center, radius, userCoordinate, events, onSelect, onCenterChange, onVisibleRadiusChange, scan }: RadarMapProps) {
   const [viewport, setViewport] = useState({ source: center, center });
+  const [zoomState, setZoomState] = useState({ center, radius, factor: 1 });
+  const zoomFactor = zoomState.center === center && zoomState.radius === radius ? zoomState.factor : 1;
+  function changeZoom(multiplier: number) { setZoomState({ center, radius, factor: Math.max(0.001, Math.min(20000 / radius, zoomFactor * multiplier)) }); }
   const mapCenter = viewport.source === center ? viewport.center : center;
   const [layout, setLayout] = useState({ width: 390, height: 390 });
   const [tileError, setTileError] = useState(false);
   const size = Math.min(layout.width * 0.96, layout.height * 0.96);
-  const metersPerPixel = radius * 2000 / (size * 0.9375);
+  const metersPerPixel = radius * zoomFactor * 2000 / layout.height;
+  useEffect(() => { onVisibleRadiusChange(radius * zoomFactor); }, [radius, zoomFactor, onVisibleRadiusChange]);
   const zoom = Math.max(1, Math.min(18, Math.floor(Math.log2(156543.034 * Math.cos(mapCenter.latitude * Math.PI / 180) / metersPerPixel))));
   const scale = 156543.034 * Math.cos(mapCenter.latitude * Math.PI / 180) / (2 ** zoom * metersPerPixel);
   const tileSize = 256 * scale;
@@ -54,6 +58,7 @@ export default function RadarMap({ center, radius, events, onSelect, onCenterCha
     <View testID="radar-map" {...handlers} style={styles.frame} onLayout={(event) => setLayout(event.nativeEvent.layout)}>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.tiles]}>{tiles}</View>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.tint]} />
+      {userCoordinate && <View accessibilityLabel="Dein Standort" pointerEvents="none" style={[styles.locationDot, { left: layout.width / 2 + (project(userCoordinate.latitude, userCoordinate.longitude, zoom).x - origin.x) * scale - 8, top: layout.height / 2 + (project(userCoordinate.latitude, userCoordinate.longitude, zoom).y - origin.y) * scale - 8 }]} />}
       {scan.scanning && <RadarOverlay size={size} rotation={scan.rotation} opacity={scan.opacity} />}
       {events.map((event) => {
         const point = project(event.coordinate.latitude, event.coordinate.longitude, zoom);
@@ -62,6 +67,7 @@ export default function RadarMap({ center, radius, events, onSelect, onCenterCha
         return <Pressable key={event.id} onPress={() => onSelect(event)} accessibilityRole="button" accessibilityLabel={`${event.title}, Vorschau öffnen`} style={[styles.markerTouch, { left: left - 27, top: top - 56 }]}><EventPin event={event} reduceMotion={scan.reduceMotion || scan.settledIds.includes(event.id)} onReady={() => scan.onPinSettled(event.id)} /></Pressable>;
       })}
       {tileError && <Text style={styles.error}>Karte nicht verfügbar · Internetverbindung prüfen</Text>}
+      <View style={styles.zoomControls}>{[{ label: '+', factor: 0.5, hint: 'Karte vergrößern' }, { label: '−', factor: 2, hint: 'Karte verkleinern' }].map((item) => <Pressable key={item.label} accessibilityRole="button" accessibilityLabel={item.hint} onPress={() => changeZoom(item.factor)} style={styles.zoomButton}><Text style={styles.zoomText}>{item.label}</Text></Pressable>)}</View>
       <Pressable accessibilityRole="link" accessibilityLabel="Kartendaten: OpenStreetMap" onPress={() => void Linking.openURL('https://www.openstreetmap.org/copyright')} style={styles.attribution}><Text style={styles.attributionText}>© OpenStreetMap</Text></Pressable>
     </View>
   );
@@ -71,6 +77,10 @@ const styles = StyleSheet.create({
   frame: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: '#202023' },
   tiles: { filter: 'grayscale(1) invert(1) brightness(0.55) contrast(1.15)' },
   tint: { backgroundColor: '#00000010' },
+  locationDot: { position: 'absolute', width: 16, height: 16, borderRadius: 8, borderWidth: 3, borderColor: '#ffffff', backgroundColor: '#348cff', zIndex: 2 },
+  zoomControls: { position: 'absolute', left: 12, bottom: 54, borderRadius: 12, overflow: 'hidden', backgroundColor: '#17101fee' },
+  zoomButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  zoomText: { fontSize: 24, color: '#ffffff' },
   markerTouch: { position: 'absolute', width: 54, height: 66, justifyContent: 'center', alignItems: 'center' },
   attribution: { position: 'absolute', bottom: 18, right: 8, padding: 3, backgroundColor: '#191c27cc', borderRadius: 4 },
   attributionText: { color: '#bbc1cb', fontSize: 8 },
