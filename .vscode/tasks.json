@@ -11,6 +11,21 @@
 			],
 			"isBackground": true,
 			"problemMatcher": []
+		},
+		{
+			"label": "Supabase: Einmalig anmelden",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"supabase",
+				"login",
+				"--agent",
+				"no",
+				"--output-format",
+				"text"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }

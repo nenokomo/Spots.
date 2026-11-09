@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, AppState, Easing, Platform, Vibration } from 'react-native';
-import type { DemoEvent } from '../data/events';
+import type { SpotEvent } from '../types/events';
 
 export const RADAR_TURN_MS = 1800;
 export const RADAR_TURNS = 3;
@@ -9,7 +9,7 @@ export const PIN_STAGGER_MS = 320;
 // App session only. Navigation/backgrounding must not replay the intro.
 const session = { complete: false, revealed: new Set<string>(), settled: new Set<string>() };
 
-export function useRadarIntro(events: DemoEvent[]) {
+export function useRadarIntro<T extends SpotEvent>(events: T[]) {
   const [rotation] = useState(() => new Animated.Value(0));
   const [opacity] = useState(() => new Animated.Value(session.complete ? 0 : 1));
   const [complete, setComplete] = useState(() => session.complete);

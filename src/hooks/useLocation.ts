@@ -7,7 +7,7 @@ export const berlinCenter = { latitude: 52.52, longitude: 13.405 };
 export function useLocation() {
   const [center, setCenter] = useState(berlinCenter);
   const [label, setLabel] = useState('Berlin');
-  const [message, setMessage] = useState('Demo-Karte · Berlin');
+  const [message, setMessage] = useState('Kartenmitte · Berlin');
   const [loading, setLoading] = useState(false);
   const requesting = useRef(false);
   const revision = useRef(0);
@@ -18,7 +18,7 @@ export function useLocation() {
     setLoading(false);
     setCenter({ latitude: city.latitude, longitude: city.longitude });
     setLabel(city.name);
-    setMessage(`${city.name} · Eventdaten sind Beispiele`);
+    setMessage(`${city.name} · gewählte Kartenmitte`);
   }
 
   const locate = useCallback(async ({ automatic = false }: { automatic?: boolean } = {}) => {
@@ -35,7 +35,7 @@ export function useLocation() {
       }
       if (currentRevision !== revision.current) return;
       if (permission.status !== 'granted') {
-        setMessage('Keine Freigabe · Demo-Karte bleibt nutzbar');
+        setMessage('Keine Standortfreigabe · Stadt manuell wählen');
         return;
       }
       const servicesEnabled = await Location.hasServicesEnabledAsync();
@@ -50,7 +50,7 @@ export function useLocation() {
       if (currentRevision !== revision.current) return;
       setCenter({ latitude: position.coords.latitude, longitude: position.coords.longitude });
       setLabel('Dein Standort');
-      setMessage('Standort gefunden · Eventdaten sind Beispiele');
+      setMessage('Standort gefunden · Umkreis ab Kartenmitte');
     } catch {
       if (currentRevision === revision.current) setMessage('Standort nicht verfügbar · bitte erneut versuchen');
     } finally {

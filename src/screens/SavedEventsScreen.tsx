@@ -6,9 +6,10 @@ import { Icon } from '../components/Icon';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Screen } from '../components/Screen';
+import { EventDataState } from '../components/EventDataState';
 import { tabBarContentInset } from '../constants/navigation';
 import { colors } from '../constants/theme';
-import { demoEvents } from '../data/events';
+import { useSavedEventDetails } from '../hooks/useEvents';
 import { useSavedEvents } from '../hooks/useSavedEvents';
 import { useToday } from '../hooks/useToday';
 import { dayKey } from '../utils/events';
@@ -17,11 +18,12 @@ const dateFormat = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-
 
 export default function SavedEventsScreen() {
   const { ids, ready, busy, error, reload } = useSavedEvents();
+  const remote = useSavedEventDetails(ids);
   const insets = useSafeAreaInsets();
   const today = useToday();
   const [search, setSearch] = useState('');
   const saved = ids.flatMap((id) => {
-    const event = demoEvents.find((item) => item.id === id);
+    const event = remote.events.find((item) => item.id === id);
     return event ? [event] : [];
   });
   const events = saved.filter((event) => `${event.title} ${event.location} ${event.categories.join(' ')}`.toLocaleLowerCase('de').includes(search.trim().toLocaleLowerCase('de')));
@@ -45,12 +47,13 @@ export default function SavedEventsScreen() {
         {ready && saved.length > 0 && <View style={styles.search}><Icon name="search" size={18} /><TextInput value={search} onChangeText={setSearch} accessibilityLabel="Gemerkte Events durchsuchen" placeholder="In deinen Spots suchen" placeholderTextColor="#9f90a4" style={styles.input} autoCorrect={false} returnKeyType="search" />{search.length > 0 && <Pressable accessibilityRole="button" accessibilityLabel="Suche löschen" onPress={() => setSearch('')} style={styles.clear}><Icon name="close" size={17} /></Pressable>}</View>}
         <View style={styles.section}><Text style={styles.sectionTitle}>Deine Merkliste</Text><Text style={styles.count}>{ready ? `${saved.length} ${saved.length === 1 ? 'Spot' : 'Spots'}` : '…'}</Text></View>
         {error && <View style={styles.error}><Text accessibilityRole="alert" style={styles.infoText}>{error}</Text><Pressable accessibilityRole="button" onPress={reload} disabled={busy} style={styles.retry}><Text style={styles.linkText}>Erneut versuchen</Text></Pressable></View>}
-        {saved.length > 0 && <Text style={styles.demo}>Demo-Events · Symbolfotos · keine echten Veranstaltungen</Text>}
+        <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
+        {ready && !remote.loading && !remote.error && ids.length > saved.length && <Text style={styles.demo}>Einige gespeicherte Events sind nicht mehr veröffentlicht oder gehören zu früheren Testdaten.</Text>}
       </View>}
       renderItem={({ item }) => <View style={styles.card}>
         <GlassBackdrop radius={17} variant="card" />
-        <Link href={{ pathname: '/event/[id]', params: { id: item.id } }} asChild><Pressable accessibilityLabel={`${item.title}, Demo-Event, Details öffnen`} style={styles.cardLink}>
-          <Image source={item.image} style={styles.image} accessibilityLabel="Symbolfoto eines Demo-Events" />
+        <Link href={{ pathname: '/event/[id]', params: { id: item.id } }} asChild><Pressable accessibilityLabel={`${item.title}, Details öffnen`} style={styles.cardLink}>
+          <Image source={item.image} style={styles.image} accessibilityLabel={item.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${item.title}`} />
           <View style={styles.copy}>
             <Text style={styles.genre}>{item.categories.join(' · ')}</Text>
             <Text numberOfLines={2} style={styles.cardTitle}>{item.title}</Text>
@@ -61,7 +64,7 @@ export default function SavedEventsScreen() {
         </Pressable></Link>
         <View style={styles.save}><SaveEventButton id={item.id} title={item.title} /></View>
       </View>}
-      ListEmptyComponent={!ready ? <View style={styles.empty}>{busy && <ActivityIndicator color={colors.pink} />}<Text style={styles.emptyText}>{busy ? 'Deine Spots werden geladen …' : 'Deine Merkliste ist gerade nicht verfügbar.'}</Text></View> : <View style={styles.empty}>
+      ListEmptyComponent={remote.loading || remote.error ? undefined : !ready ? <View style={styles.empty}>{busy && <ActivityIndicator color={colors.pink} />}<Text style={styles.emptyText}>{busy ? 'Deine Spots werden geladen …' : 'Deine Merkliste ist gerade nicht verfügbar.'}</Text></View> : <View style={styles.empty}>
         <View style={styles.emptyIcon}><Icon name={saved.length > 0 ? 'search' : 'heart'} size={36} color={colors.pink} /></View>
         <Text style={styles.emptyTitle}>{saved.length > 0 ? 'Kein passender Spot' : 'Deine nächste Nacht wartet.'}</Text>
         <Text style={styles.emptyText}>{saved.length > 0 ? 'Suche nach einem anderen Namen, Ort oder Genre.' : 'Tippe bei einem Event auf das Herz. Hier sammelst du alles, worauf du Lust hast.'}</Text>

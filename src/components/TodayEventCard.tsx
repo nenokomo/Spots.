@@ -2,19 +2,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../constants/theme';
-import type { DemoEvent } from '../data/events';
+import type { SpotEvent } from '../types/events';
 import { Icon } from './Icon';
 import { SaveEventButton } from './SaveEventButton';
 
-export function TodayEventCard({ event }: { event: DemoEvent }) {
+export function TodayEventCard({ event }: { event: SpotEvent }) {
   const house = event.categories.includes('House');
   return (
     <View><Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
-      <Pressable accessibilityLabel={`${event.title}, Demo-Event, Details öffnen`} style={styles.card}>
+      <Pressable accessibilityLabel={`${event.title}, Details öffnen`} style={styles.card}>
         <LinearGradient pointerEvents="none" colors={house ? ['#262632', '#192632', '#17111d'] : ['#3b1b36', '#2e192b', '#17111d']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-        <Image source={event.image} style={styles.image} accessibilityLabel="Symbolfoto einer Veranstaltung" />
+        <Image source={event.image} style={styles.image} accessibilityLabel={event.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${event.title}`} />
         <View style={styles.content}>
-          <View style={styles.tags}>{event.categories.map((tag, index) => <Text key={tag} style={[styles.tag, index === 0 && (house ? styles.houseTag : styles.accentTag)]}>{tag}</Text>)}</View>
+          <View style={styles.tags}>{(event.genres?.length ? event.genres : event.categories).map((tag, index) => <Text key={tag} style={[styles.tag, index === 0 && (house ? styles.houseTag : styles.accentTag)]}>{tag}</Text>)}</View>
           <Text numberOfLines={2} style={styles.title}>{event.title}</Text>
           <View style={styles.meta}><Icon name="calendar" size={13} /><Text style={styles.metaText}>{event.date}</Text></View>
           <View style={styles.meta}><Icon name="pin" size={14} /><Text numberOfLines={1} style={styles.metaText}>{event.location}</Text></View>

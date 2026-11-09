@@ -59,7 +59,7 @@ export default function RadarMap({ center, radius, events, onSelect, onCenterCha
         const point = project(event.coordinate.latitude, event.coordinate.longitude, zoom);
         const left = layout.width / 2 + (point.x - origin.x) * scale;
         const top = layout.height / 2 + (point.y - origin.y) * scale;
-        return <Pressable key={event.id} onPress={() => onSelect(event)} accessibilityRole="button" accessibilityLabel={`${event.title}, Demo-Event, Vorschau öffnen`} style={[styles.markerTouch, { left: left - 27, top: top - 56 }]}><EventPin event={event} reduceMotion={scan.reduceMotion || scan.settledIds.includes(event.id)} onReady={() => scan.onPinSettled(event.id)} /></Pressable>;
+        return <Pressable key={event.id} onPress={() => onSelect(event)} accessibilityRole="button" accessibilityLabel={`${event.title}, Vorschau öffnen`} style={[styles.markerTouch, { left: left - 27, top: top - 56 }]}><EventPin event={event} reduceMotion={scan.reduceMotion || scan.settledIds.includes(event.id)} onReady={() => scan.onPinSettled(event.id)} /></Pressable>;
       })}
       {tileError && <Text style={styles.error}>Karte nicht verfügbar · Internetverbindung prüfen</Text>}
       <Pressable accessibilityRole="link" accessibilityLabel="Kartendaten: OpenStreetMap" onPress={() => void Linking.openURL('https://www.openstreetmap.org/copyright')} style={styles.attribution}><Text style={styles.attributionText}>© OpenStreetMap</Text></Pressable>
