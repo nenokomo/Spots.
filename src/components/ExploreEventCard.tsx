@@ -1,16 +1,16 @@
 import { Link } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../constants/theme';
-import type { DemoEvent } from '../data/events';
+import type { SpotEvent } from '../types/events';
 import { Icon } from './Icon';
 import { SaveEventButton } from './SaveEventButton';
 
-export function ExploreEventCard({ event }: { event: DemoEvent }) {
+export function ExploreEventCard({ event }: { event: SpotEvent }) {
   return <View style={styles.wrapper}><Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
-    <Pressable accessibilityLabel={`${event.title}, Demo-Event, Details öffnen`} style={styles.card}>
-      <Image source={event.image} style={styles.image} accessibilityLabel="Symbolfoto einer Veranstaltung" />
+    <Pressable accessibilityLabel={`${event.title}, Details öffnen`} style={styles.card}>
+      <Image source={event.image} style={styles.image} accessibilityLabel={event.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${event.title}`} />
       <View style={styles.content}>
-        <Text numberOfLines={1} style={styles.genre}>{event.categories.join('  ·  ').toLocaleUpperCase('de')}</Text>
+        <Text numberOfLines={1} style={styles.genre}>{(event.genres?.length ? event.genres : event.categories).join('  ·  ').toLocaleUpperCase('de')}</Text>
         <Text numberOfLines={2} style={styles.title}>{event.title}</Text>
         <View style={styles.meta}><Icon name="calendar" size={14} color="#ad9bb2" /><Text numberOfLines={1} style={styles.metaText}>{event.date}</Text></View>
         <View style={styles.meta}><Icon name="pin" size={14} color="#ad9bb2" /><Text numberOfLines={1} style={styles.metaText}>{event.location}</Text></View>

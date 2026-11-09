@@ -37,23 +37,23 @@ export function CitySearch({ label, locating, onLocate, onSelect, compact = fals
 
   return (
     <View onTouchStart={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} style={[styles.container, compact && styles.compactContainer]}>
-      <View style={[styles.inputRow, open && styles.focused]}>
-        <GlassBackdrop radius={15} />
-        <Icon name={compact ? 'pin' : 'search'} size={16} color={colors.pink} />
+      <View style={[styles.inputRow, compact && styles.compactInputRow, open && styles.focused]}>
+        {!compact && <GlassBackdrop radius={15} />}
+        <Icon name={compact ? 'pin' : 'search'} size={compact ? 14 : 16} color={compact ? colors.muted : colors.pink} />
         <TextInput
           accessibilityLabel="Stadt suchen"
           placeholder={compact ? label : locating ? 'Standort wird gesucht …' : `${label} · Stadt suchen`}
-          placeholderTextColor="#c5adcb"
+          placeholderTextColor={compact ? '#b6a5bb' : '#c5adcb'}
           value={query}
           onFocus={() => setOpen(true)}
           onChangeText={(value) => { setQuery(value); setOpen(true); }}
           onSubmitEditing={() => setRetry((value) => value + 1)}
           returnKeyType="search"
           autoCorrect={false}
-          style={styles.input}
+          style={[styles.input, compact && styles.compactInput]}
         />
         {open && query.length > 0 ? <Pressable accessibilityRole="button" accessibilityLabel="Städtesuche schließen" onPress={close} style={styles.action}><Icon name="close" size={16} /></Pressable>
-          : compact ? <View pointerEvents="none" style={styles.dropdown}><Icon name="down" size={12} /></View>
+          : compact ? <View pointerEvents="none" style={styles.dropdown}><Icon name="down" size={10} color={colors.muted} /></View>
             : <Pressable accessibilityRole="button" accessibilityLabel="Aktuellen Standort verwenden" disabled={locating} onPress={() => { close(); onLocate(); }} style={styles.action}>{locating ? <ActivityIndicator color={colors.pink} size="small" /> : <Icon name="locate" size={18} color={colors.pink} />}</Pressable>}
       </View>
       {open && query.trim().length > 0 && (
@@ -79,6 +79,8 @@ const styles = StyleSheet.create({
   compactResults: { left: -60, right: -48 },
   dropdown: { paddingRight: 10 },
   inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff07', borderWidth: 1, borderColor: '#ffffff16', borderRadius: 15, paddingLeft: 11, minHeight: 44, gap: 7 },
+  compactInputRow: { backgroundColor: '#ffffff04', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff20', borderRadius: 22, gap: 6 },
+  compactInput: { fontSize: 11, fontWeight: '400' },
   focused: { borderColor: '#c922ab80', backgroundColor: '#1b1221' },
   input: { flex: 1, minWidth: 0, minHeight: 44, color: colors.text, fontSize: 12, paddingVertical: 8 },
   action: { width: 38, minHeight: 44, alignItems: 'center', justifyContent: 'center' },

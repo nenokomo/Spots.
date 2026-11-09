@@ -1,140 +1,129 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Linking from 'expo-linking';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { EventPhotoViewer } from '../components/EventPhotoViewer';
 import { Icon } from '../components/Icon';
-import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Screen } from '../components/Screen';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { colors } from '../constants/theme';
-import { demoEvents } from '../data/events';
+import { useEvent } from '../hooks/useEvents';
+import { EventDataState } from '../components/EventDataState';
+import { isLiveEvent } from '../types/events';
+import { useNow } from '../hooks/useNow';
 
-const tabs = ['Infos', 'Line-up', 'Location', 'Snaps'] as const;
-type Tab = typeof tabs[number];
+type Detail = 'Standort' | 'Tickets' | 'BeReel hochladen' | 'Event-Einstellungen';
 
 export default function EventDetailScreen() {
+  const { width } = useWindowDimensions();
+  const now = useNow();
+  const [layoutWidth, setLayoutWidth] = useState<number | null>(null);
+  const contentWidth = layoutWidth ?? width;
+  const postWidth = Math.max(1, (contentWidth - 56) / 3);
   const { id } = useLocalSearchParams<{ id: string }>();
-  const event = demoEvents.find((item) => item.id === id);
-  const [tab, setTab] = useState<Tab>('Infos');
+  const remote = useEvent(id);
+  const event = remote.event;
+  const [detail, setDetail] = useState<Detail | null>(null);
+  const [selectedPost, setSelectedPost] = useState<number | null>(null);
+  const [showMore, setShowMore] = useState(false);
+  const [ticketError, setTicketError] = useState(false);
   const [shareError, setShareError] = useState(false);
   const back = () => router.canGoBack() ? router.back() : router.replace('/');
 
   async function share() {
     if (!event) return;
     setShareError(false);
-    try { await Share.share({ title: `${event.title} · Spots`, message: `${event.title} bei Spots\n${event.date}\n${event.location}\nDemo-Event – keine echte Veranstaltung.` }); }
+    try { await Share.share({ title: `${event.title} · Spots`, message: `${event.title} bei Spots\n${event.date}\n${event.location}\n${event.sourceUrl ?? ""}` }); }
     catch { setShareError(true); }
   }
 
-  if (!event) return <Screen><View style={styles.body}><Text style={styles.title}>Event nicht gefunden</Text><Link href="/" style={styles.textLink}>Zurück zum Radar</Link></View></Screen>;
-
+  if (!event || remote.error) return <Screen><View style={styles.body}><EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />{!remote.loading && !remote.error && <Text style={styles.title}>Event nicht verfügbar</Text>}<Link href="/" style={styles.linkText}>Zurück zum Radar</Link></View></Screen>;
+  const ticketUrl = event.ticketUrl?.startsWith('https://') ? event.ticketUrl : undefined;
+  async function openTickets() {
+    setTicketError(false);
+    if (!ticketUrl) { setDetail('Tickets'); return; }
+    try { await Linking.openURL(ticketUrl); } catch { setTicketError(true); }
+  }
   const date = new Date(event.startsAt);
-  const day = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: 'short' }).format(date);
+  const day = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).format(date);
   const time = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' }).format(date);
+  const upcoming = date.getTime() >= now;
+  const posts = event.imageIsPlaceholder ? [] : [event.image];
+  const details: Record<Detail, string> = {
+    Standort: `${event.location}${event.venue ? ` · ${event.venue}` : ""}. Weitere Angaben auf der Originalseite.`,
+    Tickets: ticketUrl ? 'Tickets werden über den externen Anbieter verkauft.' : 'Für dieses Event sind noch keine Tickets oder Buchungslinks hinterlegt.',
+    'BeReel hochladen': 'Fotos und kurze Videos gehören zu diesem konkreten Event und sind für 24 Stunden vorgesehen. Upload, Medienspeicherung und automatische Ausblendung sind noch nicht verfügbar.',
+    'Event-Einstellungen': 'Bearbeiten und Veröffentlichen erfordern ein verifiziertes Veranstalterkonto. Ein verifiziertes Veranstalterkonto ist noch nicht eingerichtet.',
+  };
 
-  return (
-    <Screen>
-      <SafeAreaView edges={['bottom']} style={styles.fill}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.hero}>
-            <Image source={event.image} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel="Symbolfoto, kein Foto dieses Demo-Events" />
-            <LinearGradient colors={['#100b1510', '#100b1500', '#100b15cc', colors.background]} locations={[0, 0.3, 0.7, 1]} style={StyleSheet.absoluteFill} />
-            <View style={styles.toolbar}>
-              <Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={back} style={styles.roundButton}><GlassBackdrop radius={22} /><Icon name="back" color={colors.text} size={20} /></Pressable>
-              <Pressable accessibilityRole="button" accessibilityLabel="Event teilen" onPress={() => void share()} style={styles.roundButton}><GlassBackdrop radius={22} /><Icon name="share" color={colors.text} size={20} /></Pressable>
-            </View>
-            <View style={styles.heroContent}>
-              <View style={styles.badge}><Text style={styles.badgeText}>DEMO-EVENT</Text></View>
-              <Text style={styles.title}>{event.title}</Text>
-              <View style={styles.tags}>{event.categories.map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}</View>
-            </View>
-          </View>
+  return <Screen><SafeAreaView edges={['bottom']} style={styles.fill} onLayout={({ nativeEvent }) => setLayoutWidth(nativeEvent.layout.width)}>
+    <ScrollView contentContainerStyle={styles.scroll}>
+      <View style={[styles.hero, { height: Math.max(220, contentWidth / 1.65) }]}>
+        <Image source={event.image} style={styles.cover} resizeMode="cover" accessibilityLabel={event.imageIsPlaceholder ? "Symbolfoto, kein Foto dieses Events" : `Eventbild: ${event.title}`} />
+        <LinearGradient pointerEvents="none" colors={['#100b1500', '#100b1566']} style={styles.cover} />
+        <View style={styles.toolbar}><Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={back} style={styles.round}><Icon name="back" color={colors.text} /></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Event-Einstellungen" onPress={() => setDetail('Event-Einstellungen')} style={styles.round}><Icon name="sliders" color={colors.text} /></Pressable></View>
+      </View>
+      <View style={styles.body}>
+        <View style={styles.statusRow}>
+          <Text style={styles.status}>{isLiveEvent(event, now) ? 'Läuft jetzt' : upcoming ? 'Demnächst' : 'Start bereits erfolgt'}</Text>
+          <View style={styles.tools}><SaveEventButton id={event.id} title={event.title} /><Pressable accessibilityRole="button" accessibilityLabel="Event teilen" onPress={() => void share()} style={styles.iconButton}><Icon name="share" color={colors.text} /></Pressable></View>
+        </View>
+        <Text style={styles.title}>{event.title}</Text>
+        {shareError && <Text accessibilityRole="alert" style={styles.note}>Teilen ist gerade nicht verfügbar.</Text>}
 
-          <View style={styles.body}>
-            <View style={styles.facts}>
-              <View style={styles.fact}><Icon name="calendar" color={colors.pink} size={20} /><View style={styles.factText}><Text style={styles.factTitle}>{day}</Text><Text style={styles.factValue}>Ab {time} Uhr</Text></View></View>
-              <View style={styles.fact}><Icon name="pin" color={colors.pink} size={20} /><View style={styles.factText}><Text style={styles.factTitle}>{event.location.split(' · ')[0]}</Text><Text style={styles.factValue}>Beispielort</Text></View></View>
-            </View>
+        <View style={styles.tags}>{event.categories.map(category => <View key={category} style={styles.tag}><Text style={styles.tagText}>{category}</Text></View>)}</View>
+        <View style={styles.facts}>
+          <View style={styles.factRow}><View style={styles.factIcon}><Icon name="calendar" size={22} color={colors.pink} /></View><View style={styles.copy}><Text style={styles.factTitle}>{day}</Text><Text style={styles.muted}>{time} Uhr · {event.endsAt ? `Ende ${new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(event.endsAt))}` : "Ende noch nicht angegeben"}</Text></View></View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Standort anzeigen" onPress={() => setDetail('Standort')} style={styles.factRow}><View style={styles.factIcon}><Icon name="pin" size={22} color={colors.pink} /></View><View style={styles.copy}><Text style={styles.factTitle}>{event.location.split(' · ')[0]}</Text><Text style={styles.muted}>{event.venue ?? "Weitere Standortangaben auf der Originalseite"}</Text></View></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Ticketinformationen anzeigen" onPress={() => void openTickets()} style={styles.factRow}><View style={styles.factIcon}><Icon name="ticket" size={22} color={colors.pink} /></View><View style={styles.copy}><Text style={styles.factTitle}>Tickets</Text><Text style={styles.muted}>{ticketUrl ? 'Beim Ticketanbieter erhältlich' : 'Noch keine Tickets hinterlegt'}</Text></View></Pressable>
+        </View>
 
-            <Pressable accessibilityRole="button" accessibilityLabel="Informationen zu Live-Snaps anzeigen" onPress={() => setTab('Snaps')} style={styles.snapsPreview}>
-              <View style={styles.snapRing}><Icon name="camera" size={23} color={colors.pink} /></View>
-              <View style={styles.snapCopy}><Text style={styles.smallTitle}>Aktuelle Snaps</Text><Text style={styles.smallText}>Noch keine Eindrücke verfügbar</Text></View>
-              <Icon name="chevron" size={15} color={colors.pink} />
-            </Pressable>
+        <View style={styles.about}><Text style={styles.heading}>Über das Event</Text><Text style={styles.description}>{event.description ?? 'Für dieses Event ist noch keine Beschreibung hinterlegt.'}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={ticketUrl ? 'Tickets beim Anbieter kaufen' : 'Ticketverfügbarkeit prüfen'} onPress={() => void openTickets()} style={styles.ticketButton}><LinearGradient pointerEvents="none" colors={[colors.accent, '#9b268f']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cover} /><Icon name="ticket" color={colors.text} size={21} /><Text style={styles.ticketLabel}>{ticketUrl ? 'Ticket sichern' : 'Ticketinformationen'}</Text></Pressable>
+          {ticketError && <Text accessibilityRole="alert" style={styles.note}>Der Ticketlink konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Weitere Informationen" accessibilityState={{ expanded: showMore }} onPress={() => setShowMore(value => !value)} style={styles.moreButton}><Text style={styles.heading}>Weitere Informationen</Text><Icon name={showMore ? 'close' : 'down'} size={21} /></Pressable>
+        {showMore && <View style={styles.moreContent}><Text style={styles.muted}>{event.categories.join(' · ')}</Text><Text style={styles.note}>Zeitzone: Europe/Berlin. Angaben von der Veranstaltungsquelle.</Text></View>}
 
-            <View style={styles.ticket}>
-              <GlassBackdrop radius={16} variant="panel" />
-              <Icon name="ticket" size={26} color={colors.pink} />
-              <View style={styles.ticketCopy}><Text style={styles.smallTitle}>Tickets</Text><Text style={styles.smallText}>Noch keine Ticketinfos</Text></View>
-              <View style={styles.ticketUnavailable}><Text style={styles.unavailableText}>Bald verfügbar</Text></View>
-            </View>
-
-            <View style={styles.actions}>
-              <SaveEventButton id={event.id} title={event.title} label />
-              <Pressable accessibilityRole="button" onPress={() => setTab('Location')} style={styles.action}><GlassBackdrop radius={13} /><Icon name="pin" size={17} /><Text style={styles.actionText}>Location</Text></Pressable>
-              <Pressable accessibilityRole="button" accessibilityLabel="Event teilen" onPress={() => void share()} style={styles.action}><GlassBackdrop radius={13} /><Icon name="share" size={17} /><Text style={styles.actionText}>Teilen</Text></Pressable>
-            </View>
-            {shareError && <Text accessibilityRole="alert" style={styles.smallText}>Teilen ist gerade nicht verfügbar. Bitte versuche es erneut.</Text>}
-
-            <View accessibilityRole="tablist" style={styles.tabs}>
-              <GlassBackdrop native={false} radius={0} />
-              {tabs.map((item) => <Pressable key={item} accessibilityRole="tab" accessibilityState={{ selected: item === tab }} onPress={() => setTab(item)} style={[styles.tab, item === tab && styles.tabActive]}><Text style={[styles.tabText, item === tab && styles.tabTextActive]}>{item}</Text></Pressable>)}
-            </View>
-
-            <View style={styles.tabContent}>
-              {tab === 'Infos' && <><Text style={styles.sectionTitle}>Beschreibung</Text><Text style={styles.description}>Entdecke mit Spots, wie dein nächster Abend aussehen könnte. {event.title} ist ein fiktives Beispiel für ein {event.categories.join(' / ')}-Event.</Text><Text style={styles.description}>Termin, Beispielort und Symbolfoto dienen der Vorschau. Diese Seite gehört zu keiner echten Veranstaltung.</Text></>}
-              {tab === 'Line-up' && <><Text style={styles.sectionTitle}>Line-up</Text><Text style={styles.description}>Für dieses Demo-Event ist kein Line-up hinterlegt. Bestätigte Artists und Spielzeiten werden hier angezeigt, sobald Veranstalterinformationen vorliegen.</Text></>}
-              {tab === 'Location' && <><Text style={styles.sectionTitle}>{event.location}</Text><Text style={styles.description}>Die Markierung zeigt nur ein Beispielgebiet, keinen bestätigten Veranstaltungsort. Deshalb ist für dieses Demo-Event keine Route verfügbar.</Text></>}
-              {tab === 'Snaps' && <><Text style={styles.sectionTitle}>Mittendrin – mit Live-Snaps</Text><Text style={styles.description}>Noch keine Snaps vorhanden. Hier sollen später Fotos und kurze Videos von der Veranstaltung erscheinen und nach 24 Stunden verschwinden.</Text><Text style={styles.description}>Upload, Ablauf und Moderation sind noch nicht verfügbar.</Text></>}
-            </View>
-            <Text style={styles.demoNote}>Spots · Demo-Event · Symbolfoto</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </Screen>
-  );
+        <View style={styles.section}>
+          <View style={styles.sectionHeading}><Text style={styles.heading}>BeReels</Text><Text style={styles.note}>24 Stunden</Text></View>
+          <Text style={styles.description}>Noch keine BeReels von diesem Event vorhanden.</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="BeReel hochladen – Informationen zur Verfügbarkeit" onPress={() => setDetail('BeReel hochladen')} style={styles.upload}><Icon name="camera" color={colors.pink} /><Text style={styles.uploadLabel}>BeReel hochladen</Text></Pressable>
+          <Text style={styles.note}>Upload noch nicht verfügbar.</Text>
+        </View>
+        <View style={styles.section}><View style={styles.sectionHeading}><Text style={styles.heading}>Eventmedien</Text><Text style={styles.note}>Bild der Veranstaltungsquelle</Text></View>
+          {posts.length === 0 && <Text style={styles.description}>Noch keine Eventmedien vorhanden.</Text>}
+          <View style={styles.grid}>{posts.map((source, index) => <Pressable key={index} accessibilityRole="button" accessibilityLabel={`Eventbild ${index + 1} öffnen`} onPress={() => setSelectedPost(index)} style={[styles.tile, { width: postWidth, height: postWidth / 0.95 }]}><Image source={source} style={styles.cover} resizeMode="cover" /></Pressable>)}</View>
+        </View>
+        {event.sourceUrl && <Link href={event.sourceUrl} style={styles.linkText}>Original auf {event.sourceName ?? "der Veranstaltungsquelle"} öffnen ↗</Link>}
+        <Link href="https://www.goabase.net/" style={styles.linkText}>Veranstaltungen von Goabase ↗</Link>
+        <Text style={styles.footer}>Spots · {event.sourceName ?? "Veranstaltungsquelle"}</Text>
+      </View>
+    </ScrollView>
+  </SafeAreaView>
+  <Modal visible={detail !== null} transparent animationType="fade" onRequestClose={() => setDetail(null)}><View style={styles.modalBackdrop}><Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Dialog schließen" onPress={() => setDetail(null)} /><View style={styles.dialog} accessibilityViewIsModal><View style={styles.sectionHeading}><Text style={styles.heading}>{detail}</Text><Pressable accessibilityRole="button" accessibilityLabel="Dialog schließen" onPress={() => setDetail(null)} style={styles.iconButton}><Icon name="close" /></Pressable></View><ScrollView><Text style={styles.description}>{detail && details[detail]}</Text></ScrollView></View></View></Modal>
+  <Modal visible={selectedPost !== null} animationType="fade" onRequestClose={() => setSelectedPost(null)}>{selectedPost !== null && <EventPhotoViewer images={posts} initialIndex={selectedPost} onClose={() => setSelectedPost(null)} />}</Modal>
+  </Screen>;
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  scroll: { paddingBottom: 26 },
-  hero: { minHeight: 310, justifyContent: 'space-between', backgroundColor: colors.background },
-  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 },
-  roundButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  heroContent: { paddingHorizontal: 20, paddingTop: 100, paddingBottom: 12 },
-  badge: { alignSelf: 'flex-start', backgroundColor: colors.accent, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, marginBottom: 8 },
-  badgeText: { color: colors.text, fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
-  title: { color: colors.text, fontSize: 32, lineHeight: 37, fontWeight: '900', letterSpacing: -1 },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
-  tag: { color: colors.muted, backgroundColor: '#bc88cf24', borderRadius: 14, paddingHorizontal: 13, paddingVertical: 5, fontSize: 10, overflow: 'hidden' },
-  body: { paddingHorizontal: 20 },
-  facts: { flexDirection: 'row', flexWrap: 'wrap', gap: 18, paddingTop: 3, paddingBottom: 15 },
-  fact: { flexDirection: 'row', alignItems: 'center', gap: 7, flex: 1, minWidth: 115 },
-  factText: { flexShrink: 1, gap: 3 },
-  factTitle: { color: colors.text, fontSize: 12, fontWeight: '600' },
-  factValue: { color: colors.muted, fontSize: 10 },
-  snapsPreview: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 8, marginBottom: 13 },
-  snapRing: { width: 47, height: 47, borderRadius: 24, borderWidth: 1.5, borderColor: colors.pink, backgroundColor: '#c922ab12', alignItems: 'center', justifyContent: 'center' },
-  snapCopy: { flex: 1, gap: 4 },
-  smallTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
-  smallText: { color: colors.muted, fontSize: 10, lineHeight: 15 },
-  ticket: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, padding: 13, borderRadius: 16, borderWidth: 1, borderColor: colors.border },
-  ticketCopy: { flex: 1, minWidth: 100, gap: 4 },
-  ticketUnavailable: { backgroundColor: '#c922ab20', paddingHorizontal: 10, paddingVertical: 11, borderRadius: 12 },
-  unavailableText: { color: colors.muted, fontSize: 10, fontWeight: '600' },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 10, marginBottom: 9 },
-  action: { flex: 1, minWidth: 80, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 5, padding: 7, backgroundColor: '#ffffff08', borderWidth: 1, borderColor: colors.border, borderRadius: 13 },
-  disabled: { opacity: 0.5 },
-  actionText: { color: colors.muted, fontSize: 10 },
-  tabs: { flexDirection: 'row', marginHorizontal: -20, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: colors.border },
-  tab: { flex: 1, minHeight: 46, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: colors.pink },
-  tabText: { color: colors.muted, fontSize: 12 },
-  tabTextActive: { color: colors.pink, fontWeight: '600' },
-  tabContent: { paddingTop: 17, minHeight: 140 },
-  sectionTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
-  description: { color: colors.muted, fontSize: 12, lineHeight: 20, marginTop: 9 },
-  demoNote: { color: '#a38baa', fontSize: 9, marginTop: 20 },
-  textLink: { color: colors.pink, paddingVertical: 20 },
+  fill: { flex: 1 }, scroll: { paddingBottom: 26 }, hero: { overflow: 'hidden', backgroundColor: colors.surface, marginHorizontal: 12, marginTop: 10, borderRadius: 24 }, cover: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
+  toolbar: { flexDirection: 'row', justifyContent: 'space-between', padding: 12 }, round: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#100b1599', alignItems: 'center', justifyContent: 'center' },
+  body: { paddingHorizontal: 20, paddingTop: 8 }, statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 }, status: { color: colors.pink, fontSize: 11, fontWeight: '700', backgroundColor: '#c922ab18', paddingHorizontal: 11, paddingVertical: 6, borderRadius: 20 },
+  tools: { flexDirection: 'row', alignItems: 'center', gap: 3 }, iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  title: { color: colors.text, fontSize: 28, lineHeight: 34, fontWeight: '800', letterSpacing: -0.7 }, organizerLink: { minHeight: 44, justifyContent: 'center' }, organizerName: { color: colors.muted, fontWeight: '600' },
+  muted: { color: colors.muted, fontSize: 13, lineHeight: 19 }, facts: { paddingHorizontal: 14, paddingVertical: 4, borderWidth: 1, borderColor: colors.border, borderRadius: 20, backgroundColor: '#ffffff06' }, factRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, minHeight: 74 },
+  factIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: '#c922ab16', alignItems: 'center', justifyContent: 'center' },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 20, marginTop: 2 },
+  tag: { backgroundColor: '#ffffff08', borderWidth: 1, borderColor: colors.border, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
+  tagText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
+  copy: { flex: 1, minWidth: 0 }, factTitle: { color: colors.text, fontSize: 14, fontWeight: '600', lineHeight: 20 }, about: { paddingTop: 26 }, heading: { color: colors.text, fontSize: 18, fontWeight: '700', flexShrink: 1 }, description: { color: colors.muted, fontSize: 14, lineHeight: 22, marginTop: 12 },
+  ticketButton: { minHeight: 56, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 16, overflow: 'hidden', backgroundColor: colors.accent, marginTop: 18, padding: 12 }, ticketLabel: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  moreButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 64, gap: 12 }, moreContent: { paddingBottom: 12 }, note: { color: colors.muted, fontSize: 11, lineHeight: 17 },
+  section: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 24, marginTop: 16 }, sectionHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  upload: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 66, borderWidth: 1, borderColor: '#c922ab66', borderRadius: 18, backgroundColor: '#c922ab12', marginTop: 16, marginBottom: 10 }, uploadLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  grid: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }, tile: { overflow: 'hidden', backgroundColor: colors.surface, borderRadius: 12 }, footer: { color: colors.muted, fontSize: 10, textAlign: 'center', marginTop: 20 }, linkText: { color: colors.pink, paddingVertical: 16 },
+  modalBackdrop: { flex: 1, backgroundColor: '#000000aa', justifyContent: 'center', padding: 20 }, dialog: { maxHeight: '80%', backgroundColor: colors.surface, borderRadius: 18, padding: 20 },
 });

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Animated, Image, Platform, StyleSheet, View } from 'react-native';
 import { colors } from '../constants/theme';
-import type { DemoEvent } from '../data/events';
+import type { SpotEvent } from '../types/events';
 
-type Props = { event: DemoEvent; reduceMotion: boolean; onReady?: () => void };
+type Props = { event: SpotEvent; reduceMotion: boolean; onReady?: () => void };
 
 export function EventPin({ event, reduceMotion, onReady }: Props) {
   const [progress] = useState(() => new Animated.Value(reduceMotion ? 1 : 0));

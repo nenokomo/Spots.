@@ -2,23 +2,23 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../constants/theme';
-import type { DemoEvent } from '../data/events';
+import type { SpotEvent } from '../types/events';
 
-type Props = { event: DemoEvent; distance: number; height: number };
+type Props = { event: SpotEvent; distance: number; height: number };
 
 export function RadarEventCard({ event, distance, height }: Props) {
   return (
     <Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
       <Pressable
-        accessibilityLabel={`${event.title}, Demo-Event, ${distance.toFixed(1).replace('.', ',')} Kilometer entfernt, Details öffnen`}
+        accessibilityLabel={`${event.title}, ${distance.toFixed(1).replace('.', ',')} Kilometer entfernt, Details öffnen`}
         style={StyleSheet.flatten([styles.card, { height }])}
       >
-        <Image source={event.image} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel="Symbolfoto einer Veranstaltung" />
+        <Image source={event.image} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel={event.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${event.title}`} />
         <LinearGradient colors={['#100b1500', '#100b1555', '#100b15f5', colors.background]} locations={[0, 0.35, 0.73, 1]} style={StyleSheet.absoluteFill} />
-        <View style={styles.badge}><Text style={styles.badgeText}>DEMO</Text></View>
+        <View style={styles.badge}><Text style={styles.badgeText}>EVENT</Text></View>
         <View style={styles.content}>
           <Text numberOfLines={1} style={styles.title}>{event.title}</Text>
-          <Text numberOfLines={1} style={styles.meta}>{event.categories[0]} · {distance.toFixed(1).replace('.', ',')} km</Text>
+          <Text numberOfLines={1} style={styles.meta}>{event.genres?.[0] ?? event.categories[0] ?? 'Event'} · {distance.toFixed(1).replace('.', ',')} km</Text>
           <Text numberOfLines={1} style={styles.date}>{event.date}</Text>
         </View>
       </Pressable>

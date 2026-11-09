@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, AppState, Easing, Platform, Vibration } from 'react-native';
-import type { DemoEvent } from '../data/events';
+import type { SpotEvent } from '../types/events';
 
 export const RADAR_TURN_MS = 1800;
 export const RADAR_TURNS = 3;
@@ -9,7 +9,7 @@ export const PIN_STAGGER_MS = 320;
 // App session only. Navigation/backgrounding must not replay the intro.
 const session = { complete: false, revealed: new Set<string>(), settled: new Set<string>() };
 
-export function useRadarIntro(events: DemoEvent[]) {
+export function useRadarIntro<T extends SpotEvent>(events: T[]) {
   const [rotation] = useState(() => new Animated.Value(0));
   const [opacity] = useState(() => new Animated.Value(session.complete ? 0 : 1));
   const [complete, setComplete] = useState(() => session.complete);
@@ -24,11 +24,9 @@ export function useRadarIntro(events: DemoEvent[]) {
   useEffect(() => {
     let disposed = false;
     let animation: Animated.CompositeAnimation | undefined;
-    const vibrationTimers: ReturnType<typeof setTimeout>[] = [];
 
     function stop() {
       animation?.stop();
-      vibrationTimers.forEach(clearTimeout);
       if (Platform.OS !== 'web') Vibration.cancel();
     }
 
@@ -42,15 +40,19 @@ export function useRadarIntro(events: DemoEvent[]) {
       if (disposed) return;
       setReduceMotion(reduced);
       if (session.complete || reduced || AppState.currentState === 'background' || AppState.currentState === 'inactive') { finish(); return; }
-      if (Platform.OS !== 'web') {
-        Vibration.vibrate(45);
-        for (let turn = 1; turn < RADAR_TURNS; turn++) vibrationTimers.push(setTimeout(() => Vibration.vibrate(45), turn * RADAR_TURN_MS));
+      function runTurn(turn: number) {
+        if (disposed || session.complete) return;
+        animation = Animated.timing(rotation, { toValue: turn, duration: RADAR_TURN_MS, easing: Easing.linear, useNativeDriver: Platform.OS !== 'web', isInteraction: false });
+        animation.start(({ finished }) => {
+          if (disposed || !finished || session.complete) return;
+          if (Platform.OS !== 'web') Vibration.vibrate(45);
+          if (turn < RADAR_TURNS) { runTurn(turn + 1); return; }
+          animation = Animated.timing(opacity, { toValue: 0, duration: 280, useNativeDriver: Platform.OS !== 'web', isInteraction: false });
+          animation.start(({ finished: faded }) => { if (!disposed && faded) finish(); });
+        });
       }
-      animation = Animated.sequence([
-        Animated.timing(rotation, { toValue: RADAR_TURNS, duration: RADAR_TURN_MS * RADAR_TURNS, easing: Easing.linear, useNativeDriver: Platform.OS !== 'web', isInteraction: false }),
-        Animated.timing(opacity, { toValue: 0, duration: 280, useNativeDriver: Platform.OS !== 'web', isInteraction: false }),
-      ]);
-      animation.start(({ finished }) => { if (!disposed && finished) { stop(); finish(); } });
+      rotation.setValue(0);
+      runTurn(1);
     }
 
     void AccessibilityInfo.isReduceMotionEnabled().then(initialize).catch(() => initialize(false));
