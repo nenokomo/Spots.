@@ -1,8 +1,18 @@
 # Projektstatus – Spots
 
-Stand: 09.11.2026. Lokale Design-/Datenintegration; kein Push und kein Merge nach main, keine produktiven Backend-Änderungen.
+Stand: 09.11.2026. Account-Grundlagen auf eigenem Feature-Branch; ausschließlich Spots-Test ergänzt, keine produktiven Backend-Änderungen.
 
-## Aktuell: Design und echte Eventdaten zusammengeführt
+## Aktuell: Private Accounts und Veranstalter-Backend vorbereitet
+
+- **feature/organizer-auth** neu von aktuellem origin/main **9dbee1b** erstellt. Die vorherige Integration ist inzwischen über PR #1 in main übernommen. Keine anderen Branches verändert; kein neuer Commit/Push/Merge in dieser Arbeit.
+- [Gemeinsamer Architekturvertrag](docs/ORGANIZER_ARCHITECTURE.md) und src/types/accounts.ts definieren private Benutzerprofile, öffentliche Veranstalter, owner/editor-Mitgliedschaften, Spots-Events und spätere Textbeiträge. Öffentliche Profile enthalten keine privaten Benutzer-IDs oder E-Mails. Klare Lese-/Schreibadapter für den Kollegen dokumentiert; seine öffentlichen Design-Dateien nicht verändert.
+- Account-Client, E-Mail-Registrierung, Passwortlogin, lokale Abmeldung, persistierte Sitzung und PKCE-Codeaustausch implementiert. Minimale isolierte Route **/account**, keine Änderung an Profilgestaltung/Radar/Entdecken/öffentlichen Veranstalterseiten. Account-Schreibstrecke zunächst hart auf **nfomkdvotqtlyymomksb** begrenzt; mit bestehender Produktions-.env.local deaktiviert. Öffentlicher Event-Client bleibt unverändert.
+- SQL **15_organizer_accounts.sql** nach lokalen Tests einmalig ausschließlich in Spots-Test ausgeführt. Vier neue RLS-Tabellen, Backend-RPCs, nullable events.organizer_id und eingeschränkte Spaltenrechte. Importierte Events dürfen keine Veranstalterzuordnung erhalten; nur source=spots ist für berechtigte Mitglieder schreibbar. Keine automatischen Zuordnungen/Claims und keine vorhandenen Eventdaten umgeschrieben.
+- SQL **16_test_organizer_accounts.sql** im echten Testprojekt vollständig erfolgreich: Rollen-/Fremdzugriffs-/Privatsphäre-/Publikationsprüfungen mit vollständigem ROLLBACK. Danach **35 bestehende Events/UUIDs/Daten und sämtliche Importmetadaten/Lease unverändert**; 0 Auth-Benutzer, private Profile, Veranstalter, Mitgliedschaften, Beiträge oder verknüpfte Events zurückgeblieben. Alle vier Tabellen mit aktiver RLS.
+- **76 lokale Tests bestanden, 0 übersprungen**, Lint/Typecheck erfolgreich. Lokaler echter Goabase-RPC funktioniert unverändert mit neuer Spalte und erhält UUIDs. Browser bestätigt Produktionsschutz von /account: keine Auth-Requests/Schreibanfragen. .env.local unverändert, keine Dependencies neu installiert, keine Goabase-/Cron-Dateien geändert.
+- Noch offen: separate Test-App-Konfiguration, tatsächliche Mailzustellung/Redirect-Allowlist und vollständiger Auth-End-to-End-/Gerätetest; später Einladungen, Besitzertransfer, Accountlöschung, Passwortreset und Moderation. Noch keine produktive Accountfreigabe oder Anbindung der öffentlichen Designseiten. Neue SQL-Dateien sind keine Freigabe zur Produktionsausführung.
+
+## Vorher: Design und echte Eventdaten zusammengeführt
 
 - Neuer lokaler Branch **integration/spots-supabase-design**, Basis origin/main **7d5f654**. Zuerst origin/Jacint-branch **ee0c270**, anschließend aktueller Design-Branch origin/noyan-design **c8f0217** integriert. origin/Noyan-branch-design **3c0732d** ist ein älterer Vorfahr, nicht der aktuelle Designstand. Bestehende Branches unverändert.
 - 14 Konfliktdateien einzeln aufgelöst: Startscreen/Provider, Kalender, vier Eventkarten, Kartentypen, fünf Screens, Projektstatus und gelöschte Demo-Datei. Neues Layout, Farben, Navigation, Kalender und Kartensteuerung erhalten; echte Services, UUID-Routen, Lade-/Leer-/Fehlerzustände und Live-Zeitfilter weiterverwendet. src/data/events.ts bleibt gelöscht.
