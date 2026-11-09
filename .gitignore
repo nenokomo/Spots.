@@ -39,6 +39,18 @@ yarn-error.*
 # private local file
 /pws
 
+# Local operations: never commit credentials, database exports or run evidence
+/.temp/
+/tmp/
+/logs/
+*.log
+*.dump
+*.backup
+*.sql.gz
+*.eszip
+supabase/backups/
+supabase/.temp/
+
 # typescript
 *.tsbuildinfo
 

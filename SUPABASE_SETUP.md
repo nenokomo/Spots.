@@ -1,6 +1,6 @@
 # Spots mit Supabase verbinden
 
-Die bestehende App verwendet jetzt einen gemeinsamen Supabase-Client und getrennte Leseabfragen für kommende und laufende Events. Navigation, Farben, Kartenlayout und lokale Merkfunktion bleiben erhalten. Die alte Demo-Datei bleibt im Projekt, wird von der App aber nicht mehr verwendet. Fehler und leere Antworten erzeugen keine Ersatz-Events.
+Die bestehende App verwendet jetzt einen gemeinsamen Supabase-Client und getrennte Leseabfragen für kommende und laufende Events. Navigation, Farben, Kartenlayout und lokale Merkfunktion bleiben erhalten. Die ungenutzte alte Demo-Datei wurde bei der Projektbereinigung entfernt. Fehler und leere Antworten erzeugen keine Ersatz-Events.
 
 ## Bestätigtes Tabellenschema
 
@@ -59,7 +59,7 @@ Die App projiziert nur die zugeordneten Eventfelder, keine Straßen-/Privatadres
 
 Die Edge Function `import-goabase` bleibt serverseitig. Sie wird nicht aus der App aufgerufen; Import-Zugangsdaten bleiben in Supabase.
 
-Die Vorbereitung der automatischen Synchronisierung, fehlender Dashboard-Code und die notwendigen Admin-Prüfungen sind in [GOABASE_SYNC.md](GOABASE_SYNC.md) dokumentiert. Es wurde noch kein geplanter Import aktiviert.
+Der lokal verbesserte Importer, die Datenbankvorbereitung und die erforderlichen Tests vor dem Deployment sind in [GOABASE_SYNC.md](GOABASE_SYNC.md) dokumentiert. Es wurde noch kein geplanter Import aktiviert.
 
 ## Verhalten und Verbindungstest
 

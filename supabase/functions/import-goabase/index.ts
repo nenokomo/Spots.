@@ -1,115 +1,50 @@
 import { withSupabase } from "npm:@supabase/server@1";
-
-type Party = {
-  id?: string | number;
-  nameParty?: string;
-  dateStart?: string;
-  dateEnd?: string;
-  nameTown?: string;
-  geoLat?: string | number | null;
-  geoLon?: string | number | null;
-  urlImageSmall?: string | null;
-  nameStatus?: string;
-};
-
-function coordinate(value: unknown, min: number, max: number) {
-  if (value == null || value === "") return null;
-  const number = Number(value);
-  return Number.isFinite(number) &&
-    number >= min && number <= max
-    ? number
-    : null;
-}
+import { synchronize, SyncError } from "./sync.ts";
 
 export default {
-  fetch: withSupabase({ auth: "secret" }, async (_req, ctx) => {
-    const url = new URL(
-      "https://www.goabase.net/api/party/json/"
-    );
-    url.searchParams.set("country", "DE");
-    url.searchParams.set("eventtype", "club");
-    url.searchParams.set("limit", "50");
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      return Response.json(
-        { error: "Goabase API nicht erreichbar" },
-        { status: 502 }
-      );
-    }
-
-    const json = await response.json();
-
-    if (!Array.isArray(json?.partylist)) {
-      return Response.json(
-        { error: "Unbekanntes Goabase-Datenformat" },
-        { status: 502 }
-      );
-    }
-
-    const now = Date.now();
-    const rows = [];
-
-    for (const p of json.partylist as Party[]) {
-      const id = String(p.id ?? "");
-      const title = p.nameParty?.trim();
-      const start = Date.parse(p.dateStart ?? "");
-
-      if (!/^\d+$/.test(id) || !title ||
-          !Number.isFinite(start)) continue;
-
-      const end = Date.parse(p.dateEnd ?? "");
-      const validEnd = Number.isFinite(end) &&
-        end >= start ? end : null;
-
-      const scheduled =
-        p.nameStatus?.toLowerCase() === "scheduled";
-
-      const active =
-        validEnd !== null ? validEnd >= now : start >= now;
-
-      rows.push({
-        source: "goabase",
-        source_event_id: id,
-        source_url: `https://www.goabase.net/${id}`,
-        title,
-        city: p.nameTown ?? null,
-        category: "club",
-        starts_at: new Date(start).toISOString(),
-        ends_at: validEnd !== null
-          ? new Date(validEnd).toISOString()
-          : null,
-        latitude: coordinate(p.geoLat, -90, 90),
-        longitude: coordinate(p.geoLon, -180, 180),
-        image_url: p.urlImageSmall ?? null,
-        is_published: Boolean(scheduled && active),
+  fetch: withSupabase({ auth: "secret" }, async (req, ctx) => {
+    if (req.method !== "POST") {
+      return Response.json({ error: "POST erforderlich" }, {
+        status: 405, headers: { Allow: "POST" },
       });
     }
-
-    if (rows.length === 0) {
-      return Response.json({
-        imported: 0,
-        message: "Keine gültigen Events gefunden",
+    let token: string | undefined;
+    const started = Date.now();
+    try {
+      // No direct-upsert fallback: reviewed database preparation is required.
+      const lease = await ctx.supabaseAdmin.rpc("spots_goabase_begin");
+      if (lease.error) throw new SyncError("sync_backend_unavailable", 503);
+      if (!lease.data) throw new SyncError("sync_already_running", 409);
+      token = lease.data.token;
+      if (typeof token !== "string" || !Array.isArray(lease.data.ids)) {
+        throw new SyncError("invalid_sync_backend", 503);
+      }
+      const result = await synchronize(lease.data.ids);
+      const applied = await ctx.supabaseAdmin.rpc("spots_goabase_apply_v3", {
+        p_token: token, p_rows: result.rows, p_removed_ids: result.removed ?? [],
+        p_unconfirmed: result.unconfirmed ?? [],
       });
+      if (applied.error) throw new SyncError("sync_commit_rejected", 503);
+      const report = { run_id: token, ...applied.data,
+        discovered: result.discovered,
+        checked: result.rows.length + (result.removed?.length ?? 0) + (result.unconfirmed?.length ?? 0),
+        unconfirmed: result.unconfirmed ?? [] };
+      console.info(JSON.stringify({ sync: "goabase", duration_ms: Date.now() - started, ...report }));
+      return Response.json(report);
+    } catch (error) {
+      const failure = error instanceof SyncError ? error : new SyncError("sync_failed", 500);
+      console.error(JSON.stringify({ sync: "goabase", run: token,
+        error: failure.message, duration_ms: Date.now() - started,
+        ...(failure.diagnostic ? { source: failure.diagnostic } : {}) }));
+      return Response.json({ error: failure.message }, { status: failure.status });
+    } finally {
+      if (token) {
+        // Conditional release cannot release a replacement owner's lease.
+        try {
+          const result = await ctx.supabaseAdmin.rpc("spots_goabase_release", { p_token: token });
+          if (result.error) console.error("goabase: lease release failed; expiry will release it");
+        } catch { console.error("goabase: lease release failed; expiry will release it"); }
+      }
     }
-
-    const { error } = await ctx.supabaseAdmin
-      .from("events")
-      .upsert(rows, {
-        onConflict: "source,source_event_id",
-      });
-
-    if (error) {
-      return Response.json(
-        { error: error.message },
-        { status: 500 }
-      );
-    }
-
-    return Response.json({
-      imported: rows.length,
-      message: "Events erfolgreich synchronisiert",
-    });
   }),
 };
