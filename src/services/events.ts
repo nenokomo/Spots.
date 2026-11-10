@@ -1,6 +1,7 @@
 import { getSupabase } from '../lib/supabase';
 import { isLiveEvent, isUpcomingEvent, type SpotEvent } from '../types/events';
 import { mapEventRow } from './eventAdapter';
+import { testEvents } from './testEvents';
 import { eventColumns as columns, eventProjection, publishedValue } from './eventSchema';
 
 const pageSize = 200;
@@ -56,7 +57,7 @@ async function fetchPages(build: () => EventQuery, signal: AbortSignal) {
 export async function fetchUpcomingEvents(signal: AbortSignal) {
   const now = new Date().toISOString();
   const events = await fetchPages(() => publishedQuery().gt(columns.startsAt, now), signal);
-  return events.filter((event) => isUpcomingEvent(event));
+  return [...events, ...testEvents()].filter((event) => isUpcomingEvent(event)).sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
 }
 
 export async function fetchLiveEvents(signal: AbortSignal) {
@@ -65,12 +66,14 @@ export async function fetchLiveEvents(signal: AbortSignal) {
     .gte(columns.latitude, -90).lte(columns.latitude, 90)
     .gte(columns.longitude, -180).lte(columns.longitude, 180), signal);
   // Also validate client-side, including end > start and numeric GPS bounds.
-  return events.filter((event) => isLiveEvent(event));
+  return [...events, ...testEvents()].filter((event) => isLiveEvent(event));
 }
 
 export function fetchEvent(id: string, signal: AbortSignal) {
   // public.events uses UUIDs. Old demo ids never reach the UUID column.
   if (!isDatabaseId(id)) return Promise.resolve([]);
+  const test = testEvents().filter((event) => event.id === id);
+  if (test.length > 0) return Promise.resolve(test);
   return fetchPages(() => publishedQuery().eq(columns.id, id), signal);
 }
 
@@ -97,5 +100,5 @@ export async function fetchSavedEvents(ids: string[], signal: AbortSignal) {
     const batch = validIds.slice(offset, offset + 50);
     events.push(...await fetchPages(() => publishedQuery().in(columns.id, batch), signal));
   }
-  return events;
+  return [...events, ...testEvents().filter((event) => validIds.includes(event.id))];
 }

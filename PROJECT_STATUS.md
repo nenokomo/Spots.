@@ -22,6 +22,8 @@ Branch **feature/design-refresh** (Basis origin/main 9dbee1b, plus Merge von fea
 - Expo-Lint und Typecheck erfolgreich.
 - Web-Vorschau 375 × 812 gegen Produktionsdaten: Entdecken (Umkreis Hamburg 50 km → 10 Events mit Entfernung), Eventdetail, Gemerkt, Profil, Radar, Veranstalterseite (Leerzustand mit echten Daten; Kopfbereich und Beiträge mit lokal im Browser abgefangenen Testdaten). Dabei zwei Fehler gefunden und behoben: Wettlauf beim Rückfall ohne organizer_id, Layout von `Link asChild` mit Stil-Funktion auf Web.
 
+**Lokale Testevents (nur Entwicklung)**: `services/testEvents.ts` liefert 5 klar mit „TEST ·“ gekennzeichnete Partys in Karlsruhe um die aktuelle Uhrzeit (3 laufen, 2 starten später; erfundene Testlocations, Symbolbild). Sie werden nur geladen, wenn `__DEV__` gilt (Expo Go, Web-Vorschau), nie in einem Release-Build und nie in eine Datenbank geschrieben. Abschalten mit `EXPO_PUBLIC_SPOTS_TEST_EVENTS=0`. Im Radar zuerst Karlsruhe wählen. Test: `tests/test-events.test.cjs` (94 Tests gesamt, alle bestanden).
+
 **Nicht geprüft / offen**
 - Kein Test auf iOS/Android-Gerät (Gesten, Modals, Safe Area, Karten-Apps, Unschärfe).
 - Veranstalter-Eventlisten und das hervorgehobene Event der Veranstalterseite nur per Typecheck, nicht visuell mit Daten geprüft (Produktion hat keine Veranstalter).
