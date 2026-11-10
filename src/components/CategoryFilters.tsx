@@ -1,24 +1,17 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { categories, colors, type Category } from '../constants/theme';
-import { GlassBackdrop } from './GlassBackdrop';
+import { StyleSheet, View } from 'react-native';
+import { categories, space, type Category } from '../constants/theme';
+import { Chip } from './ui/Chip';
 
 export function CategoryFilters({ value, onChange }: { value: Category; onChange: (value: Category) => void }) {
   return (
     <View style={styles.row}>
       {categories.map((category) => (
-        <Pressable key={category} accessibilityRole="button" accessibilityState={{ selected: value === category }} onPress={() => onChange(category)} style={[styles.chip, value === category && styles.active]}>
-          {value !== category && <GlassBackdrop radius={20} native={false} />}
-          <Text style={[styles.text, value === category && styles.activeText]}>{category}</Text>
-        </Pressable>
+        <Chip key={category} label={category} selected={value === category} onPress={() => onChange(category)} />
       ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 7, minHeight: 45 },
-  chip: { paddingHorizontal: 16, minHeight: 44, justifyContent: 'center', borderRadius: 20, borderWidth: 1, borderColor: '#ffffff12', backgroundColor: '#b47dc91a' },
-  active: { backgroundColor: colors.pink, borderColor: colors.pink },
-  text: { color: colors.muted, fontSize: 11 },
-  activeText: { color: '#35102d', fontWeight: '700' },
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
 });

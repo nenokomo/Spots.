@@ -18,6 +18,8 @@ export type SpotEvent = {
   sourceName?: string | null;
   sourceUrl?: string | null;
   ticketUrl?: string | null;
+  /** Verified organizer (only Spots-owned events). Imported events never get one. */
+  organizerId?: string | null;
 };
 
 export type LocatedEvent = SpotEvent & { coordinate: NonNullable<SpotEvent['coordinate']> };

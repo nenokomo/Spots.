@@ -13,6 +13,14 @@ function timestamp(value: unknown) {
   return raw && /T.*(?:Z|[+-]\d{2}:?\d{2})$/i.test(raw) && Number.isFinite(Date.parse(raw)) ? raw : null;
 }
 
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Spelling variants of the same source category, e.g. Goabase stores "club".
+// Exact synonyms only; genres are never guessed from titles or venues.
+const categoryAliases: Record<string, Exclude<Category, 'Alle'>> = {
+  club: 'Clubs', clubs: 'Clubs', event: 'Events', events: 'Events', techno: 'Techno', house: 'House',
+};
+
 function number(value: unknown, limit: number) {
   if (typeof value !== 'number' && (typeof value !== 'string' || !value.trim())) return null;
   const parsed = Number(value);
@@ -45,7 +53,8 @@ export function mapEventRow(value: unknown): SpotEvent | null {
   const genres = rawGenres.map(text).filter((genre): genre is string => !!genre);
   const rawCategories = [text(row.category), ...genres].filter((item): item is string => !!item);
   const matched = categories.filter((category): category is Exclude<Category, 'Alle'> => category !== 'Alle'
-    && rawCategories.some((item) => item.toLowerCase() === category.toLowerCase()));
+    && rawCategories.some((item) => categoryAliases[item.toLowerCase()] === category));
+  const organizerId = text(row.organizerId);
 
   return {
     id, title, startsAt, endsAt,
@@ -62,5 +71,6 @@ export function mapEventRow(value: unknown): SpotEvent | null {
     sourceName: text(row.sourceName),
     sourceUrl: safeExternalUrl(row.sourceUrl),
     ticketUrl: safeExternalUrl(row.ticketUrl),
+    organizerId: organizerId && uuidPattern.test(organizerId) ? organizerId : null,
   };
 }

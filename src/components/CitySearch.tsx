@@ -6,9 +6,9 @@ import { Icon } from './Icon';
 import { GlassBackdrop } from './GlassBackdrop';
 
 export type CitySearchHandle = { dismiss: () => void };
-type Props = { label: string; locating: boolean; onLocate: () => void; onSelect: (city: City) => void; compact?: boolean; ref?: Ref<CitySearchHandle> };
+type Props = { label: string; locating: boolean; onLocate: () => void; onSelect: (city: City) => void; compact?: boolean; ref?: Ref<CitySearchHandle>; /** Results aligned with the input instead of the radar header. */ flush?: boolean };
 
-export function CitySearch({ label, locating, onLocate, onSelect, compact = false, ref }: Props) {
+export function CitySearch({ label, locating, onLocate, onSelect, compact = false, ref, flush = false }: Props) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -57,7 +57,7 @@ export function CitySearch({ label, locating, onLocate, onSelect, compact = fals
             : <Pressable accessibilityRole="button" accessibilityLabel="Aktuellen Standort verwenden" disabled={locating} onPress={() => { close(); onLocate(); }} style={styles.action}>{locating ? <ActivityIndicator color={colors.pink} size="small" /> : <Icon name="locate" size={18} color={colors.pink} />}</Pressable>}
       </View>
       {open && query.trim().length > 0 && (
-        <View style={[styles.results, compact && styles.compactResults]}>
+        <View style={[styles.results, compact && styles.compactResults, flush && styles.flushResults]}>
           <GlassBackdrop radius={17} variant="panel" />
           <ScrollView keyboardShouldPersistTaps="handled" style={styles.resultList}>
             {query.trim().length < 3 ? <Text style={styles.hint}>Gib mindestens 3 Buchstaben ein.</Text>
@@ -85,6 +85,7 @@ const styles = StyleSheet.create({
   input: { flex: 1, minWidth: 0, minHeight: 44, color: colors.text, fontSize: 12, paddingVertical: 8 },
   action: { width: 38, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   results: { position: 'absolute', top: 51, left: -65, right: 0, backgroundColor: '#201527', borderRadius: 17, borderWidth: 1, borderColor: '#c922ab45', overflow: 'hidden', elevation: 12, boxShadow: '0 8px 24px #00000066' },
+  flushResults: { left: 0, right: 0 },
   resultList: { maxHeight: 235 },
   result: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 15, paddingVertical: 13, minHeight: 58, borderBottomWidth: 1, borderBottomColor: '#ffffff08' },
   resultText: { flex: 1 },

@@ -15,14 +15,18 @@ function load(file, resource = {}) {
   const stub = new Proxy({}, { get: (_, key) => key });
   function dependency(id) {
     if (id === 'react/jsx-runtime') return jsx;
-    if (id === 'react') return { useState: initial => [initial, () => {}] };
+    if (id === 'react') return { useState: initial => [initial, () => {}], useMemo: fn => fn(), useCallback: fn => fn, useEffect: () => {} };
     if (id === 'react-native') return native;
     if (id === 'react-native-safe-area-context') return { SafeAreaView: 'SafeAreaView' };
     if (id === 'expo-router') return { Link: 'Link', router: {}, useLocalSearchParams: () => ({ id: 'source-uuid' }) };
-    if (id.endsWith('/theme')) return { colors: stub };
+    if (id.endsWith('/theme')) return { colors: stub, space: stub, radius: stub, type: stub };
     if (id.endsWith('/useEvents')) return { useEvent: () => resource };
     if (id.endsWith('/useNow')) return { useNow: () => Date.parse('2030-01-01T12:00:00Z') };
     if (id.endsWith('/types/events')) return { isLiveEvent: () => false };
+    if (id.endsWith('/useOrganizer')) return { useOrganizerSummary: () => null };
+    if (id.endsWith('/useEventContent')) return { useEventContent: () => ({ snaps: [], tickets: [] }) };
+    if (id.endsWith('/utils/eventStatus')) return { eventPhase: () => 'upcoming' };
+    if (id.endsWith('/navigation/eventRoutes')) return { organizerHref: id => ({ pathname: '/organizer/[id]', params: { id } }), eventDetailHref: id => ({ pathname: '/event/[id]', params: { id } }), eventHref: event => ({ pathname: '/event/[id]', params: { id: event.id } }) };
     return stub;
   }
   const source = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');

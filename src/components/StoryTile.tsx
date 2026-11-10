@@ -6,10 +6,12 @@ import { eventDayLabel, eventTimeLabel } from '../utils/events';
 import { Icon } from './Icon';
 import { SaveEventButton } from './SaveEventButton';
 
-type Props = { event: SpotEvent; today: string; seen: boolean; onOpen: () => void };
+type Props = { event: SpotEvent; today: string; seen: boolean; onOpen: () => void; distanceKm?: number };
+
+const distanceLabel = (km: number) => `${new Intl.NumberFormat('de-DE', { maximumFractionDigits: km < 10 ? 1 : 0 }).format(km)} km`;
 
 /** Tall story preview of one event. Opens the story viewer, not the detail page. */
-export function StoryTile({ event, today, seen, onOpen }: Props) {
+export function StoryTile({ event, today, seen, onOpen, distanceKm }: Props) {
   const tags = event.genres?.length ? event.genres : event.categories;
   return (
     <View style={styles.wrapper}>
@@ -25,7 +27,7 @@ export function StoryTile({ event, today, seen, onOpen }: Props) {
           <Text numberOfLines={1} style={styles.when}>{eventDayLabel(event.startsAt, today).toLocaleUpperCase('de')} · {eventTimeLabel(event.startsAt)}</Text>
           {tags.length > 0 && <Text numberOfLines={1} style={styles.genre}>{tags.join('  ·  ').toLocaleUpperCase('de')}</Text>}
           <Text numberOfLines={3} style={styles.title}>{event.title}</Text>
-          <View style={styles.meta}><Icon name="pin" size={12} color="#d9c6dc" /><Text numberOfLines={1} style={styles.metaText}>{event.location}</Text></View>
+          <View style={styles.meta}><Icon name="pin" size={12} color="#d9c6dc" /><Text numberOfLines={1} style={styles.metaText}>{typeof distanceKm === 'number' ? `${event.location} · ${distanceLabel(distanceKm)}` : event.location}</Text></View>
         </View>
       </Pressable>
       <View style={styles.save}><SaveEventButton id={event.id} title={event.title} /></View>

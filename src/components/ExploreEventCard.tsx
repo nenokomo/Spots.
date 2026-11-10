@@ -1,12 +1,13 @@
 import { Link } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../constants/theme';
+import { eventHref } from '../navigation/eventRoutes';
 import type { SpotEvent } from '../types/events';
 import { Icon } from './Icon';
 import { SaveEventButton } from './SaveEventButton';
 
 export function ExploreEventCard({ event }: { event: SpotEvent }) {
-  return <View style={styles.wrapper}><Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
+  return <View style={styles.wrapper}><Link href={eventHref(event, 'discover')} asChild>
     <Pressable accessibilityLabel={`${event.title}, Details öffnen`} style={styles.card}>
       <Image source={event.image} style={styles.image} accessibilityLabel={event.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${event.title}`} />
       <View style={styles.content}>

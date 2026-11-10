@@ -79,7 +79,8 @@ test('explore keeps search, genre and date filters and routes stories to the eve
   for (const required of ['<TextInput', '<CategoryFilters', '<EventCalendar', 'matchesEventPeriod', '<ExploreEventCard', '<StoryTile', '<EventStoryViewer']) {
     assert(source.includes(required), `${required} missing`);
   }
-  assert(source.includes("router.push({ pathname: '/event/[id]', params: { id: event.id } })"));
+  // Opening an event from the preview uses the central, context-aware route rule.
+  assert(source.includes("router.push(eventHref(event, 'discover'))"));
   // 24-hour BeReels stay a separate feature and are not part of the previews.
   assert(!/BeReel/i.test(source));
   assert(!/BeReel/i.test(fs.readFileSync(path.join(__dirname, '..', 'src/components/EventStoryViewer.tsx'), 'utf8')));

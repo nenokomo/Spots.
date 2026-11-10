@@ -4,10 +4,21 @@ import { mapEventRow } from './eventAdapter';
 import { eventColumns as columns, eventProjection, publishedValue } from './eventSchema';
 
 const pageSize = 200;
+const organizerProjection = `${eventProjection},organizerId:organizer_id`;
+
+// events.organizer_id only exists where SQL 15 has been applied (Spots-Test).
+// Ask for it optimistically and remember for this session if the column is missing.
+let organizerColumn: boolean | null = null;
 
 function publishedQuery() {
-  return getSupabase().from('events').select(eventProjection)
+  return getSupabase().from('events').select(organizerColumn === false ? eventProjection : organizerProjection)
     .eq(columns.publication, publishedValue).eq(columns.status, 'scheduled');
+}
+
+const organizerColumnMissing = () => organizerColumn === false;
+
+function missingOrganizerColumn(error: { code?: string; message?: string }) {
+  return error.code === '42703' && /organizer_id/.test(error.message ?? '');
 }
 
 type EventQuery = ReturnType<typeof publishedQuery>;
@@ -22,9 +33,16 @@ async function fetchPages(build: () => EventQuery, signal: AbortSignal) {
   const events: SpotEvent[] = [];
   const seen = new Set<string>();
   for (let offset = 0; ; offset += pageSize) {
+    // Decided per request: parallel requests may still carry the optimistic column.
+    const withOrganizer = organizerColumn !== false;
     const { data, error } = await build().order(columns.startsAt).order(columns.id)
       .range(offset, offset + pageSize - 1).abortSignal(signal);
+    if (error && withOrganizer && missingOrganizerColumn(error)) {
+      organizerColumn = false;
+      return fetchPages(build, signal);
+    }
     if (error) throw queryError(error.code);
+    if (organizerColumn === null) organizerColumn = true;
     const rows: unknown[] = data ?? [];
     for (const row of rows) {
       const event = mapEventRow(row);
@@ -58,6 +76,17 @@ export function fetchEvent(id: string, signal: AbortSignal) {
 
 function isDatabaseId(id: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
+/** All published events of one organizer, past and upcoming. Empty where the relation does not exist. */
+export async function fetchOrganizerEvents(organizerId: string, signal: AbortSignal) {
+  if (!isDatabaseId(organizerId) || organizerColumnMissing()) return [];
+  try {
+    return await fetchPages(() => publishedQuery().eq('organizer_id', organizerId), signal);
+  } catch (error) {
+    if (organizerColumnMissing()) return [];
+    throw error;
+  }
 }
 
 export async function fetchSavedEvents(ids: string[], signal: AbortSignal) {

@@ -3,6 +3,12 @@ import { getSupabase } from '../lib/supabase';
 import type { OrganizerEventSummary, PublicOrganizer, PublicOrganizerPost } from '../types/accounts';
 
 const organizerFields = 'id,slug,display_name,biography,city,avatar_url,website_url,is_published,created_at,updated_at';
+
+/** The organizer tables are not deployed in this Supabase project yet (SQL 15 missing). */
+export class OrganizerUnavailableError extends Error {
+  constructor() { super('Veranstalterprofile sind in dieser Umgebung noch nicht eingerichtet.'); this.name = 'OrganizerUnavailableError'; }
+}
+const missingSchema = (error: { code?: string }) => error.code === 'PGRST205' || error.code === '42P01' || error.code === '42703';
 const safeUrl = (value: string | null): string | null => {
   if (!value) return null;
   try { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password ? url.href : null; }
@@ -16,6 +22,7 @@ export function createPublicOrganizerReader(client: SupabaseClient) {
       const field = 'id' in identifier ? 'id' : 'slug';
       const { data, error } = await client.from('organizers').select(organizerFields).eq('is_published', true)
         .eq(field, 'id' in identifier ? identifier.id : identifier.slug).maybeSingle();
+      if (error && missingSchema(error)) throw new OrganizerUnavailableError();
       if (error) throw new Error('Veranstalterprofil konnte nicht geladen werden.');
       return data ? { id: data.id, slug: data.slug, displayName: data.display_name, biography: data.biography,
         city: data.city, avatarUrl: safeUrl(data.avatar_url), websiteUrl: safeUrl(data.website_url),
@@ -25,6 +32,7 @@ export function createPublicOrganizerReader(client: SupabaseClient) {
       const { data, error } = await client.from('events').select('id,organizer_id,title,starts_at,ends_at,city,image_url,status,organizers!inner(is_published)')
         .eq('organizer_id', organizerId).eq('source', 'spots').eq('is_published', true).eq('status', 'scheduled')
         .eq('organizers.is_published', true).order('starts_at').order('id').limit(100);
+      if (error && missingSchema(error)) throw new OrganizerUnavailableError();
       if (error) throw new Error('Veranstalterevents konnten nicht geladen werden.');
       return (data ?? []).map(row => ({ id: row.id, organizerId: row.organizer_id, title: row.title,
         startsAt: row.starts_at, endsAt: row.ends_at, city: row.city, imageUrl: safeUrl(row.image_url), status: 'scheduled' }));
@@ -33,6 +41,7 @@ export function createPublicOrganizerReader(client: SupabaseClient) {
       const { data, error } = await client.from('organizer_posts').select('id,organizer_id,body,created_at,updated_at,organizers!inner(is_published)')
         .eq('organizer_id', organizerId).eq('is_published', true).eq('organizers.is_published', true)
         .order('created_at', { ascending: false }).order('id').limit(100);
+      if (error && missingSchema(error)) throw new OrganizerUnavailableError();
       if (error) throw new Error('Veranstalterbeiträge konnten nicht geladen werden.');
       return (data ?? []).map(row => ({ id: row.id, organizerId: row.organizer_id, body: row.body, createdAt: row.created_at, updatedAt: row.updated_at }));
     },

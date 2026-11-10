@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Link, router, useLocalSearchParams } from 'expo-router';
+import { Button } from '../../components/ui/Button';
+import { Icon } from '../../components/Icon';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../../constants/theme';
+import { colors, radius, space, type } from '../../constants/theme';
 import { accountClientError, getAccountClient } from './client';
 import { createAccountActions } from './auth';
 import { useAccountSession } from './useAccountSession';
@@ -13,7 +15,7 @@ function PrivateProfileForm({ busy, save }: { busy: boolean; save: (name: string
   const [name, setName] = useState('');
   return <View style={styles.form}>
     <TextInput accessibilityLabel="Privater Anzeigename" placeholder="Privater Anzeigename" placeholderTextColor={colors.muted} value={name} onChangeText={setName} maxLength={80} editable={!busy} style={styles.input} />
-    <Pressable disabled={busy} accessibilityRole="button" onPress={() => void save(name)} style={styles.button}><Text style={styles.label}>Privates Profil speichern</Text></Pressable>
+    <Button label="Privates Profil speichern" variant="secondary" disabled={busy} onPress={() => void save(name)} />
   </View>;
 }
 
@@ -56,28 +58,27 @@ export default function AccountScreen() {
   }
   const disabled = busy || !!accountClientError;
   return <SafeAreaView style={styles.screen}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-    <Link href="/" style={styles.link}>Zurück zu Spots</Link>
-    <Text accessibilityRole="header" style={styles.title}>Dein privater Account</Text>
-    <Text style={styles.note}>Ein Login für dich und deine Veranstalter. Private Profildaten sind nicht öffentlich.</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={() => router.canGoBack() ? router.back() : router.replace('/profile')} style={styles.back}><Icon name="back" color={colors.text} /></Pressable>
+    <Text accessibilityRole="header" style={styles.title}>{session ? 'Dein Konto' : mode === 'register' ? 'Konto erstellen' : 'Anmelden'}</Text>
+    <Text style={styles.note}>Ein Login für dich und deine Veranstalterseiten. Private Profildaten sind nicht öffentlich.</Text>
     {loading && <ActivityIndicator color={colors.pink} />}
     {(error || sessionError) && <Text accessibilityRole="alert" style={styles.note}>{error ?? sessionError}</Text>}
     {message && <Text accessibilityLiveRegion="polite" style={styles.note}>{message}</Text>}
     {!accountClientError && !loading && (session ? <View style={styles.form}>
       <Text style={styles.note}>Angemeldet als {session.user.email}</Text>
       <PrivateProfileForm key={session.user.id} busy={busy} save={name => action(async () => { await savePrivateProfile(name); setMessage('Privates Profil gespeichert.'); })} />
-      <Pressable disabled={disabled} accessibilityRole="button" onPress={() => void action(async () => { await createAccountActions(getAccountClient()).signOut(); setEmail(''); })} style={styles.button}><Text style={styles.label}>Abmelden</Text></Pressable>
+      <Button label="Abmelden" variant="ghost" disabled={disabled} onPress={() => void action(async () => { await createAccountActions(getAccountClient()).signOut(); setEmail(''); })} />
     </View> : <View style={styles.form}>
       <TextInput accessibilityLabel="E-Mail" placeholder="E-Mail" placeholderTextColor={colors.muted} autoCapitalize="none" autoComplete="email" keyboardType="email-address" value={email} onChangeText={setEmail} editable={!busy} style={styles.input} />
       <TextInput accessibilityLabel="Passwort" placeholder="Passwort" placeholderTextColor={colors.muted} secureTextEntry autoCapitalize="none" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} value={password} onChangeText={setPassword} editable={!busy} style={styles.input} />
-      <Pressable disabled={disabled} accessibilityRole="button" onPress={() => void action(submit)} style={styles.button}><Text style={styles.label}>{busy ? 'Bitte warten …' : mode === 'register' ? 'Registrieren' : 'Anmelden'}</Text></Pressable>
-      <Pressable disabled={busy} accessibilityRole="button" onPress={() => { setMode(mode === 'register' ? 'signIn' : 'register'); setPassword(''); setError(null); setMessage(null); }} style={styles.button}><Text style={styles.label}>{mode === 'register' ? 'Zur Anmeldung' : 'Account erstellen'}</Text></Pressable>
+      <Button label={mode === 'register' ? 'Registrieren' : 'Anmelden'} loading={busy} disabled={disabled} onPress={() => void action(submit)} />
+      <Button label={mode === 'register' ? 'Ich habe schon ein Konto' : 'Neues Konto erstellen'} variant="ghost" disabled={busy} onPress={() => { setMode(mode === 'register' ? 'signIn' : 'register'); setPassword(''); setError(null); setMessage(null); }} />
     </View>)}
   </ScrollView></SafeAreaView>;
 }
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background }, content: { padding: 24, gap: 18, maxWidth: 560, width: '100%', alignSelf: 'center' },
-  title: { color: colors.text, fontSize: 25, fontWeight: '700' }, note: { color: colors.muted, fontSize: 14, lineHeight: 21 },
-  form: { gap: 14 }, input: { minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, color: colors.text },
-  button: { minHeight: 48, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 10, padding: 12 },
-  label: { color: colors.text, fontWeight: '600' }, link: { color: colors.pink, paddingVertical: 10 },
+  screen: { flex: 1, backgroundColor: colors.background }, content: { padding: space.xl, gap: space.lg, maxWidth: 560, width: '100%', alignSelf: 'center' },
+  back: { width: 44, height: 44, marginLeft: -space.sm, alignItems: 'center', justifyContent: 'center' },
+  title: { ...type.display, color: colors.text }, note: { ...type.body, color: colors.muted },
+  form: { gap: space.md }, input: { minHeight: 50, borderWidth: 1, borderColor: '#ffffff1c', borderRadius: radius.md, paddingHorizontal: space.lg, color: colors.text, backgroundColor: '#1b1521', fontSize: 15 },
 });

@@ -9,6 +9,8 @@ import { Screen } from '../components/Screen';
 import { tabBarContentInset } from '../constants/navigation';
 import { brandDotStyle, brandHeadingStyle, colors } from '../constants/theme';
 import { useSavedEvents } from '../hooks/useSavedEvents';
+import { accountClientError } from '../features/accounts/client';
+import { useAccountSession } from '../features/accounts/useAccountSession';
 
 function Row({ icon, title, text, trailing }: { icon: IconName; title: string; text: string; trailing?: ReactNode }) {
   return (
@@ -23,6 +25,8 @@ function Row({ icon, title, text, trailing }: { icon: IconName; title: string; t
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { ids, ready } = useSavedEvents();
+  const account = useAccountSession();
+  const email = account.session?.user.email;
   const version = Constants.expoConfig?.version;
   const savedText = !ready ? 'Merkliste wird geladen …' : ids.length === 0 ? 'Noch nichts gemerkt' : `${ids.length} ${ids.length === 1 ? 'Event' : 'Events'} auf diesem Gerät`;
   return (
@@ -35,7 +39,11 @@ export default function ProfileScreen() {
 
         <View style={styles.card}>
           <GlassBackdrop radius={20} variant="panel" />
-          <Row icon="profile" title="Konto" text="Die Anmeldung ist noch in Entwicklung. Bis dahin funktioniert Spots ohne Konto." />
+          {accountClientError
+            ? <Row icon="profile" title="Konto" text="Konten starten bald. Bis dahin funktioniert Spots komplett ohne Anmeldung." />
+            : <Link href="/account" asChild><Pressable accessibilityRole="button" accessibilityLabel={email ? 'Konto verwalten' : 'Anmelden oder Konto erstellen'}>
+                <Row icon="profile" title={email ? 'Angemeldet' : 'Anmelden'} text={email ?? (account.loading ? 'Sitzung wird geprüft …' : 'Anmelden oder kostenloses Konto erstellen')} trailing={<Icon name="chevron" size={16} />} />
+              </Pressable></Link>}
           <View style={styles.divider} />
           <Link href="/saved" asChild>
             <Pressable accessibilityRole="button" accessibilityLabel={`Gemerkte Events öffnen, ${savedText}`}>
