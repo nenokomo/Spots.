@@ -1,9 +1,12 @@
+import { View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 export type IconName = 'radar' | 'search' | 'profile' | 'pin' | 'chevron' | 'down' | 'sliders' | 'clock' | 'locate' | 'close' | 'back' | 'calendar' | 'share' | 'ticket' | 'camera' | 'bookmark' | 'heart' | 'map' | 'grid' | 'headphones' | 'wave' | 'cocktail';
 
 export function Icon({ name, size = 22, color = '#d4bcd8', filled = false }: { name: IconName; size?: number; color?: string; filled?: boolean }) {
+  // Wrapped in a View so it stacks above absolutely positioned backdrops on web as it does natively.
   return (
+    <View pointerEvents="none" style={{ width: size, height: size }}>
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
       {name === 'radar' && <><Circle cx="12" cy="12" r="9" /><Circle cx="12" cy="12" r="5.5" /><Circle cx="12" cy="12" r="2" /><Path d="M12 12 18.4 5.6" /></>}
       {name === 'search' && <><Circle cx="10.5" cy="10.5" r="7" /><Path d="m16 16 5 5" /></>}
@@ -28,5 +31,6 @@ export function Icon({ name, size = 22, color = '#d4bcd8', filled = false }: { n
       {name === 'wave' && <Path d="M2 12h4l3-8 4 16 3-12 2 4h4" />}
       {name === 'cocktail' && <Path d="m3 3 9 10 9-10H3Zm9 10v8m-5 0h10M6 6h12" />}
     </Svg>
+    </View>
   );
 }

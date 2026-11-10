@@ -1,5 +1,5 @@
 export const floatingTabBar = {
-  height: 60,
+  height: 66,
   bottomGap: 10,
   contentGap: 12,
 } as const;

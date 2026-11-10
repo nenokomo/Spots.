@@ -1,11 +1,13 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { ActivityIndicator, Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
-import { colors, radius, space, type } from '../../constants/theme';
+import { ActivityIndicator, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+import { colors, radius, space, squircle, type } from '../../constants/theme';
+import { GlassBackdrop } from '../GlassBackdrop';
 import { Icon, type IconName } from '../Icon';
+import { PressableScale } from './PressableScale';
 
-type Props = {
+type ButtonProps = {
   label: string;
   onPress: () => void;
+  /** primary = brand fill, secondary = quiet grey fill, ghost = text only. */
   variant?: 'primary' | 'secondary' | 'ghost';
   size?: 'md' | 'sm';
   icon?: IconName;
@@ -16,34 +18,46 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
-/** The one button of the app. Primary = brand gradient, secondary = soft outline, ghost = text only. */
-export function Button({ label, onPress, variant = 'primary', size = 'md', icon, trailingIcon, disabled, loading, accessibilityLabel, style }: Props) {
-  const tint = variant === 'primary' ? colors.text : variant === 'secondary' ? colors.text : colors.pink;
+export function Button({ label, onPress, variant = 'primary', size = 'md', icon, trailingIcon, disabled, loading, accessibilityLabel, style }: ButtonProps) {
+  const tint = variant === 'ghost' ? colors.pink : colors.text;
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: !!disabled || !!loading, busy: !!loading }}
       disabled={disabled || loading}
       onPress={onPress}
-      style={({ pressed }) => [styles.base, size === 'sm' ? styles.sm : styles.md, styles[variant], (pressed || disabled) && styles.dimmed, style]}
+      style={[styles.base, size === 'sm' ? styles.sm : styles.md, styles[variant], disabled && styles.disabled, style]}
     >
-      {variant === 'primary' && <LinearGradient pointerEvents="none" colors={[colors.accent, '#9b268f']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />}
-      {loading ? <ActivityIndicator color={tint} /> : icon && <Icon name={icon} size={size === 'sm' ? 16 : 18} color={tint} />}
+      {loading ? <ActivityIndicator color={tint} /> : icon && <Icon name={icon} size={size === 'sm' ? 16 : 19} color={tint} />}
       <Text numberOfLines={1} style={[size === 'sm' ? styles.smLabel : styles.label, { color: tint }]}>{label}</Text>
       {trailingIcon && <Icon name={trailingIcon} size={15} color={tint} />}
-    </Pressable>
+    </PressableScale>
+  );
+}
+
+type IconButtonProps = { icon: IconName; onPress: () => void; accessibilityLabel: string; size?: number; tint?: string; plain?: boolean; style?: StyleProp<ViewStyle> };
+
+/** Round control that floats over maps and images on a translucent material. */
+export function IconButton({ icon, onPress, accessibilityLabel, size = 44, tint = colors.text, plain = false, style }: IconButtonProps) {
+  return (
+    <PressableScale accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} scaleTo={0.92} hitSlop={6}
+      style={[styles.icon, { width: size, height: size, borderRadius: size / 2 }, style]}>
+      {!plain && <GlassBackdrop radius={size / 2} />}
+      <Icon name={icon} size={Math.round(size * 0.48)} color={tint} />
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
-  base: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm, overflow: 'hidden', borderRadius: radius.md },
-  md: { minHeight: 50, paddingHorizontal: space.xl },
-  sm: { minHeight: 40, paddingHorizontal: space.md, borderRadius: radius.sm },
+  base: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm, overflow: 'hidden', borderRadius: radius.md, ...squircle },
+  md: { minHeight: 52, paddingHorizontal: space.xl },
+  sm: { minHeight: 38, paddingHorizontal: space.lg, borderRadius: radius.pill },
   primary: { backgroundColor: colors.accent },
-  secondary: { backgroundColor: '#ffffff0d', borderWidth: 1, borderColor: '#ffffff1f' },
+  secondary: { backgroundColor: colors.surfaceHigh },
   ghost: { backgroundColor: 'transparent' },
-  dimmed: { opacity: 0.6 },
-  label: { ...type.label, fontSize: 14, fontWeight: '700' },
-  smLabel: { ...type.label, fontSize: 12 },
+  disabled: { opacity: 0.45 },
+  label: { ...type.headline },
+  smLabel: { ...type.label, fontSize: 14 },
+  icon: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
 });

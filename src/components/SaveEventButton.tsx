@@ -1,39 +1,43 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../constants/theme';
+import { StyleSheet, Text, View } from 'react-native';
+import { colors, radius, type } from '../constants/theme';
 import { useSavedEvents } from '../hooks/useSavedEvents';
 import { Icon } from './Icon';
+import { PressableScale } from './ui/PressableScale';
 
-export function SaveEventButton({ id, title, label = false, tile = false }: { id: string; title: string; label?: boolean; tile?: boolean }) {
+type Props = { id: string; title: string; label?: boolean; overlay?: boolean; size?: number };
+
+/** Heart toggle. `overlay` puts it on a dark material for use on top of images. */
+export function SaveEventButton({ id, title, label = false, overlay = false, size = 40 }: Props) {
   const { ids, ready, busy, toggle, reload } = useSavedEvents();
   const [failed, setFailed] = useState(false);
   const saved = ids.includes(id);
-  return <View style={tile && styles.tileWrap}>
-    <Pressable
+  return <View>
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={!ready ? 'Merkliste erneut laden' : `${title} ${saved ? 'nicht mehr merken' : 'merken'}`}
       accessibilityState={{ selected: saved, disabled: busy }}
       disabled={busy}
+      scaleTo={0.88}
+      hitSlop={6}
       onPress={async (event) => {
         event.stopPropagation();
         if (!ready) { reload(); return; }
         setFailed(!await toggle(id));
       }}
-      style={({ pressed }) => [styles.button, label && styles.labeled, tile && styles.tile, pressed && styles.pressed]}
+      style={[styles.button, { height: size, minWidth: size, borderRadius: size / 2 }, overlay && styles.overlay, label && styles.labeled]}
     >
-      <Icon name="heart" size={19} color={saved ? colors.pink : colors.muted} filled={saved} />
+      <Icon name="heart" size={Math.round(size * 0.48)} color={saved ? colors.pink : colors.text} filled={saved} />
       {label && <Text style={styles.text}>{saved ? 'Gemerkt' : 'Merken'}</Text>}
-    </Pressable>
-    {failed && <Text accessibilityRole="alert" style={styles.error}>Fehler. Erneut versuchen.</Text>}
+    </PressableScale>
+    {failed && <Text accessibilityRole="alert" style={styles.error}>Nicht gespeichert</Text>}
   </View>;
 }
 
 const styles = StyleSheet.create({
-  button: { width: 44, height: 44, flexShrink: 0, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#211827', borderWidth: 1, borderColor: colors.border },
-  labeled: { width: 112, flexDirection: 'row', gap: 7, paddingHorizontal: 12 },
-  tileWrap: { flex: 1, minWidth: 0 },
-  tile: { width: '100%', minHeight: 56, flex: 1, borderRadius: 9, backgroundColor: '#ffffff09', flexDirection: 'row', gap: 7, paddingHorizontal: 12 },
-  pressed: { opacity: 0.55 },
-  text: { color: colors.muted, fontSize: 11, fontWeight: '600' },
-  error: { color: colors.pink, fontSize: 10, maxWidth: 110, marginTop: 4 },
+  button: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: colors.surfaceHigh },
+  overlay: { backgroundColor: '#00000080' },
+  labeled: { paddingHorizontal: 16, borderRadius: radius.pill },
+  text: { ...type.label, color: colors.text },
+  error: { ...type.footnote, fontSize: 10, color: colors.danger, marginTop: 3, textAlign: 'center' },
 });

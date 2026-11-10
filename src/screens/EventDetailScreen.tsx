@@ -3,16 +3,17 @@ import * as Linking from 'expo-linking';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { EventArtwork } from '../components/EventCards';
 import { EventDataState } from '../components/EventDataState';
 import { EventPhotoViewer } from '../components/EventPhotoViewer';
-import { Icon, type IconName } from '../components/Icon';
+import { GlassBackdrop } from '../components/GlassBackdrop';
+import { Icon } from '../components/Icon';
 import { SaveEventButton } from '../components/SaveEventButton';
-import { Screen } from '../components/Screen';
-import { Button } from '../components/ui/Button';
-import { SectionHeader } from '../components/ui/Section';
+import { Button, IconButton } from '../components/ui/Button';
+import { ListGroup, ListRow } from '../components/ui/List';
 import { StatusBadge } from '../components/ui/StatusBadge';
-import { colors, radius, space, type } from '../constants/theme';
+import { colors, radius, space, squircle, type } from '../constants/theme';
 import { useEvent } from '../hooks/useEvents';
 import { useEventContent } from '../hooks/useEventContent';
 import { useNow } from '../hooks/useNow';
@@ -21,23 +22,18 @@ import { organizerHref } from '../navigation/eventRoutes';
 import { formatPrice } from '../services/content';
 import { eventPhase } from '../utils/eventStatus';
 
-const dayFormat = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+const GUTTER = 20;
+const dayFormat = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const shortDay = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit' });
 const timeFormat = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
-const endFormat = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
-function Fact({ icon, title, text, onPress, label }: { icon: IconName; title: string; text?: string; onPress?: () => void; label?: string }) {
-  const content = <>
-    <View style={styles.factIcon}><Icon name={icon} size={19} color={colors.pink} /></View>
-    <View style={styles.factCopy}><Text style={styles.factTitle}>{title}</Text>{text && <Text style={styles.factText}>{text}</Text>}</View>
-    {onPress && <Icon name="chevron" size={16} color={colors.faint} />}
-  </>;
-  return onPress
-    ? <Pressable accessibilityRole="button" accessibilityLabel={label ?? title} onPress={onPress} style={({ pressed }) => [styles.fact, pressed && styles.pressed]}>{content}</Pressable>
-    : <View style={styles.fact}>{content}</View>;
+function Stat({ label, value }: { label: string; value: string }) {
+  return <View style={styles.stat}><Text style={styles.statLabel}>{label}</Text><Text numberOfLines={1} style={styles.statValue}>{value}</Text></View>;
 }
 
 export default function EventDetailScreen() {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const now = useNow();
   const { id } = useLocalSearchParams<{ id: string }>();
   const remote = useEvent(id);
@@ -48,20 +44,27 @@ export default function EventDetailScreen() {
   const [linkError, setLinkError] = useState(false);
   const back = () => router.canGoBack() ? router.back() : router.replace('/');
 
-  if (!event || remote.error) return <Screen><View style={styles.state}><EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />{!remote.loading && !remote.error && <Text style={styles.title}>Event nicht verfügbar</Text>}<Link href="/" style={styles.link}>Zurück zum Radar</Link></View></Screen>;
+  if (!event || remote.error) return <View style={styles.screen}><View style={[styles.state, { paddingTop: insets.top + 12 }]}>
+    <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} plain style={styles.stateBack} />
+    <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
+    {!remote.loading && !remote.error && <Text style={styles.title}>Event nicht verfügbar</Text>}
+    <Link href="/" style={styles.link}>Zurück zum Radar</Link>
+  </View></View>;
 
   const phase = eventPhase(event, now);
   const ended = phase === 'ended';
   const start = new Date(event.startsAt);
+  const end = event.endsAt ? new Date(event.endsAt) : null;
   const ticketUrl = event.ticketUrl?.startsWith('https://') ? event.ticketUrl : undefined;
   const sourceUrl = event.sourceUrl?.startsWith('https://') ? event.sourceUrl : undefined;
   const sourceLabel = event.sourceName ? event.sourceName.charAt(0).toLocaleUpperCase('de') + event.sourceName.slice(1) : 'der Originalseite';
   const point = event.coordinate;
-  const tags = [...new Set([...event.categories, ...(event.genres ?? [])])];
+  const tags = [...new Set([...(event.genres ?? []), ...event.categories])];
   const snaps = content.snaps.filter((snap) => snap.mediaType === 'image');
   const gallery = [...(event.imageIsPlaceholder ? [] : [event.image]), ...snaps.map((snap) => ({ uri: snap.url }))];
-  const heroHeight = Math.min(440, Math.max(250, width * 0.95));
+  const heroHeight = Math.min(520, Math.max(320, width * 1.08));
   const place = event.venue ? `${event.venue}, ${event.location}` : event.location;
+  const primary = !ended ? ticketUrl ?? sourceUrl : undefined;
 
   async function open(url: string) {
     setLinkError(false);
@@ -73,125 +76,131 @@ export default function EventDetailScreen() {
     void open(Platform.OS === 'ios' ? `https://maps.apple.com/?daddr=${destination}` : `https://www.google.com/maps/dir/?api=1&destination=${destination}`);
   }
   async function share() {
-    try { await Share.share({ title: `${event!.title} · Spots`, message: `${event!.title}\n${dayFormat.format(start)}, ${timeFormat.format(start)} Uhr\n${place}${sourceUrl ? `\n${sourceUrl}` : ''}` }); } catch { /* user dismissed */ }
+    try { await Share.share({ title: `${event!.title} · Spots`, message: `${event!.title}\n${dayFormat.format(start)}, ${timeFormat.format(start)} Uhr\n${place}${sourceUrl ? `\n${sourceUrl}` : ''}` }); } catch { /* dismissed */ }
   }
 
-  const primary = !ended && (ticketUrl ?? sourceUrl);
-  return <Screen><SafeAreaView edges={['bottom']} style={styles.flex}>
-    <ScrollView contentContainerStyle={styles.scroll}>
+  return <View style={styles.screen}>
+    <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 120 }} showsVerticalScrollIndicator={false}>
       <View style={[styles.hero, { height: heroHeight }]}>
-        {/* Flyers vary wildly in format: blurred backdrop plus the complete image instead of a hard crop. */}
-        <Image source={event.image} style={StyleSheet.absoluteFill} resizeMode="cover" blurRadius={event.imageIsPlaceholder ? 0 : 26} accessibilityLabel={event.imageIsPlaceholder ? 'Symbolfoto, kein Foto dieses Events' : `Eventbild: ${event.title}`} />
-        {!event.imageIsPlaceholder && <><View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.heroTint]} /><Pressable accessibilityRole="button" accessibilityLabel="Eventbild groß anzeigen" onPress={() => setViewer(0)} style={StyleSheet.absoluteFill}><Image source={event.image} style={StyleSheet.absoluteFill} resizeMode="contain" /></Pressable></>}
-        <LinearGradient pointerEvents="none" colors={['#100b1580', '#100b1500', '#100b1500', '#100b15a6']} locations={[0, 0.22, 0.7, 1]} style={StyleSheet.absoluteFill} />
-        <View style={styles.toolbar}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={back} style={styles.round}><Icon name="back" color={colors.text} /></Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Event teilen" onPress={() => void share()} style={styles.round}><Icon name="share" size={20} color={colors.text} /></Pressable>
-        </View>
+        <View style={[styles.heroArt, { top: insets.top + 52 }]}><EventArtwork event={event} /></View>
+        {!event.imageIsPlaceholder && <Pressable accessibilityRole="button" accessibilityLabel="Eventbild groß anzeigen" onPress={() => setViewer(0)} style={StyleSheet.absoluteFill} />}
+        <LinearGradient pointerEvents="none" colors={['#000000b3', '#00000000', '#00000000', '#000000']} locations={[0, 0.2, 0.72, 1]} style={StyleSheet.absoluteFill} />
         {event.imageIsPlaceholder && <Text style={styles.placeholderNote}>Symbolbild</Text>}
       </View>
 
       <View style={styles.body}>
-        <View style={styles.statusRow}><StatusBadge phase={phase} /><SaveEventButton id={event.id} title={event.title} label /></View>
+        {phase !== 'upcoming' && <StatusBadge phase={phase} />}
         <Text style={styles.title}>{event.title}</Text>
         {organizer
           ? <Link href={organizerHref(organizer.id)} asChild><Pressable accessibilityRole="link" accessibilityLabel={`Veranstalter ${organizer.displayName} öffnen`} style={styles.organizer}>
-              <View style={styles.organizerAvatar}>{organizer.avatarUrl ? <Image source={{ uri: organizer.avatarUrl }} style={StyleSheet.absoluteFill} /> : <Icon name="profile" size={15} color={colors.pink} />}</View>
-              <Text numberOfLines={1} style={styles.organizerText}>von <Text style={styles.organizerName}>{organizer.displayName}</Text></Text>
-              <Icon name="chevron" size={14} color={colors.faint} />
+              <View style={styles.organizerAvatar}>{organizer.avatarUrl ? <Image source={{ uri: organizer.avatarUrl }} style={StyleSheet.absoluteFill} /> : <Icon name="profile" size={14} color={colors.text} />}</View>
+              <Text numberOfLines={1} style={styles.organizerName}>{organizer.displayName}</Text>
+              <Icon name="chevron" size={13} color={colors.faint} />
             </Pressable></Link>
-          : event.sourceName && <Text style={styles.source}>Quelle: {sourceLabel}</Text>}
-        {tags.length > 0 && <View style={styles.tags}>{tags.map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}</View>}
+          : <Text style={styles.subtitle}>{place}</Text>}
 
-        {ended
-          ? <View style={styles.endedNote}><Icon name="clock" size={16} color={colors.faint} /><Text style={styles.endedText}>Dieses Event ist vorbei. Tickets und Route werden nicht mehr angeboten.</Text></View>
-          : <View style={styles.actions}>
-              {primary && <Button label={ticketUrl ? 'Tickets kaufen' : 'Infos & Tickets'} accessibilityLabel={ticketUrl ? 'Tickets beim Anbieter kaufen' : `Infos und Tickets auf der Originalseite bei ${sourceLabel}`} icon="ticket" onPress={() => void open(primary)} style={styles.flex} />}
-              {point && <Button label="Route" icon="map" variant="secondary" onPress={route} accessibilityLabel="Route zum Veranstaltungsort anzeigen" style={!primary ? styles.flex : undefined} />}
-            </View>}
+        <View style={styles.stats}>
+          <Stat label="Datum" value={shortDay.format(start)} />
+          <View style={styles.statDivider} />
+          <Stat label="Beginn" value={`${timeFormat.format(start)} Uhr`} />
+          <View style={styles.statDivider} />
+          <Stat label="Ende" value={end ? `${timeFormat.format(end)} Uhr` : 'offen'} />
+        </View>
+
+        {tags.length > 0 && <View style={styles.tags}>{tags.map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}</View>}
         {linkError && <Text accessibilityRole="alert" style={styles.error}>Der Link konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
 
-        <View style={styles.facts}>
-          <Fact icon="calendar" title={dayFormat.format(start)} text={`${timeFormat.format(start)} Uhr${event.endsAt ? ` bis ${endFormat.format(new Date(event.endsAt))} Uhr` : ' · Ende nicht angegeben'}`} />
-          <View style={styles.divider} />
-          <Fact icon="pin" title={event.venue ?? event.location} text={[event.venue ? event.location : null, point && !ended ? 'Route anzeigen' : null].filter(Boolean).join(' · ') || undefined} onPress={point && !ended ? route : undefined} label="Route zum Veranstaltungsort anzeigen" />
-          <View style={styles.divider} />
-          <Fact icon="ticket" title="Tickets" text={ended ? 'Event beendet' : ticketUrl ? 'Beim Ticketanbieter erhältlich' : sourceUrl ? `Infos auf der Originalseite bei ${sourceLabel}` : 'Noch keine Ticketinformationen'} onPress={primary ? () => void open(primary) : undefined} />
+        <View style={styles.block}>
+          <ListGroup>
+            <ListRow icon="calendar" title={dayFormat.format(start)} subtitle={`${timeFormat.format(start)} Uhr${end ? ` bis ${shortDay.format(end)}, ${timeFormat.format(end)} Uhr` : ' · Ende nicht angegeben'}`} />
+            <ListRow icon="pin" title={event.venue ?? event.location} subtitle={event.venue ? event.location : point && !ended ? 'Route anzeigen' : undefined} onPress={point && !ended ? route : undefined} accessibilityLabel="Route zum Veranstaltungsort anzeigen" />
+            <ListRow icon="ticket" title="Tickets" subtitle={ended ? 'Event beendet' : ticketUrl ? 'Beim Ticketanbieter erhältlich' : sourceUrl ? `Infos auf der Originalseite bei ${sourceLabel}` : 'Noch keine Ticketinformationen'} onPress={primary ? () => void open(primary) : undefined} />
+          </ListGroup>
         </View>
 
-        {content.tickets.length > 0 && !ended && <>
-          <SectionHeader title="Ticketarten" note="Verkauf über den angegebenen Anbieter" />
-          <View style={styles.tickets}>{content.tickets.map((ticket) => (
-            <Pressable key={ticket.id} accessibilityRole="button" disabled={!ticket.externalUrl || ticket.soldOut} onPress={() => ticket.externalUrl && void open(ticket.externalUrl)} style={styles.ticket}>
-              <View style={styles.factCopy}><Text style={styles.factTitle}>{ticket.name}</Text>{ticket.description && <Text style={styles.factText}>{ticket.description}</Text>}</View>
-              <Text style={[styles.price, ticket.soldOut && styles.soldOut]}>{ticket.soldOut ? 'Ausverkauft' : formatPrice(ticket.priceCents, ticket.currency)}</Text>
-            </Pressable>
-          ))}</View>
-        </>}
+        {content.tickets.length > 0 && !ended && <View style={styles.block}>
+          <Text style={styles.heading}>Ticketarten</Text>
+          <ListGroup footer="Der Verkauf läuft über den angegebenen Anbieter.">
+            {content.tickets.map((ticket) => <ListRow key={ticket.id} title={ticket.name} subtitle={ticket.description ?? undefined} value={ticket.soldOut ? 'Ausverkauft' : formatPrice(ticket.priceCents, ticket.currency)} onPress={ticket.externalUrl && !ticket.soldOut ? () => void open(ticket.externalUrl!) : undefined} />)}
+          </ListGroup>
+        </View>}
 
-        {event.description && <><SectionHeader title="Über das Event" /><Text style={styles.description}>{event.description}</Text></>}
+        {event.description && <View style={styles.block}><Text style={styles.heading}>Über das Event</Text><Text style={styles.description}>{event.description}</Text></View>}
 
-        <SectionHeader title="Live Snaps" note="Eindrücke von Besuchern · 24 Stunden sichtbar" />
-        {snaps.length > 0
-          ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.snaps}>
-              {snaps.map((snap, index) => <Pressable key={snap.id} accessibilityRole="button" accessibilityLabel={`Live Snap ${index + 1} öffnen`} onPress={() => setViewer(gallery.length - snaps.length + index)} style={styles.snap}><Image source={{ uri: snap.url }} style={StyleSheet.absoluteFill} resizeMode="cover" />{snap.byOrganizer && <Text style={styles.snapBadge}>Veranstalter</Text>}</Pressable>)}
-            </ScrollView>
-          : <View style={styles.snapEmpty}><Icon name="camera" size={20} color={colors.pink} /><Text style={styles.snapEmptyText}>{phase === 'live' || phase === 'started' ? 'Noch keine Live Snaps von heute Nacht.' : 'Live Snaps erscheinen, sobald das Event läuft.'} Hochladen ist mit einem Spots-Konto geplant.</Text></View>}
+        <View style={styles.block}>
+          <Text style={styles.heading}>Live Snaps</Text>
+          {snaps.length > 0
+            ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.snaps}>
+                {snaps.map((snap, index) => <Pressable key={snap.id} accessibilityRole="button" accessibilityLabel={`Live Snap ${index + 1} öffnen`} onPress={() => setViewer(gallery.length - snaps.length + index)} style={styles.snap}><Image source={{ uri: snap.url }} style={StyleSheet.absoluteFill} resizeMode="cover" />{snap.byOrganizer && <Text style={styles.snapBadge}>Veranstalter</Text>}</Pressable>)}
+              </ScrollView>
+            : <Text style={styles.description}>{phase === 'live' || phase === 'started' ? 'Noch keine Eindrücke von heute Nacht.' : 'Fotos und kurze Videos von Besuchern erscheinen, sobald das Event läuft.'} Sie bleiben 24 Stunden sichtbar.</Text>}
+        </View>
 
-        <View style={styles.footerLinks}>
+        <View style={styles.links}>
+          {ended && <Text style={styles.footnote}>Dieses Event ist vorbei.</Text>}
           {sourceUrl && <Link href={sourceUrl} style={styles.link}>Original auf {sourceLabel} öffnen ↗</Link>}
           {event.sourceName?.toLowerCase() === 'goabase' && <Link href="https://www.goabase.net/" style={styles.link}>Veranstaltungen von Goabase ↗</Link>}
+          <Text style={styles.footnote}>Zeiten in Europe/Berlin · Angaben der Veranstaltungsquelle{event.sourceName ? ` (${sourceLabel})` : ''}</Text>
         </View>
-        <Text style={styles.footer}>Zeiten in Europe/Berlin · Angaben der Veranstaltungsquelle</Text>
       </View>
     </ScrollView>
-  </SafeAreaView>
-  <Modal visible={viewer !== null} animationType="fade" onRequestClose={() => setViewer(null)}>{viewer !== null && <EventPhotoViewer images={gallery} initialIndex={viewer} onClose={() => setViewer(null)} />}</Modal>
-  </Screen>;
+
+    <View pointerEvents="box-none" style={[styles.toolbar, { paddingTop: insets.top + 8 }]}>
+      <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} />
+      <IconButton icon="share" accessibilityLabel="Event teilen" onPress={() => void share()} />
+    </View>
+
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <GlassBackdrop radius={0} variant="panel" />
+      <View style={styles.barRow}>
+        {primary
+          ? <Button label={ticketUrl ? 'Tickets kaufen' : 'Infos & Tickets'} accessibilityLabel={ticketUrl ? 'Tickets beim Anbieter kaufen' : `Infos und Tickets auf der Originalseite bei ${sourceLabel}`} icon="ticket" onPress={() => void open(primary)} style={styles.flex} />
+          : <View style={styles.barCopy}><Text numberOfLines={1} style={styles.barTitle}>{ended ? 'Event beendet' : `${shortDay.format(start)} · ${timeFormat.format(start)} Uhr`}</Text><Text numberOfLines={1} style={styles.barText}>{place}</Text></View>}
+        {point && !ended && <IconButton icon="map" accessibilityLabel="Route zum Veranstaltungsort anzeigen" onPress={route} size={52} plain style={styles.barButton} />}
+        <SaveEventButton id={event.id} title={event.title} size={52} />
+      </View>
+    </View>
+
+    <Modal visible={viewer !== null} animationType="fade" onRequestClose={() => setViewer(null)}>{viewer !== null && <EventPhotoViewer images={gallery} initialIndex={viewer} onClose={() => setViewer(null)} />}</Modal>
+  </View>;
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  scroll: { paddingBottom: space.xxl },
-  state: { flex: 1, padding: space.xl, gap: space.md },
-  hero: { overflow: 'hidden', backgroundColor: colors.surface, marginHorizontal: space.md, marginTop: space.sm, borderRadius: radius.xl },
-  heroTint: { backgroundColor: '#100b1580' },
-  toolbar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', padding: space.md },
-  round: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#100b15a6', alignItems: 'center', justifyContent: 'center' },
-  placeholderNote: { position: 'absolute', right: space.md, bottom: space.md, ...type.caption, fontSize: 10, color: colors.text, backgroundColor: '#100b15b3', borderRadius: radius.sm, overflow: 'hidden', paddingHorizontal: space.sm, paddingVertical: 3 },
-  body: { paddingHorizontal: space.xl, paddingTop: space.lg },
-  statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
-  title: { ...type.display, fontSize: 28, lineHeight: 34, color: colors.text, marginTop: space.md },
-  organizer: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 44, marginTop: space.xs, alignSelf: 'flex-start' },
-  organizerAvatar: { width: 26, height: 26, borderRadius: 13, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentSoft },
-  organizerText: { ...type.label, color: colors.muted, flexShrink: 1 },
-  organizerName: { color: colors.text, fontWeight: '700' },
-  source: { ...type.caption, color: colors.faint, marginTop: space.sm },
+  screen: { flex: 1, backgroundColor: colors.background },
+  state: { flex: 1, paddingHorizontal: GUTTER, gap: space.md },
+  stateBack: { backgroundColor: colors.surface, marginBottom: space.lg },
+  hero: { overflow: 'hidden', backgroundColor: colors.surface },
+  heroArt: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  placeholderNote: { position: 'absolute', right: GUTTER, bottom: space.xl, ...type.footnote, fontSize: 11, color: colors.text, backgroundColor: '#00000099', borderRadius: radius.sm, overflow: 'hidden', paddingHorizontal: space.sm, paddingVertical: 3 },
+  toolbar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: space.lg },
+  body: { paddingHorizontal: GUTTER, paddingTop: space.sm, gap: space.sm },
+  title: { ...type.largeTitle, color: colors.text },
+  subtitle: { ...type.body, color: colors.muted },
+  organizer: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 36, alignSelf: 'flex-start' },
+  organizerAvatar: { width: 26, height: 26, borderRadius: 13, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent },
+  organizerName: { ...type.label, color: colors.text, flexShrink: 1 },
+  stats: { flexDirection: 'row', alignItems: 'center', marginTop: space.lg, paddingVertical: space.lg, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.separator },
+  stat: { flex: 1, alignItems: 'center', gap: 4 },
+  statLabel: { ...type.overline, fontSize: 11, color: colors.faint },
+  statValue: { ...type.headline, color: colors.text },
+  statDivider: { width: StyleSheet.hairlineWidth, height: 30, backgroundColor: colors.separator },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs, marginTop: space.md },
-  tag: { ...type.caption, fontSize: 11, fontWeight: '600', color: colors.muted, backgroundColor: '#ffffff0d', borderRadius: radius.pill, overflow: 'hidden', paddingHorizontal: space.md, paddingVertical: 5 },
-  actions: { flexDirection: 'row', gap: space.sm, marginTop: space.xl },
-  endedNote: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.xl, padding: space.md, borderRadius: radius.md, backgroundColor: '#ffffff0a' },
-  endedText: { ...type.caption, color: colors.muted, flex: 1 },
-  error: { ...type.caption, color: colors.danger, marginTop: space.sm },
-  facts: { marginTop: space.xl, paddingHorizontal: space.md, borderRadius: radius.lg, backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: '#ffffff0f' },
-  fact: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 68, paddingVertical: space.md },
-  pressed: { opacity: 0.7 },
-  factIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentSoft },
-  factCopy: { flex: 1, minWidth: 0 },
-  factTitle: { ...type.label, fontSize: 14, color: colors.text },
-  factText: { ...type.caption, color: colors.muted, marginTop: 2 },
-  divider: { height: 1, backgroundColor: '#ffffff0f', marginLeft: 50 },
-  tickets: { gap: space.sm },
-  ticket: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.md, backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: '#ffffff0f' },
-  price: { ...type.label, color: colors.text, fontWeight: '800' },
-  soldOut: { color: colors.faint },
+  tag: { ...type.footnote, fontWeight: '600', color: colors.text, backgroundColor: colors.surfaceHigh, borderRadius: radius.pill, overflow: 'hidden', paddingHorizontal: space.md, paddingVertical: 6 },
+  error: { ...type.footnote, color: colors.danger },
+  block: { marginTop: space.xl, gap: space.md },
+  heading: { ...type.title2, color: colors.text },
   description: { ...type.body, color: colors.muted },
   snaps: { gap: space.sm },
-  snap: { width: 104, height: 156, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surface },
-  snapBadge: { position: 'absolute', left: 6, bottom: 6, ...type.caption, fontSize: 9, fontWeight: '700', color: colors.text, backgroundColor: '#c922abcc', borderRadius: 6, overflow: 'hidden', paddingHorizontal: 5, paddingVertical: 2 },
-  snapEmpty: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.accentLine },
-  snapEmptyText: { ...type.caption, color: colors.muted, flex: 1 },
-  footerLinks: { marginTop: space.xl },
-  link: { ...type.label, color: colors.pink, paddingVertical: space.md },
-  footer: { ...type.caption, fontSize: 10, color: colors.faint, textAlign: 'center', marginTop: space.lg },
+  snap: { width: 112, height: 168, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surface, ...squircle },
+  snapBadge: { position: 'absolute', left: 6, bottom: 6, ...type.footnote, fontSize: 10, fontWeight: '700', color: colors.text, backgroundColor: colors.accent, borderRadius: 6, overflow: 'hidden', paddingHorizontal: 6, paddingVertical: 2 },
+  links: { marginTop: space.xl, gap: space.xs },
+  link: { ...type.callout, color: colors.pink, paddingVertical: space.sm },
+  footnote: { ...type.footnote, color: colors.faint },
+  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: space.md, paddingHorizontal: space.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator },
+  barRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  barCopy: { flex: 1, minWidth: 0 },
+  barTitle: { ...type.headline, color: colors.text },
+  barText: { ...type.footnote, color: colors.faint },
+  barButton: { backgroundColor: colors.surfaceHigh },
 });

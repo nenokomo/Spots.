@@ -17,7 +17,7 @@ const mapStyle = [
   { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#242426' }] },
 ];
 
-export default function RadarMap({ center, radius, userCoordinate, events, onSelect, onCenterChange, onVisibleRadiusChange, scan }: RadarMapProps) {
+export default function RadarMap({ center, radius, userCoordinate, events, onSelect, onCenterChange, onVisibleRadiusChange, scan, topInset = 0, bottomInset = 0 }: RadarMapProps) {
   const map = useRef<MapView>(null);
   const viewport = useRef(center);
   const focus = useRef(center);
@@ -26,7 +26,7 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
   const pendingRadius = useRef<number | null>(radius);
   const initialized = useRef(false);
   const [layout, setLayout] = useState({ width: 360, height: 360 });
-  const size = Math.min(layout.width * 0.96, layout.height * 0.96);
+  const size = Math.min(layout.width * 0.96, Math.max(120, layout.height - topInset - bottomInset) * 0.96);
   const latitudeDelta = radius * 2 / 111.32;
   const longitudeDelta = latitudeDelta * layout.width / layout.height / Math.max(0.01, Math.cos(center.latitude * Math.PI / 180));
   useEffect(() => {
@@ -70,6 +70,7 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
           viewport.current = { latitude: region.latitude, longitude: region.longitude };
           onCenterChange(viewport.current);
         }}
+        mapPadding={{ top: topInset, right: 0, bottom: bottomInset, left: 0 }}
         userInterfaceStyle="dark"
         mapType={Platform.OS === 'ios' ? 'mutedStandard' : 'standard'}
         customMapStyle={mapStyle}
@@ -86,7 +87,7 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
         {events.map((event) => <EventMapMarker key={event.id} event={event} reduceMotion={scan.reduceMotion || scan.settledIds.includes(event.id)} onSelect={onSelect} onSettled={scan.onPinSettled} />)}
       </MapView>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.tint]} />
-      {scan.scanning && <RadarOverlay size={size} rotation={scan.rotation} opacity={scan.opacity} />}
+      {scan.scanning && <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.overlay, { paddingTop: topInset, paddingBottom: bottomInset }]}><RadarOverlay size={size} rotation={scan.rotation} opacity={scan.opacity} /></View>}
     </View>
   );
 }
@@ -94,6 +95,7 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
 const styles = StyleSheet.create({
   frame: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: '#202023' },
   tint: { backgroundColor: '#00000020' },
+  overlay: { alignItems: 'center', justifyContent: 'center' },
   locationHalo: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#388bff30', alignItems: 'center', justifyContent: 'center' },
   locationDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#348cff', borderWidth: 3, borderColor: '#ffffff' },
 });

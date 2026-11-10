@@ -131,8 +131,8 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
             </View>
           )}
         </Animated.View>
-        <LinearGradient pointerEvents="none" colors={['#100b15d9', '#100b1500']} style={[styles.topShade, { height: insets.top + 120 }]} />
-        <LinearGradient pointerEvents="none" colors={['#100b1500', '#100b15e6', colors.background]} locations={[0, 0.45, 1]} style={[styles.bottomShade, { height: insets.bottom + 330 }]} />
+        <LinearGradient pointerEvents="none" colors={['#000000d9', '#00000000']} style={[styles.topShade, { height: insets.top + 120 }]} />
+        <LinearGradient pointerEvents="none" colors={['#00000000', '#000000e6', colors.background]} locations={[0, 0.45, 1]} style={[styles.bottomShade, { height: insets.bottom + 330 }]} />
 
         <View style={styles.zones}>
           <Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={previous} onLongPress={() => setPaused(true)} onPressOut={() => setPaused(false)} delayLongPress={180} style={styles.zoneBack} />
@@ -160,11 +160,11 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
           {current.placeholder && <Text style={styles.symbol}>Symbolbild · für dieses Event liegt noch kein Bild vor</Text>}
           <Text style={styles.when}>{eventDayLabel(event.startsAt, today).toLocaleUpperCase('de')} · {eventTimeLabel(event.startsAt)} UHR</Text>
           <Text numberOfLines={3} accessibilityRole="header" style={styles.title}>{event.title}</Text>
-          <View style={styles.meta}><Icon name="pin" size={15} color="#e3d2e6" /><Text numberOfLines={1} style={styles.metaText}>{place}</Text></View>
+          <View style={styles.meta}><Icon name="pin" size={15} color="#ebebf5cc" /><Text numberOfLines={1} style={styles.metaText}>{place}</Text></View>
           {tags.length > 0 && <View style={styles.tags}>{tags.slice(0, 4).map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}</View>}
           <View style={styles.actions}>
             <Pressable accessibilityRole="button" accessibilityLabel={`${event.title}, Event ansehen`} onPress={() => onOpenEvent(event)} style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
-              <LinearGradient pointerEvents="none" colors={[colors.accent, '#9b268f']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cover} />
+              <LinearGradient pointerEvents="none" colors={[colors.accent, '#a01b88']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cover} />
               <Text style={styles.ctaText}>Event ansehen</Text>
               <Icon name="chevron" size={17} color={colors.text} />
             </Pressable>
@@ -180,8 +180,8 @@ const styles = StyleSheet.create({
   viewer: { flex: 1, backgroundColor: colors.background },
   fill: { flex: 1 },
   cover: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
-  tint: { backgroundColor: '#100b1594' },
-  placeholderTint: { backgroundColor: '#100b1566' },
+  tint: { backgroundColor: '#00000094' },
+  placeholderTint: { backgroundColor: '#00000066' },
   media: { position: 'absolute', left: 18, right: 18, alignItems: 'center', justifyContent: 'center' },
   mediaImage: { width: '100%', height: '100%', maxWidth: 460 },
   topShade: { position: 'absolute', top: 0, left: 0, right: 0 },
@@ -197,14 +197,14 @@ const styles = StyleSheet.create({
   headerCopy: { flex: 1, minWidth: 0, gap: 3 },
   brand: { color: colors.text, fontSize: 11, fontWeight: '800', letterSpacing: 2.2 },
   brandDot: { color: colors.pink },
-  counter: { color: '#e3d2e6', fontSize: 11 },
-  close: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: '#100b1580' },
+  counter: { color: '#ebebf5cc', fontSize: 11 },
+  close: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: '#00000080' },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 18, gap: 8 },
-  symbol: { color: '#e3d2e6', fontSize: 11 },
+  symbol: { color: '#ebebf5cc', fontSize: 11 },
   when: { color: colors.pink, fontSize: 12, fontWeight: '800', letterSpacing: 1.1 },
   title: { color: colors.text, fontSize: 26, lineHeight: 31, fontWeight: '800', letterSpacing: -0.6 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  metaText: { color: '#e3d2e6', fontSize: 13, flexShrink: 1 },
+  metaText: { color: '#ebebf5cc', fontSize: 13, flexShrink: 1 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   tag: { color: colors.text, fontSize: 11, fontWeight: '600', backgroundColor: '#ffffff1c', borderRadius: 12, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 4 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },

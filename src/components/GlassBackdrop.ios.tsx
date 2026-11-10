@@ -11,5 +11,5 @@ function hasNativeGlass() {
 export function GlassBackdrop({ radius = 16, variant = 'control', native = true }: GlassBackdropProps) {
   const allowed = useGlassAllowed();
   if (!native || !allowed || !hasNativeGlass()) return <GlassFallback radius={radius} variant={variant} />;
-  return <GlassView pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" colorScheme="dark" glassEffectStyle="regular" tintColor={variant === 'panel' ? '#28133288' : '#401b3a55'} style={[StyleSheet.absoluteFill, { borderRadius: radius }]} />;
+  return <GlassView pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" colorScheme="dark" glassEffectStyle="regular" tintColor={variant === 'panel' ? '#00000066' : '#00000033'} style={[StyleSheet.absoluteFill, { borderRadius: radius }]} />;
 }

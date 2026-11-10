@@ -9,5 +9,8 @@ export type RadarMapProps = {
   onSelect: (event: LocatedEvent) => void;
   onCenterChange: (center: { latitude: number; longitude: number }) => void;
   onVisibleRadiusChange: (radiusKm: number) => void;
+  /** Space covered by floating controls; the map centres in what remains. */
+  topInset?: number;
+  bottomInset?: number;
   scan: { scanning: boolean; rotation: Animated.Value; opacity: Animated.Value; reduceMotion: boolean; settledIds: string[]; onPinSettled: (id: string) => void };
 };

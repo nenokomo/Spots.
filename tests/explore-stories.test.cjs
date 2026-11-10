@@ -22,9 +22,9 @@ function load(file) {
   const stub = new Proxy({}, { get: (_, key) => key });
   function dependency(id) {
     if (id === 'react/jsx-runtime') return jsx;
-    if (id === 'react-native') return { StyleSheet: { create: s => s }, Image: 'Image', View: 'View', Text: 'Text', Pressable: 'Pressable' };
+    if (id === 'react-native') return { StyleSheet: { create: s => s, absoluteFill: {} }, Image: 'Image', View: 'View', Text: 'Text', Pressable: 'Pressable', ScrollView: 'ScrollView' };
     if (id.endsWith('/utils/events')) return { eventDayLabel, eventTimeLabel };
-    if (id.endsWith('/theme')) return { colors: stub };
+    if (id.endsWith('/theme')) return { colors: stub, space: stub, radius: stub, type: stub, squircle: {}, gutter: 20 };
     return stub;
   }
   const code = ts.transpileModule(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), { compilerOptions: {
@@ -61,22 +61,22 @@ test('story media contains only the media of the event record and labels the sym
   assert.equal(remoteImageUri(1), null);
 });
 
-test('story tile opens the story preview and keeps the save action for the same event', () => {
-  let opened = 0;
-  const { StoryTile } = load('src/components/StoryTile.tsx');
-  const elements = nodes(StoryTile({ event, today: '2026-11-14', seen: false, onOpen: () => { opened++; } }));
-  const tile = elements.find(node => node.type === 'Pressable');
-  tile.props.onPress();
-  assert.equal(opened, 1);
-  assert(elements.some(node => node.props?.children === event.title));
-  assert(elements.some(node => node.type === 'SaveEventButton' && node.props.id === event.id));
-  // The tile itself never links to an organizer or a fictional target.
+test('story rail opens the preview of exactly the tapped event', () => {
+  const opened = [];
+  const { StoryRail } = load('src/components/EventCards.tsx');
+  const second = { ...event, id: 'second-uuid', title: 'Second record' };
+  const elements = nodes(StoryRail({ events: [event, second], today: '2026-11-14', seen: [event.id], onOpen: id => opened.push(id) }));
+  const bubbles = elements.filter(node => node.type === 'PressableScale');
+  assert.equal(bubbles.length, 2);
+  bubbles[1].props.onPress();
+  assert.deepEqual(opened, ['second-uuid']);
+  // A bubble never links to an organizer or a fictional target.
   assert(!elements.some(node => node.type === 'Link'));
 });
 
 test('explore keeps search, genre and date filters and routes stories to the event detail page', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'src/screens/ExploreScreen.tsx'), 'utf8');
-  for (const required of ['<TextInput', '<CategoryFilters', '<EventCalendar', 'matchesEventPeriod', '<ExploreEventCard', '<StoryTile', '<EventStoryViewer']) {
+  for (const required of ['<TextInput', 'categories.map', '<EventCalendar', 'matchesEventPeriod', 'distanceKm', '<StoryRail', '<EventHero', '<EventRow', '<EventStoryViewer']) {
     assert(source.includes(required), `${required} missing`);
   }
   // Opening an event from the preview uses the central, context-aware route rule.

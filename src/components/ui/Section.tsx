@@ -1,35 +1,33 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { brandDotStyle, colors, space, type } from '../../constants/theme';
+import { colors, gutter, space, type } from '../../constants/theme';
 import { Icon, type IconName } from '../Icon';
 import { Button } from './Button';
 
-/** Eyebrow, large title and optional subtitle at the top of a tab screen. */
-export function PageHeader({ section, title, subtitle, trailing }: { section: string; title: string; subtitle?: string; trailing?: ReactNode }) {
+/** Large-title header of a tab: small overline, big title, optional control on the right. */
+export function LargeHeader({ overline, title, trailing }: { overline?: string; title: string; trailing?: ReactNode }) {
   return (
-    <View style={styles.page}>
-      <View style={styles.pageCopy}>
-        <Text style={styles.eyebrow}>SPOTS<Text style={brandDotStyle}>.</Text> / {section}</Text>
-        <Text accessibilityRole="header" style={styles.pageTitle}>{title}</Text>
-        {subtitle && <Text style={styles.pageSubtitle}>{subtitle}</Text>}
+    <View style={styles.header}>
+      <View style={styles.headerCopy}>
+        {overline && <Text style={styles.overline}>{overline}</Text>}
+        <Text accessibilityRole="header" style={styles.largeTitle}>{title}</Text>
       </View>
       {trailing}
     </View>
   );
 }
 
-/** Section title with an optional note and action on the right. */
-export function SectionHeader({ title, note, action, onAction }: { title: string; note?: string; action?: string; onAction?: () => void }) {
+/** Section title with an optional action on the right. */
+export function SectionHeader({ title, note, action, onAction, inset = true }: { title: string; note?: string; action?: string; onAction?: () => void; inset?: boolean }) {
   return (
-    <View style={styles.section}>
-      <View style={styles.sectionCopy}>
+    <View style={[styles.section, inset && styles.inset]}>
+      <View style={styles.headerCopy}>
         <Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>
         {note && <Text style={styles.sectionNote}>{note}</Text>}
       </View>
       {action && onAction && (
-        <Pressable accessibilityRole="button" accessibilityLabel={action} onPress={onAction} style={styles.action}>
+        <Pressable accessibilityRole="button" accessibilityLabel={action} onPress={onAction} hitSlop={10} style={styles.action}>
           <Text style={styles.actionText}>{action}</Text>
-          <Icon name="chevron" size={13} color={colors.pink} />
         </Pressable>
       )}
     </View>
@@ -40,7 +38,7 @@ export function SectionHeader({ title, note, action, onAction }: { title: string
 export function EmptyState({ icon, title, text, action, onAction }: { icon: IconName; title: string; text?: string; action?: string; onAction?: () => void }) {
   return (
     <View style={styles.empty}>
-      <View style={styles.emptyIcon}><Icon name={icon} size={26} color={colors.pink} /></View>
+      <Icon name={icon} size={44} color={colors.faint} />
       <Text style={styles.emptyTitle}>{title}</Text>
       {text && <Text style={styles.emptyText}>{text}</Text>}
       {action && onAction && <Button label={action} onPress={onAction} variant="secondary" size="sm" style={styles.emptyAction} />}
@@ -49,20 +47,18 @@ export function EmptyState({ icon, title, text, action, onAction }: { icon: Icon
 }
 
 const styles = StyleSheet.create({
-  page: { flexDirection: 'row', alignItems: 'flex-end', gap: space.md, paddingTop: space.xl, paddingBottom: space.xl },
-  pageCopy: { flex: 1, minWidth: 0 },
-  eyebrow: { ...type.overline, color: '#b58ca9', letterSpacing: 2.4, marginBottom: space.sm },
-  pageTitle: { ...type.display, color: colors.text },
-  pageSubtitle: { ...type.caption, color: '#c4b3c8', marginTop: space.xxs },
-  section: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: space.md, paddingTop: space.xxl, paddingBottom: space.md },
-  sectionCopy: { flex: 1, minWidth: 0 },
-  sectionTitle: { ...type.headline, color: colors.text },
-  sectionNote: { ...type.caption, fontSize: 11, color: colors.faint, marginTop: 3 },
-  action: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: space.sm },
-  actionText: { ...type.caption, color: colors.pink, fontWeight: '700' },
-  empty: { alignItems: 'center', paddingVertical: space.xxl, paddingHorizontal: space.lg, gap: space.sm },
-  emptyIcon: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentSoft, marginBottom: space.xs },
-  emptyTitle: { ...type.headline, fontSize: 16, color: colors.text, textAlign: 'center' },
-  emptyText: { ...type.caption, color: colors.muted, textAlign: 'center', maxWidth: 300 },
-  emptyAction: { marginTop: space.sm },
+  header: { flexDirection: 'row', alignItems: 'flex-end', gap: space.md, paddingHorizontal: gutter, paddingTop: space.md, paddingBottom: space.md },
+  headerCopy: { flex: 1, minWidth: 0 },
+  overline: { ...type.overline, color: colors.faint, marginBottom: 2 },
+  largeTitle: { ...type.largeTitle, color: colors.text },
+  section: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: space.md, paddingTop: space.xxl + 4, paddingBottom: space.md },
+  inset: { paddingHorizontal: gutter },
+  sectionTitle: { ...type.title2, color: colors.text },
+  sectionNote: { ...type.footnote, color: colors.faint, marginTop: 2 },
+  action: { minHeight: 30, justifyContent: 'flex-end' },
+  actionText: { ...type.callout, color: colors.pink },
+  empty: { alignItems: 'center', paddingVertical: space.xxxl, paddingHorizontal: space.xxl, gap: space.sm },
+  emptyTitle: { ...type.title3, color: colors.text, textAlign: 'center', marginTop: space.sm },
+  emptyText: { ...type.callout, color: colors.muted, textAlign: 'center', maxWidth: 300 },
+  emptyAction: { marginTop: space.md },
 });

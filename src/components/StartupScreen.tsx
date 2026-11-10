@@ -17,11 +17,11 @@ export function StartupScreen({ onLayout }: { onLayout: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#100b15', alignItems: 'center', paddingHorizontal: 24 },
+  screen: { flex: 1, backgroundColor: '#000000', alignItems: 'center', paddingHorizontal: 24 },
   brand: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  wordmark: { color: colors.text, fontSize: 44, fontWeight: '300', letterSpacing: 3, paddingHorizontal: 6, marginTop: 8 },
+  wordmark: { color: colors.text, fontSize: 44, fontWeight: '800', letterSpacing: -1.5, paddingHorizontal: 6, marginTop: 8 },
   dot: { color: colors.accent },
-  tagline: { color: '#b69bb3', fontSize: 13, letterSpacing: 0.5, marginTop: 10, textAlign: 'center' },
+  tagline: { color: '#8e8e93', fontSize: 13, letterSpacing: 0.5, marginTop: 10, textAlign: 'center' },
   loading: { alignItems: 'center', gap: 12, paddingTop: 24, paddingBottom: 32 },
-  loadingText: { color: '#826f87', fontSize: 10, letterSpacing: 1 },
+  loadingText: { color: '#8e8e93', fontSize: 10, letterSpacing: 1 },
 });

@@ -7,6 +7,7 @@ const ts = require('typescript');
 const jsx = require('react/jsx-runtime');
 
 // Render component return trees with controlled hooks. No network, native runtime or invented app data.
+const pushed = [];
 function load(file, resource = {}) {
   const module = { exports: {} };
   const native = { StyleSheet: { create: s => s, flatten: s => s, absoluteFill: {} },
@@ -17,9 +18,10 @@ function load(file, resource = {}) {
     if (id === 'react/jsx-runtime') return jsx;
     if (id === 'react') return { useState: initial => [initial, () => {}], useMemo: fn => fn(), useCallback: fn => fn, useEffect: () => {} };
     if (id === 'react-native') return native;
-    if (id === 'react-native-safe-area-context') return { SafeAreaView: 'SafeAreaView' };
-    if (id === 'expo-router') return { Link: 'Link', router: {}, useLocalSearchParams: () => ({ id: 'source-uuid' }) };
-    if (id.endsWith('/theme')) return { colors: stub, space: stub, radius: stub, type: stub };
+    if (id === 'react-native-safe-area-context') return { SafeAreaView: 'SafeAreaView', useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) };
+    if (id === 'expo-router') return { Link: 'Link', router: { push: href => pushed.push(href) }, useLocalSearchParams: () => ({ id: 'source-uuid' }) };
+    if (id.endsWith('/theme')) return { colors: stub, space: stub, radius: stub, type: stub, squircle: {}, gutter: 20 };
+    if (id.endsWith('/utils/events')) return { eventDayLabel: () => 'Sa., 02.01.', eventTimeLabel: () => '21:00' };
     if (id.endsWith('/useEvents')) return { useEvent: () => resource };
     if (id.endsWith('/useNow')) return { useNow: () => Date.parse('2030-01-01T12:00:00Z') };
     if (id.endsWith('/types/events')) return { isLiveEvent: () => false };
@@ -46,13 +48,17 @@ const event = { id: 'source-uuid', title: 'Controlled source record', categories
   image: { uri: 'https://example.org/source-image.jpg' }, imageIsPlaceholder: false,
   sourceName: 'Goabase', sourceUrl: 'https://www.goabase.net/12345', description: 'Source description' };
 
-test('all four redesigned cards navigate using the event UUID, without a fictional organizer association', () => {
-  for (const name of ['EventCard', 'ExploreEventCard', 'RadarEventCard', 'TodayEventCard']) {
-    const component = load(`src/components/${name}.tsx`)[name];
-    const tree = component({ event, distance: 1, height: 140 });
-    const link = nodes(tree).find(node => node.type === 'Link');
-    assert.equal(link.props.href.pathname, '/event/[id]');
-    assert.equal(link.props.href.params.id, event.id);
+test('all event cards navigate to the event UUID they were given, without a fictional organizer association', () => {
+  const href = { pathname: '/event/[id]', params: { id: event.id } };
+  const cards = load('src/components/EventCards.tsx');
+  const row = load('src/components/EventRow.tsx');
+  for (const component of [cards.EventHero, cards.EventPoster, cards.RadarCard, row.EventRow]) {
+    pushed.length = 0;
+    const tree = component({ event, href, today: '2030-01-01', now: Date.parse('2030-01-01T12:00:00Z'), width: 320, distanceKm: 1 });
+    const pressable = nodes(tree).find(node => node.type === 'PressableScale' && node.props.accessibilityRole === 'link');
+    pressable.props.onPress();
+    assert.deepEqual(pushed, [href]);
+    assert(nodes(tree).some(node => node.props?.children === event.title));
   }
 });
 test('new detail layout displays the fetched record and real original/backlinks', () => {

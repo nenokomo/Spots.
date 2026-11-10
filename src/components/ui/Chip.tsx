@@ -1,29 +1,25 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { colors, radius, space, type } from '../../constants/theme';
 import { Icon, type IconName } from '../Icon';
+import { PressableScale } from './PressableScale';
 
-type Props = { label: string; selected?: boolean; onPress: () => void; icon?: IconName; accessibilityLabel?: string };
+type Props = { label: string; selected?: boolean; onPress: () => void; icon?: IconName; trailingIcon?: IconName; accessibilityLabel?: string };
 
-/** Selectable pill for filters, periods and radii. */
-export function Chip({ label, selected = false, onPress, icon, accessibilityLabel }: Props) {
+/** Capsule for filters. Selected = white on black inverted, the strongest neutral contrast. */
+export function Chip({ label, selected = false, onPress, icon, trailingIcon, accessibilityLabel }: Props) {
+  const tint = selected ? '#000000' : colors.text;
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={({ pressed }) => [styles.chip, selected && styles.selected, pressed && styles.pressed]}
-    >
-      {icon && <Icon name={icon} size={14} color={selected ? '#ffd6f2' : colors.muted} />}
-      <Text numberOfLines={1} style={[styles.label, selected && styles.selectedLabel]}>{label}</Text>
-    </Pressable>
+    <PressableScale accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label} accessibilityState={{ selected }} onPress={onPress} scaleTo={0.95}
+      style={[styles.chip, selected && styles.selected]}>
+      {icon && <Icon name={icon} size={15} color={tint} />}
+      <Text numberOfLines={1} style={[styles.label, { color: tint }]}>{label}</Text>
+      {trailingIcon && <Icon name={trailingIcon} size={12} color={tint} />}
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
-  chip: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingHorizontal: 14, borderRadius: radius.pill, borderWidth: 1, borderColor: '#ffffff17', backgroundColor: '#ffffff08' },
-  selected: { backgroundColor: colors.accentSoft, borderColor: colors.accentLine },
-  pressed: { opacity: 0.7 },
-  label: { ...type.caption, color: colors.muted, fontWeight: '600' },
-  selectedLabel: { color: '#ffd6f2' },
+  chip: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: colors.surfaceHigh },
+  selected: { backgroundColor: colors.text },
+  label: { ...type.label, fontSize: 14 },
 });

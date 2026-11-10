@@ -2,6 +2,24 @@
 
 Stand: 10.11.2026. Veranstalterseiten, Navigation, Designsystem und Inhalts-Backend auf feature/design-refresh; keine Produktionsänderungen.
 
+## Experiment: komplettes Redesign (Branch experiment/redesign, 11.11.2026)
+
+Eigener Branch von feature/design-refresh. Nur Oberfläche neu; Datenschicht, zentrale Navigation, Statuslogik, Accounts und SQL unverändert. Nicht gepusht. Zum alten Stand zurück: `git checkout feature/design-refresh`.
+
+**Designsprache** (`constants/theme.ts`): echtes Schwarz, Systempalette im iOS-Dunkelstil, Markenfarbe `#c922ab` als einzige Farbe und nur für Primäraktionen und Live-Status, große Titel, Haarlinien statt Kästen, durchgehend abgerundete Ecken (`borderCurve: 'continuous'`), Karten geben beim Antippen leicht nach (`PressableScale`).
+
+**Struktur**
+- Drei Tabs statt vier: Radar, Entdecken, Gemerkt. Das Profil öffnet als Sheet über einen runden Button oben rechts (`/profile`, `presentation: 'modal'`).
+- **Radar**: Karte randlos im Vollbild, schwebende Glas-Bedienelemente (Ort, Filter, Profil, Standort), unten ein Karussell mit Eventkarten. Zeigt laufende Events und solche, die später am selben Abend starten; Pins unterscheiden beides (gefüllt = läuft, umrandet = startet später). Pin antippen springt im Karussell zur Karte. Ohne Events in der Nähe: nächstgelegene kommende Events als Karten, ohne Pins. Die Seite „Alle ansehen“ (`/today`) entfällt.
+- **Entdecken**: redaktioneller Feed mit Story-Leiste, großen Hero-Karten („Als Nächstes“), Regal „Dieses Wochenende“ und Kalender nach Tagen. Suche, Ort/Umkreis, Datum und Genre als Chips; mit aktiven Filtern nur die Ergebnisliste.
+- **Eventdetail**: randloses Artwork (Flyer vollständig auf eigenem Farbfeld), Kennzahlen-Zeile Datum/Beginn/Ende, gruppierte Liste, feste Aktionsleiste unten (Tickets, Route, Merken).
+- **Veranstalterseite, Gemerkt, Profil, Konto** im selben Stil; neue Bausteine `components/ui/` (Button, IconButton, Chip, Sheet, ListGroup/ListRow, LargeHeader) und `components/EventCards.tsx`.
+- Entfernt: EventCard, ExploreEventCard, RadarEventCard, TodayEventCard, AnimatedEventCard, StoryTile, GlassTabIcon, TodayEventsScreen.
+
+**Geprüft**: 94/94 Tests (mit PGlite), Expo-Lint, Typecheck. Web-Vorschau 375 × 812: Radar (Karlsruhe mit Testevents, Pins, Karussell), Entdecken, Story-Ansicht, Eventdetail, Gemerkt (leer), Profil.
+
+**Nicht geprüft**: kein iOS-/Android-Gerät. Besonders offen: `mapPadding` der nativen Karte (verschiebt Kartenmitte und Anbieter-Logo über das Karussell), neue Pins als native Marker, Profil als natives Modal, Glas-Effekt, Schrift (im Browser Segoe UI statt San Francisco). Veranstalterseite mit Daten und Gemerkt mit Einträgen im neuen Stil nicht visuell geprüft.
+
 ## Aktuell: Veranstalterseiten, zentrale Navigation, Designsystem, Inhalte und Ticketing vorbereitet (10.11.2026)
 
 Branch **feature/design-refresh** (Basis origin/main 9dbee1b, plus Merge von feature/organizer-auth). Lokal committet, **nicht gepusht, nicht nach main gemergt**. Keine Remote-SQL-Ausführung, keine Produktionsänderung, keine neuen App-Abhängigkeiten. Details: [docs/CONTENT_ARCHITECTURE.md](docs/CONTENT_ARCHITECTURE.md).

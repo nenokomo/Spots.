@@ -43,7 +43,7 @@ export function CitySearch({ label, locating, onLocate, onSelect, compact = fals
         <TextInput
           accessibilityLabel="Stadt suchen"
           placeholder={compact ? label : locating ? 'Standort wird gesucht …' : `${label} · Stadt suchen`}
-          placeholderTextColor={compact ? '#b6a5bb' : '#c5adcb'}
+          placeholderTextColor={compact ? '#8e8e93' : '#8e8e93'}
           value={query}
           onFocus={() => setOpen(true)}
           onChangeText={(value) => { setQuery(value); setOpen(true); }}
@@ -81,10 +81,10 @@ const styles = StyleSheet.create({
   inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff07', borderWidth: 1, borderColor: '#ffffff16', borderRadius: 15, paddingLeft: 11, minHeight: 44, gap: 7 },
   compactInputRow: { backgroundColor: '#ffffff04', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff20', borderRadius: 22, gap: 6 },
   compactInput: { fontSize: 11, fontWeight: '400' },
-  focused: { borderColor: '#c922ab80', backgroundColor: '#1b1221' },
+  focused: { borderColor: '#c922ab80', backgroundColor: '#2c2c2e' },
   input: { flex: 1, minWidth: 0, minHeight: 44, color: colors.text, fontSize: 12, paddingVertical: 8 },
   action: { width: 38, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  results: { position: 'absolute', top: 51, left: -65, right: 0, backgroundColor: '#201527', borderRadius: 17, borderWidth: 1, borderColor: '#c922ab45', overflow: 'hidden', elevation: 12, boxShadow: '0 8px 24px #00000066' },
+  results: { position: 'absolute', top: 51, left: -65, right: 0, backgroundColor: '#1c1c1e', borderRadius: 17, borderWidth: 1, borderColor: '#c922ab45', overflow: 'hidden', elevation: 12, boxShadow: '0 8px 24px #00000066' },
   flushResults: { left: 0, right: 0 },
   resultList: { maxHeight: 235 },
   result: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 15, paddingVertical: 13, minHeight: 58, borderBottomWidth: 1, borderBottomColor: '#ffffff08' },
@@ -96,5 +96,5 @@ const styles = StyleSheet.create({
   error: { paddingTop: 14 },
   errorTitle: { color: colors.text, fontSize: 12, paddingHorizontal: 13 },
   source: { paddingHorizontal: 13, paddingVertical: 10, backgroundColor: '#ffffff04' },
-  sourceText: { color: '#b59fbd', fontSize: 9 },
+  sourceText: { color: '#8e8e93', fontSize: 9 },
 });
