@@ -1,10 +1,40 @@
 # Projektstatus – Spots
 
-Stand: 10.11.2026. Design-Refresh auf eigenem Branch; keine Backend-Änderungen.
+Stand: 10.11.2026. Veranstalterseiten, Navigation, Designsystem und Inhalts-Backend auf feature/design-refresh; keine Produktionsänderungen.
 
-## Aktuell: Design-Refresh und Story-Vorschau in Entdecken (10.11.2026)
+## Aktuell: Veranstalterseiten, zentrale Navigation, Designsystem, Inhalte und Ticketing vorbereitet (10.11.2026)
 
-Branch **feature/design-refresh**, Basis origin/main **9dbee1b**. Noch nicht committet/gepusht. Keine Backend-, SQL-, Auth- oder Importänderungen, keine neuen Abhängigkeiten. Produktvision verdichtet in [docs/VISION.md](docs/VISION.md).
+Branch **feature/design-refresh** (Basis origin/main 9dbee1b, plus Merge von feature/organizer-auth). Lokal committet, **nicht gepusht, nicht nach main gemergt**. Keine Remote-SQL-Ausführung, keine Produktionsänderung, keine neuen App-Abhängigkeiten. Details: [docs/CONTENT_ARCHITECTURE.md](docs/CONTENT_ARCHITECTURE.md).
+
+**Umgesetzt**
+- **Designsystem**: Tokens für Abstände, Radien und Schrift in `constants/theme.ts`; Bausteine `components/ui/` (Button, Chip, PageHeader, SectionHeader, EmptyState, StatusBadge) und `EventRow`. Eingesetzt in Entdecken, Gemerkt, Eventdetail, Veranstalterseite, Konto und Filter-Chips.
+- **Zentrale Eventlogik**: `utils/eventStatus.ts` (läuft, heute, morgen, vorbei; über Mitternacht korrekt; Nacht bis 05:00) und `navigation/eventRoutes.ts` (kontextabhängig: Entdecken + zukünftiges Event + Veranstalter → Veranstalterseite mit hervorgehobenem Event; sonst Eventdetail).
+- **Veranstalterseite** komplett neu mit echten Daten aus SQL 15: Kopfbereich, ausgewähltes Event mit „Event ansehen“/„Tickets“, Stories aus Flyern kommender Events, kommende und vergangene Events, Beiträge, Website. Sauberer Zustand, wo Veranstalter nicht existieren (Produktion). Demo-Gerüst (`data/organizers.ts`, `data/organizerPosts.ts`, `OrganizerPostFeed`) entfernt.
+- **Eventdetail** neu: Status, Veranstalter-Link (falls vorhanden) oder Quelle, „Tickets kaufen“/„Infos & Tickets“ und „Route“ (Apple Maps / Google Maps), bei vergangenen Events keine Ticket-/Routenaktion. Ticketarten und Live Snaps werden angezeigt, sobald das Backend sie liefert. „BeReels“ in „Live Snaps“ umbenannt (Nähe zu einer Fremdmarke).
+- **Entdecken**: Umkreissuche (deutsche Stadt oder eigener Standort; 10/25/50/100 km; Entfernung auf den Kacheln), Chips für Ort, Genre und Datum, „Zurücksetzen“, Navigation über die zentrale Regel.
+- **Gemerkt**: getrennt nach Anstehend/Vergangen, nach Datum sortiert, Statusanzeige, Suche ab vier Einträgen, Hinweis auf nicht mehr veröffentlichte Events.
+- **Profil/Konto**: Profil verlinkt die vorhandene Anmeldung `/account`, sobald die Testkonfiguration aktiv ist (keine zweite Authentifizierung); Kontoseite im neuen Design.
+- **Daten**: `SpotEvent.organizerId`; `club`/`clubs` → Filter „Clubs“ (exakte Synonyme, keine Genre-Rateerei). Damit funktioniert der Clubs-Filter erstmals mit den echten Goabase-Daten.
+- **Backend vorbereitet** (nur lokal geprüft): `supabase/ops/17_content_tickets.sql` (live_snaps mit 24-h-Lebensdauer, serverseitigem Status, Upload-Zeitfenster, Rate-Limit und Moderation; content_reports mit Auto-Ausblendung ab 3 Meldungen; saved_events; ticket_types; Bildpfad für Beiträge; Aufräumfunktion für abgelaufene Snaps). `18_content_storage.sql` (private Buckets und Storage-Policies). Leseservice `services/content.ts`.
+
+**Geprüft**
+- `node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE` (PGlite 0.5.15, separat installiert): **92 Tests, 92 bestanden, 0 übersprungen**. Neu: `navigation.test.cjs` (Mitternacht, Navigationsregel, Kategorie-Synonyme, Rückfall ohne organizer_id auch bei parallelen Anfragen), `content-backend.test.cjs` (echte RLS-Prüfung von SQL 17 in PGlite inklusive unveränderter Bestandsevents und Wiederholungsschutz).
+- Expo-Lint und Typecheck erfolgreich.
+- Web-Vorschau 375 × 812 gegen Produktionsdaten: Entdecken (Umkreis Hamburg 50 km → 10 Events mit Entfernung), Eventdetail, Gemerkt, Profil, Radar, Veranstalterseite (Leerzustand mit echten Daten; Kopfbereich und Beiträge mit lokal im Browser abgefangenen Testdaten). Dabei zwei Fehler gefunden und behoben: Wettlauf beim Rückfall ohne organizer_id, Layout von `Link asChild` mit Stil-Funktion auf Web.
+
+**Nicht geprüft / offen**
+- Kein Test auf iOS/Android-Gerät (Gesten, Modals, Safe Area, Karten-Apps, Unschärfe).
+- Veranstalter-Eventlisten und das hervorgehobene Event der Veranstalterseite nur per Typecheck, nicht visuell mit Daten geprüft (Produktion hat keine Veranstalter).
+- SQL 17/18 in keinem Supabase-Projekt ausgeführt; SQL 18 (Storage) gar nicht automatisiert getestet.
+- In Produktion pro App-Start 2–3 erwartete 400-Antworten (optimistische organizer_id-Abfrage), bis SQL 15 dort eingespielt ist.
+- Kein Upload-UI für Live Snaps/Beiträge (benötigt `expo-image-picker`/`expo-video` und eine Development Build). Keine Bestellungen/Zahlungen/QR-Tickets.
+- Merkliste weiterhin nur lokal; Synchronisierung mit `saved_events` nach Login noch nicht gebaut.
+- Marker-Clustering im Radar bewusst nicht eingebaut (29 Events); ab einigen hundert Markern neu bewerten.
+- Abstimmung nötig: ORGANIZER_ARCHITECTURE.md hatte die öffentlichen Veranstalterseiten dem Kollegen zugeordnet; diese Dateien wurden jetzt auf ausdrücklichen Wunsch neu gebaut.
+
+## Vorher: Design-Refresh und Story-Vorschau in Entdecken (10.11.2026)
+
+Branch **feature/design-refresh**, Basis origin/main **9dbee1b**. Committet als cabc652. Keine Backend-, SQL-, Auth- oder Importänderungen, keine neuen Abhängigkeiten. Produktvision verdichtet in [docs/VISION.md](docs/VISION.md).
 
 **Umgesetzt und im Browser (375 × 812, Web) geprüft**
 - **Entdecken**: Suche, Genre-/Datumsfilter und „Demnächst“ unverändert oben. Darunter ersetzen hochformatige Story-Kacheln (`StoryTile`) die bisherige Kartenliste. Antippen öffnet die Vollbild-Vorschau (`EventStoryViewer`): Fortschrittsbalken, Tippen rechts/links, seitlich wischen zum nächsten/vorherigen Event, Halten pausiert, nach unten wischen schließt, „Event ansehen“ führt zur bestehenden Detailseite, Merken bleibt möglich. Bereits angesehene Kacheln verlieren den Akzentrahmen (nur für die laufende Sitzung). Bei reduzierter Bewegung kein automatisches Weiterschalten.

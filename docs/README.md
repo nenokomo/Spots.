@@ -3,6 +3,8 @@
 ## Aktuelle Einstiege
 
 - [Account-/Veranstaltervertrag](ORGANIZER_ARCHITECTURE.md): gemeinsame Typen, private Profile, RLS, Testprojekt-Einrichtung und nächste Auth-Schritte.
+- [Veranstalter, Navigation, Inhalte und Ticketing](CONTENT_ARCHITECTURE.md): Seitentypen, zentrale Navigationsregel, Live Snaps, Beiträge, Ticketarten und Rollout-Reihenfolge.
+- [Produktvision (Kurzfassung)](VISION.md)
 
 - [Design-/Datenintegration](DESIGN_INTEGRATION.md): lokaler Integrationsbranch, Konfliktentscheidungen und tatsächliche Browser-/Testnachweise.
 
