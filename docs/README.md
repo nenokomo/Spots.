@@ -2,6 +2,8 @@
 
 ## Aktuelle Einstiege
 
+- [Account-/Veranstaltervertrag](ORGANIZER_ARCHITECTURE.md): gemeinsame Typen, private Profile, RLS, Testprojekt-Einrichtung und nächste Auth-Schritte.
+
 - [Design-/Datenintegration](DESIGN_INTEGRATION.md): lokaler Integrationsbranch, Konfliktentscheidungen und tatsächliche Browser-/Testnachweise.
 
 - [Projektstatus](../PROJECT_STATUS.md): aktueller Funktions- und Betriebsstand, Grenzen, nächste Schritte.
