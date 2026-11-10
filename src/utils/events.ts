@@ -43,3 +43,18 @@ export function matchesEventPeriod(event: SpotEvent, period: string, today: stri
   }
   return true;
 }
+
+/** "Heute", "Morgen" or a short weekday date such as "Sa., 14.11." in Berlin time. */
+export function eventDayLabel(startsAt: string, today: string = dayKey()) {
+  const date = new Date(startsAt);
+  const key = dayKey(date);
+  if (key === today) return 'Heute';
+  const tomorrow = new Date(`${today}T12:00:00Z`);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  if (key === tomorrow.toISOString().slice(0, 10)) return 'Morgen';
+  return new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit' }).format(date);
+}
+
+export function eventTimeLabel(startsAt: string) {
+  return new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' }).format(new Date(startsAt));
+}

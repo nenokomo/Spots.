@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { router } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ExploreEventCard } from '../components/ExploreEventCard';
 import { EventDataState } from '../components/EventDataState';
+import { EventStoryViewer } from '../components/EventStoryViewer';
+import { StoryTile } from '../components/StoryTile';
 import { EventCalendar } from '../components/EventCalendar';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Icon } from '../components/Icon';
@@ -36,7 +39,14 @@ export default function ExploreScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const activeDate = selectedDate && selectedDate >= today ? selectedDate : null;
   const dateLabel = activeDate ? new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${activeDate}T12:00:00Z`)) : null;
-  const events = remote.events.filter((event) => matchesCategory(event, category) && (activeDate ? dayKey(new Date(event.startsAt)) === activeDate : matchesEventPeriod(event, period, today)) && `${event.title} ${event.categories.join(' ')} ${event.genres?.join(' ') ?? ''} ${event.location}`.toLocaleLowerCase('de').includes(search.trim().toLocaleLowerCase('de')));
+  const [story, setStory] = useState<string | null>(null);
+  const [seenStories, setSeenStories] = useState<string[]>([]);
+  const markSeen = useCallback((id: string) => setSeenStories((previous) => previous.includes(id) ? previous : [...previous, id]), []);
+  const closeStory = useCallback(() => setStory(null), []);
+  const events = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase('de');
+    return remote.events.filter((event) => matchesCategory(event, category) && (activeDate ? dayKey(new Date(event.startsAt)) === activeDate : matchesEventPeriod(event, period, today)) && `${event.title} ${event.categories.join(' ')} ${event.genres?.join(' ') ?? ''} ${event.location} ${event.venue ?? ''}`.toLocaleLowerCase('de').includes(query));
+  }, [remote.events, category, activeDate, period, today, search]);
   function resetFilters() { setSearch(''); setCategory('Alle'); setPeriod('all'); setSelectedDate(null); }
   const popularPreview = events.filter((event) => dayKey(new Date(event.startsAt)) >= today).slice(0, 3);
 
@@ -46,7 +56,9 @@ export default function ExploreScreen() {
       data={events}
       numColumns={2}
       keyExtractor={(event) => event.id}
-      renderItem={({ item }) => <View style={styles.gridCell}><ExploreEventCard event={item} /></View>}
+      renderItem={({ item }) => <View style={styles.gridCell}><StoryTile event={item} today={today} seen={seenStories.includes(item.id)} onOpen={() => setStory(item.id)} /></View>}
+      initialNumToRender={6}
+      windowSize={7}
       columnWrapperStyle={styles.gridRow}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       contentContainerStyle={[styles.list, { paddingBottom: tabBarContentInset(insets.bottom) }]}
@@ -75,7 +87,7 @@ export default function ExploreScreen() {
         {activeDate && <Pressable accessibilityRole="button" accessibilityLabel="Datumsfilter entfernen" onPress={() => setSelectedDate(null)} style={styles.selectedDate}><Text style={styles.selectedDateText}>{dateLabel}</Text><Icon name="close" size={14} color={colors.pink} /></Pressable>}
         <View style={styles.sectionHeading}><View><Text accessibilityRole="header" style={styles.section}>Demnächst</Text><Text style={styles.note}>Die nächsten Termine deiner Auswahl</Text></View></View>
         {popularPreview.length > 0 ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.popularList}>{popularPreview.map((event) => <View key={event.id} style={styles.popularCard}><ExploreEventCard event={event} /></View>)}</ScrollView> : <Text style={styles.emptyText}>Keine kommenden Events für diese Auswahl.</Text>}
-        <View style={styles.sectionHeading}><View><Text style={styles.section}>{activeDate ? 'Events an diesem Tag' : 'Alle Events'}</Text><Text style={styles.note}>Veröffentlichte kommende Events · Zeiten in Berlin</Text></View><Text style={styles.count}>{events.length} {events.length === 1 ? 'Event' : 'Events'}</Text></View>
+        <View style={styles.sectionHeading}><View><Text accessibilityRole="header" style={styles.section}>{activeDate ? 'Events an diesem Tag' : 'Alle Events'}</Text><Text style={styles.note}>Antippen für die Vorschau · Zeiten in Berlin</Text></View><Text style={styles.count}>{events.length} {events.length === 1 ? 'Event' : 'Events'}</Text></View>
         <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
       </View>}
       ListEmptyComponent={remote.loading || remote.error ? undefined : <View style={styles.empty}><Icon name="search" size={25} color={colors.pink} /><Text style={styles.emptyTitle}>Keine passenden Events gefunden.</Text><Text style={styles.emptyText}>Passe deine Suche oder deine Filter an.</Text><Pressable accessibilityRole="button" onPress={resetFilters} style={styles.reset}><Text style={styles.resetText}>Filter zurücksetzen</Text></Pressable></View>}
@@ -92,6 +104,9 @@ export default function ExploreScreen() {
           </View>
         </SafeAreaView>
       </View>
+    </Modal>
+    <Modal visible={story !== null} animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={closeStory}>
+      {story !== null && <EventStoryViewer events={events} initialId={story} today={today} onClose={closeStory} onSeen={markSeen} onOpenEvent={(event) => { setStory(null); router.push({ pathname: '/event/[id]', params: { id: event.id } }); }} />}
     </Modal>
   </Screen>;
 }
@@ -127,7 +142,7 @@ const styles = StyleSheet.create({
   section: { color: colors.text, fontWeight: '700', fontSize: 17, flexShrink: 1 },
   count: { color: '#c4b3c8', fontSize: 11 },
   note: { color: '#a993ae', fontSize: 10, marginTop: 5 },
-  separator: { height: 9 },
+  separator: { height: 10 },
   popularList: { gap: 12, paddingBottom: 6 },
   popularCard: { width: 190 },
   gridRow: { gap: 10 },

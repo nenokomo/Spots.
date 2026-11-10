@@ -15,10 +15,10 @@ import { RadiusSlider } from '../components/RadiusSlider';
 import { Screen } from '../components/Screen';
 import { brandDotStyle, brandHeadingStyle, colors, type Category } from '../constants/theme';
 import { tabBarContentInset } from '../constants/navigation';
-import { matchesCategory, type LocatedEvent } from '../types/events';
+import { isLocatedEvent, matchesCategory, type LocatedEvent } from '../types/events';
 import { useLocation } from '../hooks/useLocation';
 import { useRadarIntro } from '../hooks/useRadarIntro';
-import { useLiveEvents } from '../hooks/useEvents';
+import { useLiveEvents, useUpcomingEvents } from '../hooks/useEvents';
 import { distanceKm, type Coordinate } from '../utils/events';
 
 export default function RadarScreen() {
@@ -55,6 +55,18 @@ export default function RadarScreen() {
   const todayEvents = useMemo(() => remote.events.filter((event) => matchesCategory(event, category) && distanceKm(searchCenter, event.coordinate) <= radius), [category, radius, searchCenter, remote.events]);
   const radar = useRadarIntro(todayEvents);
   const visibleTodayEvents = radar.visibleEvents;
+  // Nothing is running here right now: offer the next real events instead of an empty panel.
+  // They are listed only and never shown as live pins.
+  const upcoming = useUpcomingEvents();
+  const next = useMemo(() => {
+    if (todayEvents.length > 0) return { nearby: true, events: [] as LocatedEvent[] };
+    const located = upcoming.events.filter((event): event is LocatedEvent => isLocatedEvent(event) && matchesCategory(event, category))
+      .map((event) => ({ event, distance: distanceKm(searchCenter, event.coordinate) }));
+    const nearby = located.filter((item) => item.distance <= radius).sort((a, b) => Date.parse(a.event.startsAt) - Date.parse(b.event.startsAt)).slice(0, 5);
+    if (nearby.length > 0) return { nearby: true, events: nearby.map((item) => item.event) };
+    return { nearby: false, events: located.sort((a, b) => a.distance - b.distance).slice(0, 3).map((item) => item.event) };
+  }, [todayEvents.length, upcoming.events, category, searchCenter, radius]);
+  const showNext = !radar.scanning && !remote.loading && !remote.error && todayEvents.length === 0 && next.events.length > 0;
 
   useFocusEffect(useCallback(() => {
     setPreview(null);
@@ -89,21 +101,25 @@ export default function RadarScreen() {
       <LinearGradient testID="radar-today-panel" colors={colors.panelGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.eventPanel, { height: Math.min(290, height * 0.35) + navigationInset, paddingBottom: navigationInset }]}>
         <View style={styles.handle} />
         <View style={styles.panelHeading}>
-          <Text style={styles.sectionTitle}>Jetzt in deiner Nähe</Text>
-          <Link href={{ pathname: '/today', params: { category, radius: String(radius), latitude: String(searchCenter.latitude), longitude: String(searchCenter.longitude) } }} asChild><Pressable accessibilityLabel="Alle laufenden Events in der Nähe ansehen" style={styles.seeAll}><Text style={styles.seeAllText}>Alle ansehen</Text><Icon name="chevron" size={14} color={colors.pink} /></Pressable></Link>
+          <Text style={styles.sectionTitle}>{showNext ? (next.nearby ? 'Als Nächstes in deiner Nähe' : 'Die nächstgelegenen Events') : 'Jetzt in deiner Nähe'}</Text>
+          {showNext
+            ? <Link href="/explore" asChild><Pressable accessibilityLabel="Alle kommenden Events in Entdecken ansehen" style={styles.seeAll}><Text style={styles.seeAllText}>Entdecken</Text><Icon name="chevron" size={14} color={colors.pink} /></Pressable></Link>
+            : <Link href={{ pathname: '/today', params: { category, radius: String(radius), latitude: String(searchCenter.latitude), longitude: String(searchCenter.longitude) } }} asChild><Pressable accessibilityLabel="Alle laufenden Events in der Nähe ansehen" style={styles.seeAll}><Text style={styles.seeAllText}>Alle ansehen</Text><Icon name="chevron" size={14} color={colors.pink} /></Pressable></Link>}
         </View>
         <FlatList
-          data={visibleTodayEvents}
+          data={showNext ? next.events : visibleTodayEvents}
           keyExtractor={(event) => event.id}
-          renderItem={({ item }) => <AnimatedEventCard event={item} reduceMotion={radar.reduceMotion} />}
+          renderItem={({ item }) => showNext
+            ? <EventCard event={item} compact glass={false} distanceKm={distanceKm(searchCenter, item.coordinate)} />
+            : <AnimatedEventCard event={item} reduceMotion={radar.reduceMotion} />}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           contentContainerStyle={styles.eventList}
           showsVerticalScrollIndicator={false}
           style={styles.list}
-          ListHeaderComponent={<EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />}
+          ListHeaderComponent={<View><EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />{showNext && <Text style={styles.nextHint}>{next.nearby ? 'Gerade läuft hier nichts. Diese Events starten als Nächstes in deinem Umkreis.' : 'Gerade läuft hier nichts und im Umkreis ist nichts geplant. Das sind die nächstgelegenen kommenden Events.'}</Text>}</View>}
           ListEmptyComponent={remote.loading || remote.error ? undefined : <View style={styles.empty}><Text style={styles.emptyTitle}>{radar.scanning || todayEvents.length > 0 ? 'Deine Umgebung wird entdeckt …' : 'Gerade keine laufenden Events in diesem Kartenausschnitt.'}</Text><Text style={styles.emptyText}>{radar.scanning || todayEvents.length > 0 ? 'Die Events erscheinen gleich zusammen mit den Pins.' : 'Verschiebe die Karte oder finde kommende Events in Entdecken.'}</Text></View>}
         />
-        <Text style={styles.demoNote}>Laufende Events mit bestätigter Start- und Endzeit</Text>
+        <Text style={styles.demoNote}>{showNext ? 'Kommende Events · noch nicht gestartet' : 'Laufende Events mit bestätigter Start- und Endzeit'}</Text>
       </LinearGradient>
 
       {!radar.scanning && preview && todayEvents.some((event) => event.id === preview.id) && (
@@ -165,6 +181,7 @@ const styles = StyleSheet.create({
   seeAll: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: 4 },
   seeAllText: { color: colors.pink, fontSize: 12, fontWeight: '700' },
   demoNote: { color: '#d5b3ce', fontSize: 9, paddingHorizontal: 13, marginTop: 5 },
+  nextHint: { color: colors.muted, fontSize: 12, lineHeight: 17, paddingBottom: 9 },
   eventList: { paddingHorizontal: 13, paddingTop: 1 },
   list: { flex: 1 },
   separator: { height: 7 },

@@ -14,7 +14,10 @@ import { EventDataState } from '../components/EventDataState';
 import { isLiveEvent } from '../types/events';
 import { useNow } from '../hooks/useNow';
 
-type Detail = 'Standort' | 'Tickets' | 'BeReel hochladen' | 'Event-Einstellungen';
+type Detail = 'Standort' | 'Tickets' | 'BeReel hochladen';
+
+// Calendar day in Berlin as YYYY-MM-DD.
+const berlinDay = (value: Date | number) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(value);
 
 export default function EventDetailScreen() {
   const { width } = useWindowDimensions();
@@ -41,51 +44,65 @@ export default function EventDetailScreen() {
 
   if (!event || remote.error) return <Screen><View style={styles.body}><EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />{!remote.loading && !remote.error && <Text style={styles.title}>Event nicht verfügbar</Text>}<Link href="/" style={styles.linkText}>Zurück zum Radar</Link></View></Screen>;
   const ticketUrl = event.ticketUrl?.startsWith('https://') ? event.ticketUrl : undefined;
+  const sourceUrl = event.sourceUrl?.startsWith('https://') ? event.sourceUrl : undefined;
+  const sourceLabel = event.sourceName ? event.sourceName.charAt(0).toLocaleUpperCase('de') + event.sourceName.slice(1) : 'der Originalseite';
+  // Without a ticket link the original event page is the most useful next step.
+  const actionUrl = ticketUrl ?? sourceUrl;
   async function openTickets() {
     setTicketError(false);
-    if (!ticketUrl) { setDetail('Tickets'); return; }
-    try { await Linking.openURL(ticketUrl); } catch { setTicketError(true); }
+    if (!actionUrl) { setDetail('Tickets'); return; }
+    try { await Linking.openURL(actionUrl); } catch { setTicketError(true); }
+  }
+  const point = event.coordinate;
+  async function openLocation() {
+    if (!point) { setDetail('Standort'); return; }
+    try { await Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${point.latitude},${point.longitude}`); } catch { setDetail('Standort'); }
   }
   const date = new Date(event.startsAt);
   const day = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).format(date);
   const time = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' }).format(date);
   const upcoming = date.getTime() >= now;
+  const startDay = berlinDay(date);
+  const statusLabel = isLiveEvent(event, now) ? 'Läuft jetzt' : !upcoming ? 'Start bereits erfolgt'
+    : startDay === berlinDay(now) ? 'Heute' : startDay === berlinDay(now + 86_400_000) ? 'Morgen' : 'Demnächst';
+  const tags = [...new Set([...event.categories, ...(event.genres ?? [])])];
+  const heroHeight = Math.min(430, Math.max(240, contentWidth * 0.92));
   const posts = event.imageIsPlaceholder ? [] : [event.image];
   const details: Record<Detail, string> = {
     Standort: `${event.location}${event.venue ? ` · ${event.venue}` : ""}. Weitere Angaben auf der Originalseite.`,
-    Tickets: ticketUrl ? 'Tickets werden über den externen Anbieter verkauft.' : 'Für dieses Event sind noch keine Tickets oder Buchungslinks hinterlegt.',
+    Tickets: ticketUrl ? 'Tickets werden über den externen Anbieter verkauft.' : sourceUrl ? `Informationen zu Einlass und Tickets stehen auf der Originalseite bei ${sourceLabel}.` : 'Für dieses Event sind noch keine Tickets oder Buchungslinks hinterlegt.',
     'BeReel hochladen': 'Fotos und kurze Videos gehören zu diesem konkreten Event und sind für 24 Stunden vorgesehen. Upload, Medienspeicherung und automatische Ausblendung sind noch nicht verfügbar.',
-    'Event-Einstellungen': 'Bearbeiten und Veröffentlichen erfordern ein verifiziertes Veranstalterkonto. Ein verifiziertes Veranstalterkonto ist noch nicht eingerichtet.',
   };
 
   return <Screen><SafeAreaView edges={['bottom']} style={styles.fill} onLayout={({ nativeEvent }) => setLayoutWidth(nativeEvent.layout.width)}>
     <ScrollView contentContainerStyle={styles.scroll}>
-      <View style={[styles.hero, { height: Math.max(220, contentWidth / 1.65) }]}>
-        <Image source={event.image} style={styles.cover} resizeMode="cover" accessibilityLabel={event.imageIsPlaceholder ? "Symbolfoto, kein Foto dieses Events" : `Eventbild: ${event.title}`} />
-        <LinearGradient pointerEvents="none" colors={['#100b1500', '#100b1566']} style={styles.cover} />
-        <View style={styles.toolbar}><Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={back} style={styles.round}><Icon name="back" color={colors.text} /></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Event-Einstellungen" onPress={() => setDetail('Event-Einstellungen')} style={styles.round}><Icon name="sliders" color={colors.text} /></Pressable></View>
+      <View style={[styles.hero, { height: heroHeight }]}>
+        {/* Flyers have very different formats: blurred backdrop plus the complete image instead of a hard crop. */}
+        <Image source={event.image} style={styles.cover} resizeMode="cover" blurRadius={event.imageIsPlaceholder ? 0 : 24} accessibilityLabel={event.imageIsPlaceholder ? "Symbolfoto, kein Foto dieses Events" : `Eventbild: ${event.title}`} />
+        {!event.imageIsPlaceholder && <><View pointerEvents="none" style={[styles.cover, styles.heroTint]} /><Image source={event.image} style={styles.cover} resizeMode="contain" /></>}
+        <LinearGradient pointerEvents="none" colors={['#100b1580', '#100b1500', '#100b1500', '#100b1599']} locations={[0, 0.25, 0.7, 1]} style={styles.cover} />
+        <View style={styles.toolbar}><Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={back} style={styles.round}><Icon name="back" color={colors.text} /></Pressable></View>
       </View>
       <View style={styles.body}>
         <View style={styles.statusRow}>
-          <Text style={styles.status}>{isLiveEvent(event, now) ? 'Läuft jetzt' : upcoming ? 'Demnächst' : 'Start bereits erfolgt'}</Text>
+          <Text style={styles.status}>{statusLabel}</Text>
           <View style={styles.tools}><SaveEventButton id={event.id} title={event.title} /><Pressable accessibilityRole="button" accessibilityLabel="Event teilen" onPress={() => void share()} style={styles.iconButton}><Icon name="share" color={colors.text} /></Pressable></View>
         </View>
         <Text style={styles.title}>{event.title}</Text>
         {shareError && <Text accessibilityRole="alert" style={styles.note}>Teilen ist gerade nicht verfügbar.</Text>}
 
-        <View style={styles.tags}>{event.categories.map(category => <View key={category} style={styles.tag}><Text style={styles.tagText}>{category}</Text></View>)}</View>
+        {tags.length > 0 ? <View style={styles.tags}>{tags.map(tag => <View key={tag} style={styles.tag}><Text style={styles.tagText}>{tag}</Text></View>)}</View> : <View style={styles.tagGap} />}
         <View style={styles.facts}>
           <View style={styles.factRow}><View style={styles.factIcon}><Icon name="calendar" size={22} color={colors.pink} /></View><View style={styles.copy}><Text style={styles.factTitle}>{day}</Text><Text style={styles.muted}>{time} Uhr · {event.endsAt ? `Ende ${new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(event.endsAt))}` : "Ende noch nicht angegeben"}</Text></View></View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Standort anzeigen" onPress={() => setDetail('Standort')} style={styles.factRow}><View style={styles.factIcon}><Icon name="pin" size={22} color={colors.pink} /></View><View style={styles.copy}><Text style={styles.factTitle}>{event.location.split(' · ')[0]}</Text><Text style={styles.muted}>{event.venue ?? "Weitere Standortangaben auf der Originalseite"}</Text></View></Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Ticketinformationen anzeigen" onPress={() => void openTickets()} style={styles.factRow}><View style={styles.factIcon}><Icon name="ticket" size={22} color={colors.pink} /></View><View style={styles.copy}><Text style={styles.factTitle}>Tickets</Text><Text style={styles.muted}>{ticketUrl ? 'Beim Ticketanbieter erhältlich' : 'Noch keine Tickets hinterlegt'}</Text></View></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel={point ? 'Standort in Karten öffnen' : 'Standort anzeigen'} onPress={() => void openLocation()} style={styles.factRow}><View style={styles.factIcon}><Icon name="pin" size={22} color={colors.pink} /></View><View style={styles.copy}><Text style={styles.factTitle}>{event.venue ?? event.location.split(' · ')[0]}</Text><Text style={styles.muted}>{[event.venue ? event.location : null, point ? 'In Karten öffnen' : 'Weitere Standortangaben auf der Originalseite'].filter(Boolean).join(' · ')}</Text></View>{point && <Icon name="chevron" size={16} />}</Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Ticketinformationen anzeigen" onPress={() => void openTickets()} style={styles.factRow}><View style={styles.factIcon}><Icon name="ticket" size={22} color={colors.pink} /></View><View style={styles.copy}><Text style={styles.factTitle}>Tickets</Text><Text style={styles.muted}>{ticketUrl ? 'Beim Ticketanbieter erhältlich' : sourceUrl ? `Infos auf der Originalseite bei ${sourceLabel}` : 'Noch keine Tickets hinterlegt'}</Text></View>{actionUrl && <Icon name="chevron" size={16} />}</Pressable>
         </View>
 
-        <View style={styles.about}><Text style={styles.heading}>Über das Event</Text><Text style={styles.description}>{event.description ?? 'Für dieses Event ist noch keine Beschreibung hinterlegt.'}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={ticketUrl ? 'Tickets beim Anbieter kaufen' : 'Ticketverfügbarkeit prüfen'} onPress={() => void openTickets()} style={styles.ticketButton}><LinearGradient pointerEvents="none" colors={[colors.accent, '#9b268f']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cover} /><Icon name="ticket" color={colors.text} size={21} /><Text style={styles.ticketLabel}>{ticketUrl ? 'Ticket sichern' : 'Ticketinformationen'}</Text></Pressable>
-          {ticketError && <Text accessibilityRole="alert" style={styles.note}>Der Ticketlink konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
-        </View>
+        {actionUrl && <Pressable accessibilityRole="button" accessibilityLabel={ticketUrl ? 'Tickets beim Anbieter kaufen' : `Originalseite bei ${sourceLabel} öffnen`} onPress={() => void openTickets()} style={styles.ticketButton}><LinearGradient pointerEvents="none" colors={[colors.accent, '#9b268f']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cover} /><Icon name="ticket" color={colors.text} size={21} /><Text style={styles.ticketLabel}>{ticketUrl ? 'Ticket sichern' : `Infos & Tickets bei ${sourceLabel}`}</Text></Pressable>}
+        {ticketError && <Text accessibilityRole="alert" style={styles.note}>Der Link konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
+        {event.description && <View style={styles.about}><Text style={styles.heading}>Über das Event</Text><Text style={styles.description}>{event.description}</Text></View>}
         <Pressable accessibilityRole="button" accessibilityLabel="Weitere Informationen" accessibilityState={{ expanded: showMore }} onPress={() => setShowMore(value => !value)} style={styles.moreButton}><Text style={styles.heading}>Weitere Informationen</Text><Icon name={showMore ? 'close' : 'down'} size={21} /></Pressable>
-        {showMore && <View style={styles.moreContent}><Text style={styles.muted}>{event.categories.join(' · ')}</Text><Text style={styles.note}>Zeitzone: Europe/Berlin. Angaben von der Veranstaltungsquelle.</Text></View>}
+        {showMore && <View style={styles.moreContent}>{tags.length > 0 && <Text style={styles.muted}>{tags.join(' · ')}</Text>}<Text style={styles.note}>Zeitzone: Europe/Berlin. Angaben von der Veranstaltungsquelle.</Text></View>}
 
         <View style={styles.section}>
           <View style={styles.sectionHeading}><Text style={styles.heading}>BeReels</Text><Text style={styles.note}>24 Stunden</Text></View>
@@ -116,11 +133,11 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 28, lineHeight: 34, fontWeight: '800', letterSpacing: -0.7 }, organizerLink: { minHeight: 44, justifyContent: 'center' }, organizerName: { color: colors.muted, fontWeight: '600' },
   muted: { color: colors.muted, fontSize: 13, lineHeight: 19 }, facts: { paddingHorizontal: 14, paddingVertical: 4, borderWidth: 1, borderColor: colors.border, borderRadius: 20, backgroundColor: '#ffffff06' }, factRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, minHeight: 74 },
   factIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: '#c922ab16', alignItems: 'center', justifyContent: 'center' },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 20, marginTop: 2 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 20, marginTop: 10 }, tagGap: { height: 18 }, heroTint: { backgroundColor: '#100b1580' },
   tag: { backgroundColor: '#ffffff08', borderWidth: 1, borderColor: colors.border, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
   tagText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
   copy: { flex: 1, minWidth: 0 }, factTitle: { color: colors.text, fontSize: 14, fontWeight: '600', lineHeight: 20 }, about: { paddingTop: 26 }, heading: { color: colors.text, fontSize: 18, fontWeight: '700', flexShrink: 1 }, description: { color: colors.muted, fontSize: 14, lineHeight: 22, marginTop: 12 },
-  ticketButton: { minHeight: 56, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 16, overflow: 'hidden', backgroundColor: colors.accent, marginTop: 18, padding: 12 }, ticketLabel: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  ticketButton: { minHeight: 56, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 16, overflow: 'hidden', backgroundColor: colors.accent, marginTop: 16, padding: 12 }, ticketLabel: { color: colors.text, fontSize: 14, fontWeight: '700' },
   moreButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 64, gap: 12 }, moreContent: { paddingBottom: 12 }, note: { color: colors.muted, fontSize: 11, lineHeight: 17 },
   section: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 24, marginTop: 16 }, sectionHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   upload: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 66, borderWidth: 1, borderColor: '#c922ab66', borderRadius: 18, backgroundColor: '#c922ab12', marginTop: 16, marginBottom: 10 }, uploadLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },

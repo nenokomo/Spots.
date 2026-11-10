@@ -1,8 +1,36 @@
 # Projektstatus – Spots
 
-Stand: 09.11.2026. Lokale Design-/Datenintegration; kein Push und kein Merge nach main, keine produktiven Backend-Änderungen.
+Stand: 10.11.2026. Design-Refresh auf eigenem Branch; keine Backend-Änderungen.
 
-## Aktuell: Design und echte Eventdaten zusammengeführt
+## Aktuell: Design-Refresh und Story-Vorschau in Entdecken (10.11.2026)
+
+Branch **feature/design-refresh**, Basis origin/main **9dbee1b**. Noch nicht committet/gepusht. Keine Backend-, SQL-, Auth- oder Importänderungen, keine neuen Abhängigkeiten. Produktvision verdichtet in [docs/VISION.md](docs/VISION.md).
+
+**Umgesetzt und im Browser (375 × 812, Web) geprüft**
+- **Entdecken**: Suche, Genre-/Datumsfilter und „Demnächst“ unverändert oben. Darunter ersetzen hochformatige Story-Kacheln (`StoryTile`) die bisherige Kartenliste. Antippen öffnet die Vollbild-Vorschau (`EventStoryViewer`): Fortschrittsbalken, Tippen rechts/links, seitlich wischen zum nächsten/vorherigen Event, Halten pausiert, nach unten wischen schließt, „Event ansehen“ führt zur bestehenden Detailseite, Merken bleibt möglich. Bereits angesehene Kacheln verlieren den Akzentrahmen (nur für die laufende Sitzung). Bei reduzierter Bewegung kein automatisches Weiterschalten.
+- Story-Medien stammen ausschließlich aus dem Eventdatensatz (`src/utils/stories.ts`), derzeit genau ein Bild. Ohne Eventbild wird das Symbolfoto gezeigt und als solches beschriftet. BeReels sind bewusst nicht Teil der Vorschau.
+- **Eventdetail**: Flyer wird vollständig gezeigt (unscharfer Hintergrund + ganzes Bild statt Beschnitt). Statuschip „Heute/Morgen/Demnächst/Läuft jetzt“. Genres werden zusätzlich zu Kategorien angezeigt. Ohne Ticketlink führt der Hauptbutton zur Originalseite der Quelle statt in einen leeren Dialog. Standortzeile öffnet die Koordinaten in der Karten-App. Leere Abschnitte (Beschreibung, Tags) werden ausgeblendet statt als „nicht vorhanden“ angekündigt. Der wirkungslose Button „Event-Einstellungen“ wurde entfernt.
+- **Radar**: Läuft im Umkreis nichts, listet das Panel die nächsten kommenden Events im Umkreis, sonst die drei nächstgelegenen mit Entfernung. Sie erscheinen nur in der Liste, nie als Live-Pin; die Live-Logik ist unverändert.
+- **Profil**: Übersichtliche Zeilen für Konto (noch in Entwicklung), gemerkte Events mit Anzahl, Standort/Privatsphäre mit Sprung in die Systemeinstellungen (nur nativ), Datenquelle und Version.
+- Neuer Test `tests/explore-stories.test.cjs` (4 Tests). Gesamt `node --test tests/*.test.cjs`: 50 Tests, 43 bestanden, 0 fehlgeschlagen, 7 übersprungen (benötigen `SPOTS_PGLITE_MODULE` für die SQL-Tests). Expo-Lint und Typecheck erfolgreich.
+
+**Nicht geprüft / bekannte Grenzen**
+- Kein Test auf echtem iOS-/Android-Gerät: Gesten, Modal-Verhalten, Safe-Area und Unschärfe der Story-Ansicht sind nur im Web bestätigt.
+- Alle 29 veröffentlichten Events haben kein Genre, keinen Venue-Namen, keine Beschreibung und keinen Ticketlink; Kategorie ist durchgehend `club`. Dadurch finden die Filter Techno/House/Events/Clubs aktuell nichts (`club` ≠ `Clubs`; der Adapter ordnet bewusst nichts zu).
+- Eventbilder sind kleine Goabase-Flyer (`/flyer/small/`); im Vollbild wirken sie weich. Größere Varianten müsste der Importer liefern.
+- Videos in Storys benötigen eine Medienrelation im Backend und ein Player-Modul; beides existiert noch nicht.
+- BeReels auf der Detailseite sind weiterhin nur ein Platzhalter ohne Upload/Speicher.
+- `.claude/launch.json` startet die Web-Vorschau (`spots-web`) für Browserprüfungen.
+
+**Offene Lücken für Phase 1 (priorisiert)**
+1. Eventmenge und Datenqualität: nur Goabase, 29 Events, siehe oben.
+2. Pins für „startet bald“ auf der Radarkarte (bisher nur Liste) – erst nach Gerätetest der Marker.
+3. Kategorien/Genres: Zuordnung `club` → Clubs entscheiden; Hip-Hop und Festivals fehlen.
+4. Entdecken: Entfernungsfilter und Veranstaltersuche fehlen; „Beliebt“ bleibt „Demnächst“, solange keine echten Nutzungsdaten existieren.
+5. Accounts liegen auf feature/organizer-auth (1 Commit vor main), noch nicht im Profil eingebunden; Passwortreset und Accountlöschung fehlen.
+6. Release-Vorbereitung: kein eas.json, slug/scheme „meine-app“, keine Bundle-ID/Package, Android-Icon-Hintergrund Standardblau, kein Google-Maps-Key für Android-Builds.
+
+## Vorher: Design und echte Eventdaten zusammengeführt
 
 - Neuer lokaler Branch **integration/spots-supabase-design**, Basis origin/main **7d5f654**. Zuerst origin/Jacint-branch **ee0c270**, anschließend aktueller Design-Branch origin/noyan-design **c8f0217** integriert. origin/Noyan-branch-design **3c0732d** ist ein älterer Vorfahr, nicht der aktuelle Designstand. Bestehende Branches unverändert.
 - 14 Konfliktdateien einzeln aufgelöst: Startscreen/Provider, Kalender, vier Eventkarten, Kartentypen, fünf Screens, Projektstatus und gelöschte Demo-Datei. Neues Layout, Farben, Navigation, Kalender und Kartensteuerung erhalten; echte Services, UUID-Routen, Lade-/Leer-/Fehlerzustände und Live-Zeitfilter weiterverwendet. src/data/events.ts bleibt gelöscht.
