@@ -76,7 +76,7 @@ test('story rail opens the preview of exactly the tapped event', () => {
 
 test('explore keeps search, genre and date filters and routes stories to the event detail page', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'src/screens/ExploreScreen.tsx'), 'utf8');
-  for (const required of ['<TextInput', 'categories.map', '<EventCalendar', 'matchesEventPeriod', 'distanceKm', '<StoryRail', '<EventHero', '<EventRow', '<EventStoryViewer']) {
+  for (const required of ['<TextInput', 'categories.map', '<EventCalendar', 'matchesEventPeriod', 'distanceKm', '<StoryRail', '<EventHero', '<EventTile', '<EventStoryViewer']) {
     assert(source.includes(required), `${required} missing`);
   }
   // Opening an event from the preview uses the central, context-aware route rule.

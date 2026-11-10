@@ -11,11 +11,10 @@ function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
   return <View pointerEvents="none" style={[styles.icon, focused && styles.iconFocused]}><Icon name={name} size={22} color={focused ? colors.text : colors.faint} filled={focused && name === 'heart'} /></View>;
 }
 
-/** Three destinations. The profile is not a place you browse; it opens as a sheet from the header. */
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const barWidth = Math.min(300, width - 48);
+  const barWidth = Math.min(360, width - 32);
   const sideInset = (width - barWidth) / 2;
   return (
     <Tabs screenOptions={{
@@ -32,6 +31,7 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: 'Radar', tabBarIcon: ({ focused }) => <TabIcon name="radar" focused={focused} /> }} />
       <Tabs.Screen name="explore" options={{ title: 'Entdecken', tabBarIcon: ({ focused }) => <TabIcon name="search" focused={focused} /> }} />
       <Tabs.Screen name="saved" options={{ title: 'Gemerkt', tabBarIcon: ({ focused }) => <TabIcon name="heart" focused={focused} /> }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: ({ focused }) => <TabIcon name="profile" focused={focused} /> }} />
     </Tabs>
   );
 }

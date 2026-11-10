@@ -16,7 +16,13 @@ Eigener Branch von feature/design-refresh. Nur Oberfläche neu; Datenschicht, ze
 - **Veranstalterseite, Gemerkt, Profil, Konto** im selben Stil; neue Bausteine `components/ui/` (Button, IconButton, Chip, Sheet, ListGroup/ListRow, LargeHeader) und `components/EventCards.tsx`.
 - Entfernt: EventCard, ExploreEventCard, RadarEventCard, TodayEventCard, AnimatedEventCard, StoryTile, GlassTabIcon, TodayEventsScreen.
 
-**Geprüft**: 94/94 Tests (mit PGlite), Expo-Lint, Typecheck. Web-Vorschau 375 × 812: Radar (Karlsruhe mit Testevents, Pins, Karussell), Entdecken, Story-Ansicht, Eventdetail, Gemerkt (leer), Profil.
+**Zweite Runde (Mischung aus altem Aufbau und neuem Stil, auf Wunsch)**
+- Wieder vier Tabs; Profil ist eine eigene Seite statt eines Sheets.
+- Radar: Vollbildkarte und Glas-Bedienelemente bleiben; unten statt des Karussells ein Panel mit Liste (etwa drei Events gleichzeitig sichtbar, Entfernung je Zeile, Pin antippen markiert die Zeile).
+- Entdecken: kompakte Hero-Karten im Querformat, darunter zweispaltiges Raster nach Tagen statt der Zeilenliste; Wochenend-Regal entfällt.
+- `EventPoster` und `RadarCard` entfernt, `EventTile` neu.
+
+**Geprüft**: 94/94 Tests (mit PGlite), Expo-Lint, Typecheck. Web-Vorschau 375 × 812: Radar (Karlsruhe mit Testevents, Pins, Listen-Panel), Entdecken, Story-Ansicht, Eventdetail, Gemerkt (leer), Profil.
 
 **Nicht geprüft**: kein iOS-/Android-Gerät. Besonders offen: `mapPadding` der nativen Karte (verschiebt Kartenmitte und Anbieter-Logo über das Karussell), neue Pins als native Marker, Profil als natives Modal, Glas-Effekt, Schrift (im Browser Segoe UI statt San Francisco). Veranstalterseite mit Daten und Gemerkt mit Einträgen im neuen Stil nicht visuell geprüft.
 

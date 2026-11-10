@@ -31,7 +31,6 @@ function StartupContent() {
     <Stack.Screen name="(tabs)" />
     <Stack.Screen name="event/[id]" />
     <Stack.Screen name="organizer/[id]" />
-    <Stack.Screen name="profile" options={{ presentation: 'modal' }} />
     <Stack.Screen name="account" options={{ presentation: 'modal' }} />
   </Stack>;
 }

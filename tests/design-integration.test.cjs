@@ -52,7 +52,7 @@ test('all event cards navigate to the event UUID they were given, without a fict
   const href = { pathname: '/event/[id]', params: { id: event.id } };
   const cards = load('src/components/EventCards.tsx');
   const row = load('src/components/EventRow.tsx');
-  for (const component of [cards.EventHero, cards.EventPoster, cards.RadarCard, row.EventRow]) {
+  for (const component of [cards.EventHero, cards.EventTile, row.EventRow]) {
     pushed.length = 0;
     const tree = component({ event, href, today: '2030-01-01', now: Date.parse('2030-01-01T12:00:00Z'), width: 320, distanceKm: 1 });
     const pressable = nodes(tree).find(node => node.type === 'PressableScale' && node.props.accessibilityRole === 'link');

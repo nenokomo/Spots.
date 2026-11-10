@@ -6,7 +6,7 @@ import { EventDataState } from '../components/EventDataState';
 import { EventRow } from '../components/EventRow';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Screen } from '../components/Screen';
-import { Button, IconButton } from '../components/ui/Button';
+import { Button } from '../components/ui/Button';
 import { EmptyState, LargeHeader } from '../components/ui/Section';
 import { tabBarContentInset } from '../constants/navigation';
 import { colors, gutter, space, type } from '../constants/theme';
@@ -50,7 +50,7 @@ export default function SavedEventsScreen() {
       renderSectionHeader={({ section }) => <Text accessibilityRole="header" style={styles.section}>{section.title}</Text>}
       renderItem={({ item }) => <View style={styles.row}><EventRow event={item} href={eventHref(item, 'saved')} now={now} today={today} trailing={<SaveEventButton id={item.id} title={item.title} size={36} />} /></View>}
       ListHeaderComponent={<View>
-        <LargeHeader overline={ready && saved.length > 0 ? `${saved.length} ${saved.length === 1 ? 'Event' : 'Events'}` : undefined} title="Gemerkt" trailing={<IconButton icon="profile" accessibilityLabel="Profil öffnen" onPress={() => router.push('/profile')} size={36} plain style={styles.profile} />} />
+        <LargeHeader overline={ready && saved.length > 0 ? `${saved.length} ${saved.length === 1 ? 'Event' : 'Events'}` : undefined} title="Gemerkt" />
         {error && <View style={styles.notice}><Text accessibilityRole="alert" style={styles.note}>{error}</Text><Button label="Erneut versuchen" variant="ghost" size="sm" onPress={reload} disabled={busy} /></View>}
         <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
         {missing > 0 && <Text style={[styles.note, styles.missing]}>{missing === 1 ? 'Ein gemerktes Event ist' : `${missing} gemerkte Events sind`} nicht mehr veröffentlicht, zum Beispiel weil sie abgesagt wurden.</Text>}
@@ -64,7 +64,6 @@ export default function SavedEventsScreen() {
 
 const styles = StyleSheet.create({
   list: { flexGrow: 1 },
-  profile: { backgroundColor: colors.surface, marginBottom: 4 },
   section: { ...type.title3, color: colors.text, paddingHorizontal: gutter, paddingTop: space.xl, paddingBottom: space.xxs },
   row: { paddingHorizontal: gutter },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: gutter + 68 + space.md },

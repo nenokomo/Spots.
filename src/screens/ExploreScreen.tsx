@@ -4,14 +4,12 @@ import { FlatList, Modal, Pressable, ScrollView, SectionList, StyleSheet, Text, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CitySearch } from '../components/CitySearch';
 import { EventCalendar } from '../components/EventCalendar';
-import { EventHero, EventPoster, StoryRail } from '../components/EventCards';
+import { EventHero, EventTile, StoryRail } from '../components/EventCards';
 import { EventDataState } from '../components/EventDataState';
-import { EventRow } from '../components/EventRow';
 import { EventStoryViewer } from '../components/EventStoryViewer';
 import { Icon } from '../components/Icon';
-import { SaveEventButton } from '../components/SaveEventButton';
 import { Screen } from '../components/Screen';
-import { Button, IconButton } from '../components/ui/Button';
+import { Button } from '../components/ui/Button';
 import { Chip } from '../components/ui/Chip';
 import { EmptyState, LargeHeader, SectionHeader } from '../components/ui/Section';
 import { Sheet } from '../components/ui/Sheet';
@@ -47,13 +45,6 @@ function dayTitle(key: string, today: string) {
   if (key === today) return 'Heute';
   if (key === addDays(today, 1)) return 'Morgen';
   return longDay.format(new Date(`${key}T12:00:00Z`));
-}
-
-/** Friday to Sunday of the current week, starting no earlier than today. */
-function weekendDays(today: string) {
-  const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
-  const untilSunday = (7 - weekday) % 7;
-  return Array.from({ length: untilSunday + 1 }, (_, offset) => addDays(today, offset)).filter((key) => [5, 6, 0].includes(new Date(`${key}T12:00:00Z`).getUTCDay()));
 }
 
 export default function ExploreScreen() {
@@ -95,12 +86,16 @@ export default function ExploreScreen() {
   const sections = useMemo(() => {
     const days = new Map<string, SpotEvent[]>();
     for (const event of events) { const key = dayKey(new Date(event.startsAt)); days.set(key, [...(days.get(key) ?? []), event]); }
-    return [...days].map(([key, data]) => ({ key, title: dayTitle(key, today), data }));
+    // Two tiles per row: each list item is a pair of events of the same day.
+    return [...days].map(([key, list]) => ({
+      key, title: dayTitle(key, today), count: list.length,
+      data: Array.from({ length: Math.ceil(list.length / 2) }, (_, row) => list.slice(row * 2, row * 2 + 2)),
+    }));
   }, [events, today]);
+  const distances = useMemo(() => new Map(activeArea ? events.flatMap((event) => isLocatedEvent(event) ? [[event.id, distanceKm(activeArea.center, event.coordinate)] as const] : []) : []), [events, activeArea]);
   const featured = events.slice(0, 5);
   const stories = useMemo(() => events.filter((event) => !event.imageIsPlaceholder).slice(0, 12), [events]);
-  const weekend = useMemo(() => { const days = weekendDays(today); return events.filter((event) => days.includes(dayKey(new Date(event.startsAt)))).slice(0, 10); }, [events, today]);
-  const heroWidth = Math.min(width - gutter * 2 - 28, 400);
+  const heroWidth = Math.min(width - gutter * 2 - 24, 420);
 
   function resetFilters() { setSearch(''); setCategory('Alle'); setPeriod('all'); setSelectedDate(null); setArea(null); setWaitingForGps(false); }
   function chooseCity(city: City) { setWaitingForGps(false); setArea({ label: city.name, center: { latitude: city.latitude, longitude: city.longitude } }); }
@@ -109,7 +104,7 @@ export default function ExploreScreen() {
   return <Screen>
     <SectionList
       sections={sections}
-      keyExtractor={(event) => event.id}
+      keyExtractor={(pair) => pair[0].id}
       stickySectionHeadersEnabled={false}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
@@ -118,11 +113,13 @@ export default function ExploreScreen() {
       onRefresh={remote.reload}
       initialNumToRender={8}
       contentContainerStyle={{ paddingBottom: tabBarContentInset(insets.bottom) }}
-      renderSectionHeader={({ section }) => <Text accessibilityRole="header" style={styles.day}>{section.title}</Text>}
-      renderItem={({ item }) => <View style={styles.row}><EventRow event={item} href={eventHref(item, 'discover')} now={now} today={today} showDay={false} trailing={<SaveEventButton id={item.id} title={item.title} size={36} />} /></View>}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
+      renderSectionHeader={({ section }) => <View style={styles.dayRow}><Text accessibilityRole="header" style={styles.day}>{section.title}</Text><Text style={styles.dayCount}>{section.count}</Text></View>}
+      renderItem={({ item }) => <View style={styles.gridRow}>
+        {item.map((event) => <EventTile key={event.id} event={event} href={eventHref(event, 'discover')} today={today} now={now} distanceKm={distances.get(event.id)} />)}
+        {item.length === 1 && <View style={styles.flex} />}
+      </View>}
       ListHeaderComponent={<View>
-        <LargeHeader overline={headerDate.format(new Date(now))} title="Entdecken" trailing={<IconButton icon="profile" accessibilityLabel="Profil öffnen" onPress={() => router.push('/profile')} size={36} plain style={styles.profile} />} />
+        <LargeHeader overline={headerDate.format(new Date(now))} title="Entdecken" />
         <View style={styles.search}>
           <Icon name="search" size={17} color={colors.faint} />
           <TextInput accessibilityLabel="Events nach Name, Ort oder Genre suchen" value={search} onChangeText={setSearch} placeholder="Events, Städte, Genres" placeholderTextColor={colors.faint} style={styles.input} returnKeyType="search" autoCorrect={false} />
@@ -138,7 +135,7 @@ export default function ExploreScreen() {
         {!filtersActive && stories.length > 0 && <View style={styles.rail}><StoryRail events={stories} today={today} seen={seenStories} onOpen={setStory} /></View>}
 
         {!filtersActive && featured.length > 0 && <>
-          <SectionHeader title="Als Nächstes" note="Die nächsten Events in Deutschland" />
+          <SectionHeader title="Als Nächstes" />
           <FlatList
             horizontal
             data={featured}
@@ -152,14 +149,7 @@ export default function ExploreScreen() {
           />
         </>}
 
-        {!filtersActive && weekend.length > 0 && <>
-          <SectionHeader title="Dieses Wochenende" action="Samstag" onAction={() => { setPeriod('saturday'); setSelectedDate(null); }} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.shelf, styles.posters]}>
-            {weekend.map((event) => <EventPoster key={event.id} event={event} href={eventHref(event, 'discover')} today={today} />)}
-          </ScrollView>
-        </>}
-
-        <SectionHeader title={filtersActive ? 'Ergebnisse' : 'Kalender'} note={`${events.length} ${events.length === 1 ? 'Event' : 'Events'}`} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
+        <SectionHeader title={filtersActive ? 'Ergebnisse' : 'Alle Events'} note={`${events.length} ${events.length === 1 ? 'Event' : 'Events'}`} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
         <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
       </View>}
       ListEmptyComponent={remote.loading || remote.error ? undefined : <EmptyState icon="search" title="Nichts gefunden" text={activeArea ? `Im Umkreis von ${areaRadius} km um ${activeArea.label} ist für diese Auswahl nichts geplant.` : 'Probier einen anderen Begriff oder weniger Filter.'} action="Filter zurücksetzen" onAction={resetFilters} />}
@@ -196,7 +186,6 @@ export default function ExploreScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  profile: { backgroundColor: colors.surface, marginBottom: 4 },
   search: { height: 44, marginHorizontal: gutter, borderRadius: radius.md, backgroundColor: colors.fill, flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.md, gap: space.sm, ...squircle },
   input: { ...type.body, lineHeight: undefined, color: colors.text, flex: 1, minWidth: 0, height: 44, paddingVertical: 0 },
   clear: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.faint },
@@ -204,11 +193,11 @@ const styles = StyleSheet.create({
   chipDivider: { width: StyleSheet.hairlineWidth, height: 20, backgroundColor: colors.separator, marginHorizontal: space.xxs },
   rail: { paddingTop: space.xl },
   shelf: { paddingHorizontal: gutter },
-  posters: { gap: space.md },
   heroGap: { width: HERO_GAP },
-  day: { ...type.headline, color: colors.text, paddingHorizontal: gutter, paddingTop: space.lg, paddingBottom: space.xxs },
-  row: { paddingHorizontal: gutter },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: gutter + 68 + space.md },
+  dayRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: gutter, paddingTop: space.sm, paddingBottom: space.md },
+  day: { ...type.headline, color: colors.text },
+  dayCount: { ...type.footnote, color: colors.faint },
+  gridRow: { flexDirection: 'row', gap: space.md, paddingHorizontal: gutter, paddingBottom: space.xl },
   presetRow: { flexGrow: 0 },
   presets: { gap: space.sm },
   calendar: { flex: 1 },
