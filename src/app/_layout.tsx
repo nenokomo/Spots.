@@ -34,6 +34,7 @@ function StartupContent() {
     <Stack.Screen name="organizer/[id]" />
     <Stack.Screen name="clubs" />
     <Stack.Screen name="venue/[id]" />
+    <Stack.Screen name="admin" />
     <Stack.Screen name="account" options={{ presentation: 'modal' }} />
   </Stack>;
 }

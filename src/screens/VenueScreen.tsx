@@ -9,7 +9,8 @@ import { ListGroup, ListRow } from '../components/ui/List';
 import { EmptyState } from '../components/ui/Section';
 import { VenueReportSheet } from '../components/VenueReportSheet';
 import { colors, gutter, space, type } from '../constants/theme';
-import { useVenue } from '../hooks/useVenues';
+import { useVenue, useVenueEvents } from '../hooks/useVenues';
+import { eventDetailHref } from '../navigation/eventRoutes';
 import { venueAddress, venueKindLabels, venueSourceUrl } from '../types/venues';
 
 /** Ortsseite: Club, Live-Musik oder Eventlocation. Zeigt nie eine erfundene Party. */
@@ -17,6 +18,7 @@ export default function VenueScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const { venue, loading, error, reload } = useVenue(typeof id === 'string' ? id : undefined);
+  const events = useVenueEvents(venue && venue.source !== 'test' ? venue.id : undefined);
   const [reportOpen, setReportOpen] = useState(false);
   const [linkError, setLinkError] = useState(false);
   const back = () => router.canGoBack() ? router.back() : router.replace('/explore');
@@ -64,7 +66,12 @@ export default function VenueScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Events hier</Text>
-        <Text style={styles.muted}>Noch keine Events eingetragen. Ein Ort im Verzeichnis heißt nicht, dass dort gerade etwas los ist.</Text>
+        {events.length > 0
+          ? <ListGroup>
+              {events.map((event) => <ListRow key={event.id} icon="calendar" title={event.title} subtitle={event.date}
+                onPress={() => router.push(eventDetailHref(event.id))} />)}
+            </ListGroup>
+          : <Text style={styles.muted}>Noch keine Events eingetragen. Ein Ort im Verzeichnis heißt nicht, dass dort gerade etwas los ist.</Text>}
       </View>
 
       <ListGroup footer={venue.source === 'test' ? 'Lokaler Testort, kein echter Club.' : 'Daten: © OpenStreetMap-Mitwirkende (ODbL). Fehler kannst du melden, das Spots-Team prüft jede Meldung.'}>

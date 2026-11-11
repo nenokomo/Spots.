@@ -10,6 +10,7 @@ import { tabBarContentInset } from '../constants/navigation';
 import { colors, space, type } from '../constants/theme';
 import { accountClientError } from '../features/accounts/client';
 import { useAccountSession } from '../features/accounts/useAccountSession';
+import { useIsAdmin } from '../features/admin/useIsAdmin';
 import { useSavedEvents } from '../hooks/useSavedEvents';
 
 /** Fourth tab: private, minimal, no public profile. */
@@ -18,6 +19,7 @@ export default function ProfileScreen() {
   const { ids, ready } = useSavedEvents();
   const account = useAccountSession();
   const email = account.session?.user.email;
+  const isAdmin = useIsAdmin(account.session?.user.id ?? null).allowed;
   const version = Constants.expoConfig?.version;
 
   return (
@@ -38,6 +40,7 @@ export default function ProfileScreen() {
               ? <ListRow icon="profile" title="Konto" value="Startet bald" />
               : <ListRow icon="profile" title={email ? 'Konto verwalten' : 'Anmelden'} subtitle={email ? undefined : account.loading ? 'Sitzung wird geprüft …' : 'Anmelden oder Konto erstellen'} onPress={() => router.push('/account')} />}
             <ListRow icon="heart" title="Gemerkt" value={!ready ? '…' : String(ids.length)} onPress={() => router.navigate('/saved')} accessibilityLabel="Gemerkte Events öffnen" />
+            {isAdmin && <ListRow icon="grid" title="Spots-Team: Freigaben" subtitle="Entwürfe, Orte und Meldungen prüfen" onPress={() => router.push('/admin')} />}
           </ListGroup>
 
           <ListGroup header="Privatsphäre" footer="Standort nur für die Karte, solange du Spots nutzt. Kein Tracking, keine Speicherung.">

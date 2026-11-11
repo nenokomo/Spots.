@@ -92,6 +92,22 @@ export async function fetchOrganizerEvents(organizerId: string, signal: AbortSig
   }
 }
 
+/** Kommende veröffentlichte Events eines Ortes (redaktionell eingetragen). */
+export async function fetchVenueEvents(venueId: string, signal: AbortSignal): Promise<SpotEvent[]> {
+  if (!isDatabaseId(venueId)) return [];
+  const since = new Date(Date.now() - 8 * 3_600_000).toISOString();
+  const { data, error } = await getSupabase().from('events').select(eventProjection)
+    .eq(columns.publication, publishedValue).eq(columns.status, 'scheduled').eq('venue_id', venueId)
+    .gte(columns.startsAt, since).order(columns.startsAt).limit(50).abortSignal(signal);
+  // events.venue_id gibt es erst mit SQL 22 (Spots-Test); ohne die Spalte hat kein Ort Events.
+  if (error) {
+    if (error.code === '42703') return [];
+    throw queryError(error.code);
+  }
+  const rows: unknown[] = data ?? [];
+  return rows.map(mapEventRow).filter((event): event is SpotEvent => !!event);
+}
+
 export async function fetchSavedEvents(ids: string[], signal: AbortSignal) {
   const validIds = [...new Set(ids.filter(isDatabaseId))];
   const events: SpotEvent[] = [];

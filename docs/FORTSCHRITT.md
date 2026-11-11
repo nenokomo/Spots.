@@ -41,15 +41,20 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
   - Skripte: `scripts/fetch-osm-venues.cjs` (pro Bundesland, Ausweich-Server), `scripts/analyze-osm-venues.cjs` (lokale Auswertung mit derselben SQL).
   - **Clubzahl Deutschland: nicht ermittelt.** Alle drei Overpass-Server antworteten am 11.11. bei Bundesländern mit 504; eine 1°-Kachel um Karlsruhe ging (227 Orte, 90 s), mit Begrenzung auf Deutschland Zeitüberschreitung. Gesamtlauf später wiederholen.
 
+- **Teil 3a – Admin-Bereich**:
+  - `supabase/ops/22_admin_review.sql`: Admin-Rolle nur per SQL (`spots_admin_private.admins`), `spots_is_admin()`, Tabelle `event_drafts` (Ort, Zeiten, Genre, Art, Links, **Herkunft Pflicht**; nur Admins), Freigabe `spots_admin_approve_draft` erzeugt ein Event `source = 'redaktion'` mit Ortsdaten, Ablehnen, redaktionelle Events ein-/ausblenden (Importe nie), Orte freigeben/ausblenden, Meldungen erledigen/verwerfen, `events.venue_id`.
+  - Tests: `tests/admin-backend.test.cjs` (5 Teiltests), `tests/berlin-time.test.cjs` (Eingabe in Berliner Zeit, Sommer/Winter, über Mitternacht). Gesamt **139/139**, Lint und Typecheck ok.
+  - **In Spots-Test eingespielt**, Prüfsummen identisch, Events unverändert (außer neuer leerer Spalte `venue_id`). Noch **kein Admin eingetragen**.
+  - App: `/admin` (nur mit Konto + Admin-Rolle; sonst „Nur für das Spots-Team“), Reiter Entwürfe/Orte/Meldungen, Formular „Event anlegen“ (Ortssuche, Datum/Zeit, Art, Genre, Links, Herkunft; „Speichern und freigeben“ oder nur Entwurf), Eintrag im Profil nur für Admins, Ortsseite zeigt freigegebene Events des Ortes. Web-Vorschau: Sperrseite ohne Konto geprüft, keine Datenabfragen ohne Konto. **Freigabe-Ablauf mit echtem Admin-Konto nicht geprüft** (kein Konto vorhanden).
+
 ## Läuft gerade
 
-- Teil 3: Admin-Bereich (Freigaben) und Goabase-Prüfung.
+- Teil 3b: Goabase lesend prüfen (größere Bilder, Genres), dann Abschluss.
 
 ## Als Nächstes
 
-1. SQL 22: Admin-Rolle, Event-Entwürfe, Freigabe als Event (`source = 'redaktion'`), Prüfung von Orten und Meldungen
-2. App: Admin-Bereich (nur für Admins sichtbar)
-3. Goabase: lesend prüfen, was größere Bilder/Genres bringen würden (kein Eingriff in den Produktionsimport)
+1. Goabase-Prüfung dokumentieren (kein Eingriff in den Produktionsimport)
+2. PROJECT_STATUS.md aktualisieren, Abschlussliste
 
 ## Offene Punkte (für die Abschlussliste)
 
@@ -62,6 +67,7 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
 - Produktentscheidung: Das Radar zählt nur Events mit Endzeit als „live“ (`isLiveEvent`). Ticketmaster liefert meist keine Endzeit (≈ 90 %), solche Konzerte erscheinen daher vor Beginn als „später heute“, aber nach Beginn nicht als „live“. Ändern? (betrifft auch Goabase)
 - Profil zeigt bei „Eventdaten“ weiterhin nur „Goabase“; anpassen, sobald Ticketmaster in Produktion läuft.
 - Die Filterleiste hat jetzt 7 Chips; Gestaltung/Reihenfolge mit Noyan abstimmen.
+- Admin eintragen (nach Kontoerstellung in Spots-Test): `insert into spots_admin_private.admins(user_id, note) select id, 'Spots-Team' from auth.users where email = '<deine E-Mail>';`
 - OSM-Import für ganz Deutschland später wiederholen (`node scripts/fetch-osm-venues.cjs`, dann laden mit Service-Rolle). Für die Produktion braucht es ein kleines Ladeskript mit Service-Key, das Jacint ausführt.
 - Automatischer Erotik-Filter greift nur bei eindeutigen Merkmalen; Stichproben durch das Team bleiben nötig.
 - Doku-Entwürfe liegen in `docs/entwuerfe/` (Mails, Datenschutz, Nutzungsbedingungen, App-Texte DE/EN, 25 Rechtsfragen). Befunde daraus: Konto löschen fehlt (Apple/Google-Pflicht); Melden in SQL 17 nur mit Konto (DSA verlangt Melden für alle); `live_snaps.author_id` wäre laut SQL 17 öffentlich lesbar (vor dem Einspielen korrigieren, Jacint); Ortssuche schickt Suchtext an Open-Meteo (Nutzungsbedingungen prüfen); keine Links zu Datenschutz/Impressum in der App; EXIF-Daten bei Uploads entfernen.
