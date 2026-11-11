@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Button } from '../../components/ui/Button';
 import { ListGroup, ListRow } from '../../components/ui/List';
 import { Sheet } from '../../components/ui/Sheet';
@@ -93,6 +93,9 @@ export function NewEventSheet({ visible, onClose, onSaved }: Props) {
 
   return (
     <Sheet visible={visible} title="Event anlegen" onClose={onClose} tall>
+      {/* Das Sheet scrollt nicht selbst; das Formular ist länger als der Bildschirm. */}
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
       <Text style={styles.hint}>Nur echte Events mit Herkunft. Keine Flyer und keine kopierten Beschreibungen ohne Erlaubnis.</Text>
       <View style={styles.field}>
         <Text style={styles.label}>Ort</Text>
@@ -130,11 +133,14 @@ export function NewEventSheet({ visible, onClose, onSaved }: Props) {
       {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
       <Button label="Speichern und freigeben" icon="ticket" onPress={() => void save(true)} loading={busy} />
       <Button label="Nur als Entwurf speichern" variant="secondary" onPress={() => void save(false)} disabled={busy} />
+      </ScrollView>
     </Sheet>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: { flex: 1 },
+  scrollContent: { gap: space.lg, paddingBottom: space.xxxl * 2 },
   hint: { ...type.footnote, color: colors.muted },
   field: { gap: space.xs },
   label: { ...type.overline, fontSize: 11, color: colors.faint },
