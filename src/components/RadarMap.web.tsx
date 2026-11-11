@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   zoomButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   zoomText: { fontSize: 24, color: '#ffffff' },
   markerTouch: { position: 'absolute', width: 54, height: 66, justifyContent: 'center', alignItems: 'center' },
-  attribution: { position: 'absolute', left: 16, bottom: 6, padding: 3, backgroundColor: '#191c27cc', borderRadius: 4 },
+  attribution: { position: 'absolute', alignSelf: 'center', bottom: 6, padding: 3, backgroundColor: '#191c27cc', borderRadius: 4 },
   attributionText: { color: '#bbc1cb', fontSize: 8 },
   error: { position: 'absolute', bottom: 40, color: '#e5cfe8', fontSize: 11, backgroundColor: '#25172b', padding: 8 },
 });

@@ -79,7 +79,7 @@ export default function RadarScreen() {
   const filtered = category !== 'Alle' || radius !== 30;
   const radiusLabel = `${new Intl.NumberFormat('de-DE', { maximumFractionDigits: visibleRadius < 10 ? 1 : 0 }).format(visibleRadius)} km`;
 
-  const headline = radar.scanning ? 'Scan läuft' : quiet ? 'Gerade ruhig hier' : liveCount > 0 ? 'Jetzt los' : 'Heute Nacht';
+  const headline = radar.scanning ? 'Scan läuft' : quiet ? 'Gerade ruhig hier' : liveCount > 0 ? 'Partys heute' : 'Heute Nacht';
   const summary = radar.scanning ? `${radiusLabel} um ${location.label}`
     : quiet ? (nearest.length > 0 ? 'Die nächsten Events in der Nähe' : 'Karte verschieben oder Entdecken öffnen')
       : [liveCount > 0 ? `${liveCount} live` : null, laterCount > 0 ? `${laterCount} später` : null, location.userCoordinate ? 'um dich' : `um ${location.label}`].filter(Boolean).join(' · ');
@@ -137,7 +137,7 @@ export default function RadarScreen() {
         </View>
       )}
 
-      <View pointerEvents="none" style={[styles.radiusPill, { top: topInset }]}>
+      <View pointerEvents="none" style={[styles.radiusPill, { bottom: panelHeight + space.md + 4 }]}>
         <GlassBackdrop radius={18} />
         <Icon name="radar" size={14} color={colors.pink} />
         <Text style={styles.radiusText}>{radiusLabel} Umkreis</Text>
