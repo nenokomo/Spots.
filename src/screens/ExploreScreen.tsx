@@ -5,7 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CategoryFilters } from '../components/CategoryFilters';
 import { CitySearch } from '../components/CitySearch';
 import { EventCalendar } from '../components/EventCalendar';
-import { EventHero, RankCard } from '../components/EventCards';
+import { EventHero } from '../components/EventCards';
+import { HypeChart } from '../components/HypeChart';
 import { EventDataState } from '../components/EventDataState';
 import { EventStoryViewer } from '../components/EventStoryViewer';
 import { Icon } from '../components/Icon';
@@ -152,9 +153,7 @@ export default function ExploreScreen() {
 
         {!filtersActive && popular.ranked.length > 0 && <>
           <SectionHeader title={`Gehypt in ${popular.city ?? 'deiner Nähe'}`} note={popular.preview ? 'Vorschau mit Testdaten · später nach verkauften Tickets' : undefined} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.ranks}>
-            {popular.ranked.map((item) => <RankCard key={item.event.id} event={item.event} href={destination(item.event)} rank={item.rank} ticketsSold={item.ticketsSold} today={today} />)}
-          </ScrollView>
+          <HypeChart ranked={popular.ranked} today={today} hrefFor={destination} />
         </>}
 
         <SectionHeader title={area ? `Alle Events · ${area.label}` : 'Alle Events'} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
@@ -207,7 +206,6 @@ const styles = StyleSheet.create({
   periodActiveText: { color: colors.text },
   shelf: { paddingHorizontal: gutter },
   heroGap: { width: HERO_GAP },
-  ranks: { gap: space.xs, paddingHorizontal: gutter },
   fallback: { ...type.footnote, color: colors.muted, paddingHorizontal: gutter, paddingBottom: space.md },
   gridRow: { gap: space.md, paddingHorizontal: gutter, paddingBottom: space.md },
   cell: { flex: 1, maxWidth: '50%' },

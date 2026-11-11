@@ -53,24 +53,6 @@ export function EventHero({ event, href, today, now, width }: CardProps & { widt
   );
 }
 
-/** Top-list card: large rank numeral behind a portrait poster, tickets sold underneath. */
-export function RankCard({ event, href, rank, ticketsSold, today }: { event: SpotEvent; href: Href; rank: number; ticketsSold: number; today: string }) {
-  return (
-    <PressableScale accessibilityRole="link" accessibilityLabel={`Platz ${rank}: ${event.title}, ${when(event, today)} Uhr, ${ticketsSold} Tickets, öffnen`} onPress={() => router.push(href)} style={styles.rank}>
-      <Text style={styles.rankNumber}>{rank}</Text>
-      <View style={styles.rankPoster}>
-        <Image source={event.image} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityLabel={imageLabel(event)} />
-        <LinearGradient pointerEvents="none" colors={['#100b1500', '#100b15e6']} locations={[0.5, 1]} style={StyleSheet.absoluteFill} />
-        <View style={styles.rankTickets}><Text style={styles.rankTicketsText}>{ticketsSold} Tickets</Text></View>
-        <View style={styles.rankCopy}>
-          <Text numberOfLines={1} style={styles.rankWhen}>{when(event, today)}</Text>
-          <Text numberOfLines={2} style={styles.rankTitle}>{event.title}</Text>
-        </View>
-      </View>
-    </PressableScale>
-  );
-}
-
 /** Row of round previews that open the full-screen story of an event. */
 export function StoryRail({ events, today, seen, onOpen }: { events: SpotEvent[]; today: string; seen: string[]; onOpen: (id: string) => void }) {
   return (
@@ -99,14 +81,6 @@ const styles = StyleSheet.create({
   heroPlace: { ...type.footnote, color: colors.muted },
   heroSave: { position: 'absolute', top: space.sm, right: space.sm },
   rail: { gap: space.md, paddingHorizontal: gutter },
-  rank: { width: 196, height: 220, flexDirection: 'row', alignItems: 'flex-end' },
-  rankNumber: { fontSize: 120, lineHeight: 120, fontWeight: '900', letterSpacing: -8, color: colors.accent, opacity: 0.9, marginRight: -22, marginBottom: -14, zIndex: 0 },
-  rankPoster: { width: 140, height: 200, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.surface, zIndex: 1, ...squircle },
-  rankTickets: { position: 'absolute', top: space.sm, left: space.sm, paddingHorizontal: space.sm, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: colors.accent },
-  rankTicketsText: { ...type.footnote, fontSize: 11, fontWeight: '700', color: colors.text },
-  rankCopy: { position: 'absolute', left: space.sm, right: space.sm, bottom: space.sm, gap: 1 },
-  rankWhen: { ...type.overline, fontSize: 10, color: colors.pink },
-  rankTitle: { ...type.label, fontSize: 14, lineHeight: 18, color: colors.text },
   story: { width: 66, alignItems: 'center', gap: space.xxs },
   ring: { width: 66, height: 66, borderRadius: 33, padding: 3, borderWidth: 2.5, borderColor: colors.accent },
   ringSeen: { borderColor: colors.surfaceHigh },
