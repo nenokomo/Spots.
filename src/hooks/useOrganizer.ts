@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchOrganizerEvents } from '../services/events';
 import { fetchPublicOrganizer, fetchPublicOrganizerPosts, OrganizerUnavailableError } from '../services/organizers';
+import { testEvents, testOrganizer, testOrganizerPosts } from '../services/testEvents';
 import type { PublicOrganizer, PublicOrganizerPost } from '../types/accounts';
 import type { SpotEvent } from '../types/events';
 
@@ -30,6 +31,13 @@ export function useOrganizerPage(identifier: string | undefined) {
     const controller = new AbortController();
     void (async () => {
       try {
+        // Local test organizer (development only), see services/testEvents.ts.
+        const fixture = testOrganizer(identifier);
+        if (fixture) {
+          await Promise.resolve();
+          if (active) setResult({ key, state: { status: 'ready', data: { organizer: fixture, events: testEvents().filter((event) => event.organizerId === fixture.id), posts: testOrganizerPosts() } } });
+          return;
+        }
         const organizer = await fetchPublicOrganizer(uuid.test(identifier) ? { id: identifier } : { slug: identifier.toLowerCase() });
         if (!organizer) { if (active) setResult({ key, state: { status: 'ready', data: { organizer: null, events: [], posts: [] } } }); return; }
         const [events, posts] = await Promise.all([
@@ -62,7 +70,8 @@ export function useOrganizerSummary(organizerId: string | null | undefined) {
     let active = true;
     let request = summaries.get(organizerId);
     if (!request) {
-      request = fetchPublicOrganizer({ id: organizerId }).catch(() => null);
+      const fixture = testOrganizer(organizerId);
+      request = fixture ? Promise.resolve(fixture) : fetchPublicOrganizer({ id: organizerId }).catch(() => null);
       summaries.set(organizerId, request);
     }
     void request.then((organizer) => { if (active) setResult({ id: organizerId, organizer }); });

@@ -18,6 +18,8 @@ type Props = {
   onClose: () => void;
   onOpenEvent: (event: SpotEvent) => void;
   onSeen?: (id: string) => void;
+  /** Label of the main button, e.g. when the event leads to its organizer. */
+  actionLabel?: (event: SpotEvent) => string;
 };
 
 /**
@@ -25,7 +27,7 @@ type Props = {
  * slide, swipe sideways for the next/previous event, hold to pause, swipe down
  * to close. It never replaces the event detail page.
  */
-export function EventStoryViewer({ events, initialId, today, onClose, onOpenEvent, onSeen }: Props) {
+export function EventStoryViewer({ events, initialId, today, onClose, onOpenEvent, onSeen, actionLabel }: Props) {
   const insets = useSafeAreaInsets();
   const [position, setPosition] = useState({ id: initialId, slide: 0, run: 0 });
   const [paused, setPaused] = useState(false);
@@ -163,9 +165,9 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
           <View style={styles.meta}><Icon name="pin" size={15} color="#ebebf5cc" /><Text numberOfLines={1} style={styles.metaText}>{place}</Text></View>
           {tags.length > 0 && <View style={styles.tags}>{tags.slice(0, 4).map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}</View>}
           <View style={styles.actions}>
-            <Pressable accessibilityRole="button" accessibilityLabel={`${event.title}, Event ansehen`} onPress={() => onOpenEvent(event)} style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`${event.title}, ${actionLabel?.(event) ?? 'Event ansehen'}`} onPress={() => onOpenEvent(event)} style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
               <LinearGradient pointerEvents="none" colors={[colors.accent, '#a01b88']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cover} />
-              <Text style={styles.ctaText}>Event ansehen</Text>
+              <Text style={styles.ctaText}>{actionLabel?.(event) ?? 'Event ansehen'}</Text>
               <Icon name="chevron" size={17} color={colors.text} />
             </Pressable>
             <SaveEventButton id={event.id} title={event.title} />

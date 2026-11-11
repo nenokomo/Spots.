@@ -24,6 +24,7 @@ function load(file) {
     if (id === 'react/jsx-runtime') return jsx;
     if (id === 'react-native') return { StyleSheet: { create: s => s, absoluteFill: {} }, Image: 'Image', View: 'View', Text: 'Text', Pressable: 'Pressable', ScrollView: 'ScrollView' };
     if (id.endsWith('/utils/events')) return { eventDayLabel, eventTimeLabel };
+    if (id.endsWith('/utils/eventStatus')) return { eventPhase: () => 'upcoming' };
     if (id.endsWith('/theme')) return { colors: stub, space: stub, radius: stub, type: stub, squircle: {}, gutter: 20 };
     return stub;
   }
@@ -61,6 +62,18 @@ test('story media contains only the media of the event record and labels the sym
   assert.equal(remoteImageUri(1), null);
 });
 
+test('story tile opens the story preview and keeps the save action for the same event', () => {
+  let opened = 0;
+  const { StoryTile } = load('src/components/StoryTile.tsx');
+  const elements = nodes(StoryTile({ event, today: '2026-11-14', now: Date.parse('2026-11-14T12:00:00Z'), seen: false, onOpen: () => { opened++; } }));
+  elements.find(node => node.type === 'PressableScale').props.onPress();
+  assert.equal(opened, 1);
+  assert(elements.some(node => node.props?.children === event.title));
+  assert(elements.some(node => node.type === 'SaveEventButton' && node.props.id === event.id));
+  // The tile itself never links to an organizer or a fictional target.
+  assert(!elements.some(node => node.type === 'Link'));
+});
+
 test('story rail opens the preview of exactly the tapped event', () => {
   const opened = [];
   const { StoryRail } = load('src/components/EventCards.tsx');
@@ -76,7 +89,7 @@ test('story rail opens the preview of exactly the tapped event', () => {
 
 test('explore keeps search, genre and date filters and routes stories to the event detail page', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'src/screens/ExploreScreen.tsx'), 'utf8');
-  for (const required of ['<TextInput', 'categories.map', '<EventCalendar', 'matchesEventPeriod', 'distanceKm', '<StoryRail', '<EventHero', '<EventTile', '<EventStoryViewer']) {
+  for (const required of ['<TextInput', '<CategoryFilters', '<EventCalendar', 'matchesEventPeriod', 'distanceKm', '<EventHero', '<StoryTile', '<EventStoryViewer']) {
     assert(source.includes(required), `${required} missing`);
   }
   // Opening an event from the preview uses the central, context-aware route rule.

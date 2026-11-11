@@ -1,8 +1,19 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, gutter, space, type } from '../../constants/theme';
+import { brandDotStyle, colors, gutter, space, type } from '../../constants/theme';
 import { Icon, type IconName } from '../Icon';
 import { Button } from './Button';
+
+/** Tab header in the Spots style: brand eyebrow, big title and one line of context. */
+export function PageHeader({ section, title, subtitle }: { section: string; title: string; subtitle?: string }) {
+  return (
+    <View style={styles.page}>
+      <Text style={styles.eyebrow}>SPOTS<Text style={brandDotStyle}>.</Text> / {section}</Text>
+      <Text accessibilityRole="header" style={styles.largeTitle}>{title}</Text>
+      {subtitle && <Text style={styles.pageSubtitle}>{subtitle}</Text>}
+    </View>
+  );
+}
 
 /** Large-title header of a tab: small overline, big title, optional control on the right. */
 export function LargeHeader({ overline, title, trailing }: { overline?: string; title: string; trailing?: ReactNode }) {
@@ -47,6 +58,9 @@ export function EmptyState({ icon, title, text, action, onAction }: { icon: Icon
 }
 
 const styles = StyleSheet.create({
+  page: { paddingHorizontal: gutter, paddingTop: space.lg, paddingBottom: space.lg },
+  eyebrow: { ...type.overline, fontSize: 11, color: '#b58ca9', letterSpacing: 2.4, marginBottom: space.sm },
+  pageSubtitle: { ...type.callout, color: colors.muted, marginTop: space.xxs },
   header: { flexDirection: 'row', alignItems: 'flex-end', gap: space.md, paddingHorizontal: gutter, paddingTop: space.md, paddingBottom: space.md },
   headerCopy: { flex: 1, minWidth: 0 },
   overline: { ...type.overline, color: colors.faint, marginBottom: 2 },

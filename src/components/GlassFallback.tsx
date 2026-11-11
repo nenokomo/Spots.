@@ -1,15 +1,16 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
-import { colors } from '../constants/theme';
 
 export type GlassBackdropProps = { radius?: number; variant?: 'panel' | 'control' | 'card'; native?: boolean };
 
-// Neutral translucent material where native glass is unavailable (Android, web, older iOS).
-// No blur, filters or native glass imports here.
+// Tinted material where native glass is unavailable (Android, web, older iOS).
+// No blur, filters, animation or native glass imports here.
 export function GlassFallback({ radius = 16, variant = 'control' }: GlassBackdropProps) {
   return (
-    <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-      style={[StyleSheet.absoluteFill, styles.frame, { borderRadius: radius, backgroundColor: variant === 'panel' ? '#1c1c1ef2' : colors.material }]} />
+    <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFill, styles.frame, { borderRadius: radius, backgroundColor: variant === 'panel' ? '#24162cef' : variant === 'card' ? '#24172bd9' : '#261b30eb' }]}>
+      <LinearGradient colors={['#ffffff18', '#c922ab0c', '#100b1533']} start={{ x: 0, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
+    </View>
   );
 }
 
-const styles = StyleSheet.create({ frame: { overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff2e' } });
+const styles = StyleSheet.create({ frame: { overflow: 'hidden', borderWidth: 1, borderColor: '#f6d6ff24', borderTopColor: '#ffe8ff42' } });

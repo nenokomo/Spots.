@@ -11,7 +11,6 @@ import { StatusBadge } from './ui/StatusBadge';
 
 const when = (event: SpotEvent, today: string) => `${eventDayLabel(event.startsAt, today)} · ${eventTimeLabel(event.startsAt)}`;
 const place = (event: SpotEvent) => event.venue ? `${event.venue} · ${event.location}` : event.location;
-const distance = (km: number) => `${new Intl.NumberFormat('de-DE', { maximumFractionDigits: km < 10 ? 1 : 0 }).format(km)} km`;
 const imageLabel = (event: SpotEvent) => event.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${event.title}`;
 
 /**
@@ -54,24 +53,6 @@ export function EventHero({ event, href, today, now, width }: CardProps & { widt
   );
 }
 
-/** Grid tile: poster on top, three short lines underneath. Two fit side by side. */
-export function EventTile({ event, href, today, now, distanceKm }: CardProps & { distanceKm?: number }) {
-  const phase = eventPhase(event, now);
-  const live = phase === 'live' || phase === 'started';
-  return (
-    <PressableScale accessibilityRole="link" accessibilityLabel={`${event.title}, ${when(event, today)} Uhr, ${event.location}, öffnen`} onPress={() => router.push(href)} style={styles.tile}>
-      <View style={styles.tileImage}>
-        <Image source={event.image} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityLabel={imageLabel(event)} />
-        {live && <View style={styles.tileBadge}><StatusBadge phase={phase} /></View>}
-        <View style={styles.tileSave}><SaveEventButton id={event.id} title={event.title} overlay size={34} /></View>
-      </View>
-      <Text numberOfLines={1} style={styles.tileWhen}>{eventTimeLabel(event.startsAt)} Uhr</Text>
-      <Text numberOfLines={2} style={styles.tileTitle}>{event.title}</Text>
-      <Text numberOfLines={1} style={styles.tilePlace}>{typeof distanceKm === 'number' ? `${event.location} · ${distance(distanceKm)}` : event.location}</Text>
-    </PressableScale>
-  );
-}
-
 /** Row of round previews that open the full-screen story of an event. */
 export function StoryRail({ events, today, seen, onOpen }: { events: SpotEvent[]; today: string; seen: string[]; onOpen: (id: string) => void }) {
   return (
@@ -99,13 +80,6 @@ const styles = StyleSheet.create({
   heroTitle: { ...type.title3, color: colors.text },
   heroPlace: { ...type.footnote, color: colors.muted },
   heroSave: { position: 'absolute', top: space.sm, right: space.sm },
-  tile: { flex: 1, gap: 2 },
-  tileImage: { aspectRatio: 1, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.surface, marginBottom: space.xs, ...squircle },
-  tileBadge: { position: 'absolute', left: space.sm, top: space.sm },
-  tileSave: { position: 'absolute', right: space.xs, top: space.xs },
-  tileWhen: { ...type.overline, fontSize: 11, color: colors.pink },
-  tileTitle: { ...type.label, color: colors.text },
-  tilePlace: { ...type.footnote, color: colors.faint },
   rail: { gap: space.md, paddingHorizontal: gutter },
   story: { width: 66, alignItems: 'center', gap: space.xxs },
   ring: { width: 66, height: 66, borderRadius: 33, padding: 3, borderWidth: 2.5, borderColor: colors.accent },

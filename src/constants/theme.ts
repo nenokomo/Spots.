@@ -1,42 +1,43 @@
 /**
  * Spots design language (experiment/redesign).
  *
- * Principles: true black, one accent, large confident type, generous space,
- * hairlines instead of boxes, content (event imagery) first.
- * The palette follows the dark system palette of iOS so the app feels native;
- * the brand colour #c922ab is the only chromatic colour and is used sparingly.
+ * Principles: one accent, large confident type, generous space, hairlines
+ * instead of boxes, content (event imagery) first.
+ * The canvas is the original Spots night gradient (deep violet to plum);
+ * surfaces are tinted to sit on it. #c922ab stays the only accent.
  */
 export const colors = {
   /** Brand. Fills, primary buttons, live state. */
   accent: '#c922ab',
   /** Brighter tint of the brand colour for text and icons on black (contrast ≥ 5:1). */
-  pink: '#f055d1',
+  pink: '#ff4ab8',
   accentSoft: '#c922ab29',
   accentLine: '#c922ab73',
 
-  background: '#000000',
+  background: '#100b15',
   /** Grouped lists, cards, sheets. */
-  surface: '#1c1c1e',
-  surfaceRaised: '#1c1c1e',
+  surface: '#221629',
+  surfaceRaised: '#1c1522',
   /** Controls on top of a surface. */
-  surfaceHigh: '#2c2c2e',
+  surfaceHigh: '#33233b',
   /** Translucent fill for search fields and quiet buttons. */
-  fill: '#7676803d',
+  fill: '#ffffff12',
   /** Translucent material for floating controls over the map or images. */
-  material: '#1c1c1ed9',
+  material: '#261b30eb',
 
-  text: '#ffffff',
+  text: '#fff6ff',
   /** Secondary label. */
-  muted: '#ebebf599',
+  muted: '#d4bcd8',
   /** Tertiary label. */
-  faint: '#8e8e93',
-  border: '#ffffff1f',
-  separator: '#54545899',
+  faint: '#a993ae',
+  border: '#ffffff18',
+  separator: '#ffffff1f',
   danger: '#ff453a',
 
-  // Kept for components that still paint gradients; both are flat black now.
-  gradient: ['#000000', '#000000', '#000000'] as const,
-  panelGradient: ['#1c1c1e', '#1c1c1e'] as const,
+  /** Screen canvas, left to right. */
+  gradient: ['#120d1c', '#281326', '#3d1a32'] as const,
+  /** Raised panels such as the radar list. */
+  panelGradient: ['#211329', '#3a1b32'] as const,
 };
 
 /** 4-pt spacing scale. */

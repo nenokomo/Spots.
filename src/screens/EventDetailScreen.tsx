@@ -10,6 +10,7 @@ import { EventPhotoViewer } from '../components/EventPhotoViewer';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Icon } from '../components/Icon';
 import { SaveEventButton } from '../components/SaveEventButton';
+import { Backdrop } from '../components/Screen';
 import { Button, IconButton } from '../components/ui/Button';
 import { ListGroup, ListRow } from '../components/ui/List';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -44,7 +45,7 @@ export default function EventDetailScreen() {
   const [linkError, setLinkError] = useState(false);
   const back = () => router.canGoBack() ? router.back() : router.replace('/');
 
-  if (!event || remote.error) return <View style={styles.screen}><View style={[styles.state, { paddingTop: insets.top + 12 }]}>
+  if (!event || remote.error) return <View style={styles.screen}><Backdrop /><View style={[styles.state, { paddingTop: insets.top + 12 }]}>
     <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} plain style={styles.stateBack} />
     <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
     {!remote.loading && !remote.error && <Text style={styles.title}>Event nicht verfügbar</Text>}
@@ -62,7 +63,7 @@ export default function EventDetailScreen() {
   const tags = [...new Set([...(event.genres ?? []), ...event.categories])];
   const snaps = content.snaps.filter((snap) => snap.mediaType === 'image');
   const gallery = [...(event.imageIsPlaceholder ? [] : [event.image]), ...snaps.map((snap) => ({ uri: snap.url }))];
-  const heroHeight = Math.min(520, Math.max(320, width * 1.08));
+  const heroHeight = Math.min(460, Math.max(280, width * 0.95));
   const place = event.venue ? `${event.venue}, ${event.location}` : event.location;
   const primary = !ended ? ticketUrl ?? sourceUrl : undefined;
 
@@ -80,11 +81,12 @@ export default function EventDetailScreen() {
   }
 
   return <View style={styles.screen}>
+    <Backdrop />
     <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 120 }} showsVerticalScrollIndicator={false}>
-      <View style={[styles.hero, { height: heroHeight }]}>
-        <View style={[styles.heroArt, { top: insets.top + 52 }]}><EventArtwork event={event} /></View>
+      <View style={[styles.hero, { height: heroHeight, marginTop: insets.top + 8 }]}>
+        <View style={StyleSheet.absoluteFill}><EventArtwork event={event} inset={14} /></View>
         {!event.imageIsPlaceholder && <Pressable accessibilityRole="button" accessibilityLabel="Eventbild groß anzeigen" onPress={() => setViewer(0)} style={StyleSheet.absoluteFill} />}
-        <LinearGradient pointerEvents="none" colors={['#000000b3', '#00000000', '#00000000', '#000000']} locations={[0, 0.2, 0.72, 1]} style={StyleSheet.absoluteFill} />
+        <LinearGradient pointerEvents="none" colors={['#100b1599', '#100b1500', '#100b1500', '#100b1580']} locations={[0, 0.22, 0.75, 1]} style={StyleSheet.absoluteFill} />
         {event.imageIsPlaceholder && <Text style={styles.placeholderNote}>Symbolbild</Text>}
       </View>
 
@@ -145,7 +147,7 @@ export default function EventDetailScreen() {
       </View>
     </ScrollView>
 
-    <View pointerEvents="box-none" style={[styles.toolbar, { paddingTop: insets.top + 8 }]}>
+    <View pointerEvents="box-none" style={[styles.toolbar, { paddingTop: insets.top + 18 }]}>
       <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} />
       <IconButton icon="share" accessibilityLabel="Event teilen" onPress={() => void share()} />
     </View>
@@ -170,11 +172,10 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   state: { flex: 1, paddingHorizontal: GUTTER, gap: space.md },
   stateBack: { backgroundColor: colors.surface, marginBottom: space.lg },
-  hero: { overflow: 'hidden', backgroundColor: colors.surface },
-  heroArt: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  placeholderNote: { position: 'absolute', right: GUTTER, bottom: space.xl, ...type.footnote, fontSize: 11, color: colors.text, backgroundColor: '#00000099', borderRadius: radius.sm, overflow: 'hidden', paddingHorizontal: space.sm, paddingVertical: 3 },
-  toolbar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: space.lg },
-  body: { paddingHorizontal: GUTTER, paddingTop: space.sm, gap: space.sm },
+  hero: { overflow: 'hidden', backgroundColor: colors.surface, marginHorizontal: space.md, borderRadius: radius.xl, ...squircle },
+  placeholderNote: { position: 'absolute', right: GUTTER, bottom: space.xl, ...type.footnote, fontSize: 11, color: colors.text, backgroundColor: '#100b15b3', borderRadius: radius.sm, overflow: 'hidden', paddingHorizontal: space.sm, paddingVertical: 3 },
+  toolbar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: space.xl + 2 },
+  body: { paddingHorizontal: GUTTER, paddingTop: space.lg, gap: space.sm },
   title: { ...type.largeTitle, color: colors.text },
   subtitle: { ...type.body, color: colors.muted },
   organizer: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 36, alignSelf: 'flex-start' },

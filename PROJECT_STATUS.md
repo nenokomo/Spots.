@@ -22,7 +22,15 @@ Eigener Branch von feature/design-refresh. Nur Oberfläche neu; Datenschicht, ze
 - Entdecken: kompakte Hero-Karten im Querformat, darunter zweispaltiges Raster nach Tagen statt der Zeilenliste; Wochenend-Regal entfällt.
 - `EventPoster` und `RadarCard` entfernt, `EventTile` neu.
 
-**Geprüft**: 94/94 Tests (mit PGlite), Expo-Lint, Typecheck. Web-Vorschau 375 × 812: Radar (Karlsruhe mit Testevents, Pins, Listen-Panel), Entdecken, Story-Ansicht, Eventdetail, Gemerkt (leer), Profil.
+**Dritte Runde (Rückmeldung nach Handy-Test)**
+- Hintergrund wieder der ursprüngliche lila Verlauf statt Schwarz; Flächen, Glas-Material und Chips darauf abgestimmt (`Backdrop` in `components/Screen.tsx`). Die Aussage „echtes Schwarz“ oben gilt damit nicht mehr.
+- Entdecken: Kopfbereich, Suchleiste, Chips (Ort, Genre, Datum) und Zeitraum-Leiste wieder wie im bisherigen Design; „Als Nächstes“ mit den Querformat-Karten; darunter „Alle Events“ als zweispaltige Story-Kacheln (`StoryTile`), die die Story öffnen. Story-Leiste und Tagesraster entfallen.
+- Story-Button heißt „Zum Veranstalter“, wenn das Event über die zentrale Regel zur Veranstalterseite führt (zukünftiges Event mit Veranstalter), sonst „Event ansehen“.
+- Entdecken zeigt standardmäßig Events im Umkreis des eigenen Standorts, wenn die Freigabe schon erteilt ist; ist dort nichts geplant, erscheinen alle Events mit einem Hinweis. Kein erneuter Berechtigungsdialog nach Ablehnung.
+- Lokale Testdaten erweitert (nur Entwicklung): 7 Test-Events (3 laufend, 2 später heute, 2 an späteren Tagen) und ein Test-Veranstalter „TEST · Club Fixture“ mit Beitrag, damit der Weg Story → Veranstalterseite → Event testbar ist.
+- Detail- und Veranstalterseite: Artwork als abgerundete Karte auf dem Verlauf; Radar-Panel mit Panel-Verlauf.
+
+**Geprüft**: 96/96 Tests (mit PGlite), Expo-Lint, Typecheck (Stand dritte Runde; Veranstalterseite jetzt mit Testdaten visuell geprüft). Zuvor: 94/94 Tests, Expo-Lint, Typecheck. Web-Vorschau 375 × 812: Radar (Karlsruhe mit Testevents, Pins, Listen-Panel), Entdecken, Story-Ansicht, Eventdetail, Gemerkt (leer), Profil.
 
 **Nicht geprüft**: kein iOS-/Android-Gerät. Besonders offen: `mapPadding` der nativen Karte (verschiebt Kartenmitte und Anbieter-Logo über das Karussell), neue Pins als native Marker, Profil als natives Modal, Glas-Effekt, Schrift (im Browser Segoe UI statt San Francisco). Veranstalterseite mit Daten und Gemerkt mit Einträgen im neuen Stil nicht visuell geprüft.
 

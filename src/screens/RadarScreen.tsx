@@ -112,7 +112,7 @@ export default function RadarScreen() {
       <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={select}
         onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} topInset={topInset} bottomInset={panelHeight} />
 
-      <LinearGradient pointerEvents="none" colors={['#000000b3', '#00000000']} style={[styles.topShade, { height: insets.top + 110 }]} />
+      <LinearGradient pointerEvents="none" colors={['#100b15b3', '#100b1500']} style={[styles.topShade, { height: insets.top + 110 }]} />
 
       <View pointerEvents="box-none" style={[styles.top, { paddingTop: insets.top + 8 }]}>
         <PressableScale accessibilityRole="button" accessibilityLabel={`Ort ändern, aktuell ${location.label}`} onPress={() => setPlaceOpen(true)} scaleTo={0.96} style={styles.place}>
@@ -132,6 +132,7 @@ export default function RadarScreen() {
       </View>
 
       <View style={[styles.panel, { height: panelHeight, paddingBottom: tabInset }]}>
+        <LinearGradient pointerEvents="none" colors={colors.panelGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
         <View style={styles.panelHeader}>
           <View style={styles.panelCopy}>
             <Text accessibilityRole="header" style={styles.headline}>{headline}</Text>
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
   placeLabel: { ...type.headline, fontSize: 16, color: colors.text, flexShrink: 1 },
   filterDot: { position: 'absolute', top: 2, right: 2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent, borderWidth: 2, borderColor: colors.background },
   locate: { position: 'absolute', right: space.lg },
-  panel: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.background, borderTopLeftRadius: corner.xl, borderTopRightRadius: corner.xl, borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.separator, overflow: 'hidden', ...squircle },
+  panel: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.background, borderTopLeftRadius: corner.xl, borderTopRightRadius: corner.xl, borderTopWidth: 1, borderColor: '#b872ac50', overflow: 'hidden', ...squircle },
   panelHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingHorizontal: gutter, paddingTop: space.lg, paddingBottom: space.xs },
   panelCopy: { flex: 1, minWidth: 0 },
   headline: { ...type.title2, color: colors.text },
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
   more: { flexDirection: 'row', alignItems: 'center', gap: 3, minHeight: 32 },
   moreText: { ...type.callout, color: colors.pink },
   row: { paddingHorizontal: gutter },
-  rowSelected: { backgroundColor: colors.surface },
+  rowSelected: { backgroundColor: '#ffffff12' },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: gutter + 68 + space.md },
   empty: { ...type.callout, color: colors.faint, paddingHorizontal: gutter, paddingTop: space.lg },
   citySearch: { minHeight: 48, zIndex: 10 },

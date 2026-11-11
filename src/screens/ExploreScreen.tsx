@@ -1,20 +1,22 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CategoryFilters } from '../components/CategoryFilters';
 import { CitySearch } from '../components/CitySearch';
 import { EventCalendar } from '../components/EventCalendar';
-import { EventHero, EventTile, StoryRail } from '../components/EventCards';
+import { EventHero } from '../components/EventCards';
 import { EventDataState } from '../components/EventDataState';
 import { EventStoryViewer } from '../components/EventStoryViewer';
 import { Icon } from '../components/Icon';
 import { Screen } from '../components/Screen';
+import { StoryTile } from '../components/StoryTile';
 import { Button } from '../components/ui/Button';
 import { Chip } from '../components/ui/Chip';
-import { EmptyState, LargeHeader, SectionHeader } from '../components/ui/Section';
+import { EmptyState, PageHeader, SectionHeader } from '../components/ui/Section';
 import { Sheet } from '../components/ui/Sheet';
 import { tabBarContentInset } from '../constants/navigation';
-import { categories, colors, gutter, radius, space, squircle, type, type Category } from '../constants/theme';
+import { colors, gutter, radius, space, squircle, type, type Category } from '../constants/theme';
 import { useUpcomingEvents } from '../hooks/useEvents';
 import { useLocation } from '../hooks/useLocation';
 import { useNow } from '../hooks/useNow';
@@ -25,7 +27,7 @@ import { isLocatedEvent, matchesCategory, type SpotEvent } from '../types/events
 import { dayKey, distanceKm, matchesEventPeriod, type Coordinate } from '../utils/events';
 
 const periods = [
-  { id: 'all', label: 'Jederzeit' },
+  { id: 'all', label: 'Alle Termine' },
   { id: 'today', label: 'Heute' },
   { id: 'friday', label: 'Freitag' },
   { id: 'saturday', label: 'Samstag' },
@@ -33,19 +35,11 @@ const periods = [
 ] as const;
 type Period = typeof periods[number]['id'];
 const radii = [10, 25, 50, 100] as const;
-type Area = { label: string; center: Coordinate } | null;
+type Area = { label: string; center: Coordinate };
+/** auto = around the user when a location is known; everywhere = no distance filter. */
+type AreaChoice = { kind: 'auto' } | { kind: 'everywhere' } | { kind: 'gps' } | { kind: 'city'; area: Area };
 const HERO_GAP = 12;
-
-const headerDate = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'long', day: 'numeric', month: 'long' });
-const longDay = new Intl.DateTimeFormat('de-DE', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long' });
 const shortDay = new Intl.DateTimeFormat('de-DE', { timeZone: 'UTC', day: 'numeric', month: 'long' });
-const addDays = (key: string, days: number) => { const date = new Date(`${key}T12:00:00Z`); date.setUTCDate(date.getUTCDate() + days); return date.toISOString().slice(0, 10); };
-
-function dayTitle(key: string, today: string) {
-  if (key === today) return 'Heute';
-  if (key === addDays(today, 1)) return 'Morgen';
-  return longDay.format(new Date(`${key}T12:00:00Z`));
-}
 
 export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
@@ -54,93 +48,97 @@ export default function ExploreScreen() {
   const now = useNow();
   const remote = useUpcomingEvents();
   const location = useLocation();
+  const { locate } = location;
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<Category>('Alle');
   const [period, setPeriod] = useState<Period>('all');
   const [datesOpen, setDatesOpen] = useState(false);
+  const [genresOpen, setGenresOpen] = useState(false);
   const [areaOpen, setAreaOpen] = useState(false);
-  const [area, setArea] = useState<Area>(null);
+  const [choice, setChoice] = useState<AreaChoice>({ kind: 'auto' });
   const [areaRadius, setAreaRadius] = useState<number>(50);
-  const [waitingForGps, setWaitingForGps] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [story, setStory] = useState<string | null>(null);
   const [seenStories, setSeenStories] = useState<string[]>([]);
   const markSeen = useCallback((id: string) => setSeenStories((previous) => previous.includes(id) ? previous : [...previous, id]), []);
   const closeStory = useCallback(() => setStory(null), []);
 
+  // Use an existing location permission to show what is on nearby. Never prompts again after a refusal.
+  useFocusEffect(useCallback(() => { void locate({ automatic: true }); }, [locate]));
+
   const activeDate = selectedDate && selectedDate >= today ? selectedDate : null;
-  const dateLabel = activeDate ? shortDay.format(new Date(`${activeDate}T12:00:00Z`)) : period !== 'all' ? periods.find((item) => item.id === period)?.label : null;
-  // A GPS request finishes asynchronously; adopt the fix once it arrives.
-  const gpsArea: Area = waitingForGps && location.userCoordinate ? { label: 'Dein Standort', center: location.userCoordinate } : null;
-  const activeArea = gpsArea ?? area;
-  const filtersActive = category !== 'Alle' || period !== 'all' || !!activeDate || !!activeArea || search.trim().length > 0;
+  const dateLabel = activeDate ? shortDay.format(new Date(`${activeDate}T12:00:00Z`)) : null;
 
-  const events = useMemo(() => {
+  const { events, area, fellBack } = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('de');
-    return remote.events.filter((event) => matchesCategory(event, category)
+    const base = remote.events.filter((event) => matchesCategory(event, category)
       && (activeDate ? dayKey(new Date(event.startsAt)) === activeDate : matchesEventPeriod(event, period, today))
-      && (!activeArea || (isLocatedEvent(event) && distanceKm(activeArea.center, event.coordinate) <= areaRadius))
       && `${event.title} ${event.categories.join(' ')} ${event.genres?.join(' ') ?? ''} ${event.location} ${event.venue ?? ''}`.toLocaleLowerCase('de').includes(query));
-  }, [remote.events, category, activeDate, period, today, search, activeArea, areaRadius]);
+    const gps: Area | null = location.userCoordinate ? { label: 'In deiner Nähe', center: location.userCoordinate } : null;
+    const wanted = choice.kind === 'city' ? choice.area : choice.kind === 'everywhere' ? null : gps;
+    if (!wanted) return { events: base, area: null, fellBack: false };
+    const nearby = base.filter((event) => isLocatedEvent(event) && distanceKm(wanted.center, event.coordinate) <= areaRadius);
+    // Nothing near the user and no place chosen: show everything rather than an empty page.
+    if (choice.kind === 'auto' && nearby.length === 0) return { events: base, area: null, fellBack: base.length > 0 };
+    return { events: nearby, area: wanted, fellBack: false };
+  }, [remote.events, category, activeDate, period, today, search, choice, location.userCoordinate, areaRadius]);
 
-  const sections = useMemo(() => {
-    const days = new Map<string, SpotEvent[]>();
-    for (const event of events) { const key = dayKey(new Date(event.startsAt)); days.set(key, [...(days.get(key) ?? []), event]); }
-    // Two tiles per row: each list item is a pair of events of the same day.
-    return [...days].map(([key, list]) => ({
-      key, title: dayTitle(key, today), count: list.length,
-      data: Array.from({ length: Math.ceil(list.length / 2) }, (_, row) => list.slice(row * 2, row * 2 + 2)),
-    }));
-  }, [events, today]);
-  const distances = useMemo(() => new Map(activeArea ? events.flatMap((event) => isLocatedEvent(event) ? [[event.id, distanceKm(activeArea.center, event.coordinate)] as const] : []) : []), [events, activeArea]);
+  const distances = useMemo(() => new Map(area ? events.flatMap((event) => isLocatedEvent(event) ? [[event.id, distanceKm(area.center, event.coordinate)] as const] : []) : []), [events, area]);
   const featured = events.slice(0, 5);
-  const stories = useMemo(() => events.filter((event) => !event.imageIsPlaceholder).slice(0, 12), [events]);
   const heroWidth = Math.min(width - gutter * 2 - 24, 420);
+  const filtersActive = category !== 'Alle' || period !== 'all' || !!activeDate || choice.kind !== 'auto' || search.trim().length > 0;
+  const areaLabel = area ? `${area.label} · ${areaRadius} km` : choice.kind === 'gps' && location.loading ? 'Standort …' : 'Überall';
 
-  function resetFilters() { setSearch(''); setCategory('Alle'); setPeriod('all'); setSelectedDate(null); setArea(null); setWaitingForGps(false); }
-  function chooseCity(city: City) { setWaitingForGps(false); setArea({ label: city.name, center: { latitude: city.latitude, longitude: city.longitude } }); }
-  async function chooseGps() { setArea(null); setWaitingForGps(true); await location.locate(); }
+  function resetFilters() { setSearch(''); setCategory('Alle'); setPeriod('all'); setSelectedDate(null); setChoice({ kind: 'auto' }); }
+  function chooseCity(city: City) { setChoice({ kind: 'city', area: { label: city.name, center: { latitude: city.latitude, longitude: city.longitude } } }); }
+  async function chooseGps() { setChoice({ kind: 'gps' }); await locate(); }
+  // Where an event leads from here: future events with a verified organizer open the organizer page.
+  const destination = (event: SpotEvent) => eventHref(event, 'discover', now);
+  const toOrganizer = (event: SpotEvent) => destination(event).pathname === '/organizer/[id]';
 
   return <Screen>
-    <SectionList
-      sections={sections}
-      keyExtractor={(pair) => pair[0].id}
-      stickySectionHeadersEnabled={false}
+    <FlatList
+      key="explore-grid"
+      data={events}
+      numColumns={2}
+      keyExtractor={(event) => event.id}
+      renderItem={({ item }) => <View style={styles.cell}><StoryTile event={item} today={today} now={now} seen={seenStories.includes(item.id)} distanceKm={distances.get(item.id)} onOpen={() => setStory(item.id)} /></View>}
+      columnWrapperStyle={styles.gridRow}
+      initialNumToRender={6}
+      windowSize={7}
+      contentContainerStyle={{ paddingBottom: tabBarContentInset(insets.bottom) }}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       showsVerticalScrollIndicator={false}
       refreshing={remote.loading}
       onRefresh={remote.reload}
-      initialNumToRender={8}
-      contentContainerStyle={{ paddingBottom: tabBarContentInset(insets.bottom) }}
-      renderSectionHeader={({ section }) => <View style={styles.dayRow}><Text accessibilityRole="header" style={styles.day}>{section.title}</Text><Text style={styles.dayCount}>{section.count}</Text></View>}
-      renderItem={({ item }) => <View style={styles.gridRow}>
-        {item.map((event) => <EventTile key={event.id} event={event} href={eventHref(event, 'discover')} today={today} now={now} distanceKm={distances.get(event.id)} />)}
-        {item.length === 1 && <View style={styles.flex} />}
-      </View>}
       ListHeaderComponent={<View>
-        <LargeHeader overline={headerDate.format(new Date(now))} title="Entdecken" />
+        <PageHeader section="ENTDECKEN" title="Entdecken" subtitle="Finde den richtigen Spot für deinen Abend." />
         <View style={styles.search}>
-          <Icon name="search" size={17} color={colors.faint} />
-          <TextInput accessibilityLabel="Events nach Name, Ort oder Genre suchen" value={search} onChangeText={setSearch} placeholder="Events, Städte, Genres" placeholderTextColor={colors.faint} style={styles.input} returnKeyType="search" autoCorrect={false} />
-          {search.length > 0 && <Pressable accessibilityRole="button" accessibilityLabel="Suche löschen" onPress={() => setSearch('')} hitSlop={10} style={styles.clear}><Icon name="close" size={11} color={colors.background} /></Pressable>}
+          <Icon name="search" size={18} color={colors.muted} />
+          <TextInput accessibilityLabel="Events nach Name, Ort oder Genre suchen" value={search} onChangeText={setSearch} placeholder="Event, Stadt oder Genre" placeholderTextColor={colors.faint} style={styles.input} returnKeyType="search" autoCorrect={false} />
+          {search.length > 0 && <Pressable accessibilityRole="button" accessibilityLabel="Suche löschen" onPress={() => setSearch('')} hitSlop={10} style={styles.clear}><Icon name="close" size={16} color={colors.muted} /></Pressable>}
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled">
-          <Chip icon="pin" trailingIcon="down" label={activeArea ? `${activeArea.label} · ${areaRadius} km` : waitingForGps && location.loading ? 'Standort …' : 'Überall'} selected={!!activeArea} onPress={() => setAreaOpen(true)} accessibilityLabel="Ort und Umkreis wählen" />
-          <Chip icon="calendar" trailingIcon="down" label={dateLabel ?? 'Jederzeit'} selected={!!dateLabel} onPress={() => setDatesOpen(true)} accessibilityLabel="Datum auswählen" />
-          <View style={styles.chipDivider} />
-          {categories.map((item) => <Chip key={item} label={item} selected={category === item} onPress={() => setCategory(item)} accessibilityLabel={`Genre ${item}`} />)}
+          <Chip icon="pin" label={areaLabel} selected={!!area} onPress={() => setAreaOpen(true)} accessibilityLabel="Ort und Umkreis wählen" />
+          <Chip icon="sliders" label={category === 'Alle' ? 'Genre' : category} selected={category !== 'Alle' || genresOpen} onPress={() => setGenresOpen((value) => !value)} accessibilityLabel={`Genre filtern, aktuell ${category}`} />
+          <Chip icon="calendar" label={dateLabel ?? 'Datum'} selected={!!activeDate} onPress={() => setDatesOpen(true)} accessibilityLabel="Datum auswählen" />
+        </ScrollView>
+        {genresOpen && <View style={styles.genres}><CategoryFilters value={category} onChange={(item) => { setCategory(item); setGenresOpen(false); }} /></View>}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.periods} keyboardShouldPersistTaps="handled">
+          {periods.map((item) => {
+            const selected = !activeDate && period === item.id;
+            return <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={item.label} accessibilityState={{ selected }} onPress={() => { setPeriod(item.id); setSelectedDate(null); }} style={[styles.period, selected && styles.periodActive]}><Text style={[styles.periodLabel, selected && styles.periodActiveText]}>{item.label}</Text></Pressable>;
+          })}
         </ScrollView>
 
-        {!filtersActive && stories.length > 0 && <View style={styles.rail}><StoryRail events={stories} today={today} seen={seenStories} onOpen={setStory} /></View>}
-
-        {!filtersActive && featured.length > 0 && <>
-          <SectionHeader title="Als Nächstes" />
+        {featured.length > 0 && <>
+          <SectionHeader title="Als Nächstes" note="Die nächsten Termine deiner Auswahl" />
           <FlatList
             horizontal
             data={featured}
             keyExtractor={(event) => event.id}
-            renderItem={({ item }) => <EventHero event={item} href={eventHref(item, 'discover')} today={today} now={now} width={heroWidth} />}
+            renderItem={({ item }) => <EventHero event={item} href={destination(item)} today={today} now={now} width={heroWidth} />}
             ItemSeparatorComponent={() => <View style={styles.heroGap} />}
             contentContainerStyle={styles.shelf}
             snapToInterval={heroWidth + HERO_GAP}
@@ -149,57 +147,59 @@ export default function ExploreScreen() {
           />
         </>}
 
-        <SectionHeader title={filtersActive ? 'Ergebnisse' : 'Alle Events'} note={`${events.length} ${events.length === 1 ? 'Event' : 'Events'}`} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
+        <SectionHeader title={area ? `Alle Events · ${area.label}` : 'Alle Events'} note={`${events.length} ${events.length === 1 ? 'Event' : 'Events'} · antippen für die Story`} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
+        {fellBack && <Text style={styles.fallback}>In deiner Nähe ist gerade nichts geplant. Das sind alle Events in Deutschland.</Text>}
         <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
       </View>}
-      ListEmptyComponent={remote.loading || remote.error ? undefined : <EmptyState icon="search" title="Nichts gefunden" text={activeArea ? `Im Umkreis von ${areaRadius} km um ${activeArea.label} ist für diese Auswahl nichts geplant.` : 'Probier einen anderen Begriff oder weniger Filter.'} action="Filter zurücksetzen" onAction={resetFilters} />}
+      ListEmptyComponent={remote.loading || remote.error ? undefined : <EmptyState icon="search" title="Keine passenden Events" text={area ? `Im Umkreis von ${areaRadius} km um ${area.label} ist für diese Auswahl nichts geplant.` : 'Passe deine Suche oder deine Filter an.'} action="Filter zurücksetzen" onAction={resetFilters} />}
     />
 
-    <Sheet visible={datesOpen} title="Wann?" onClose={() => setDatesOpen(false)} tall>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.presets} style={styles.presetRow}>
-        {periods.map((item) => <Chip key={item.id} label={item.label} selected={!activeDate && period === item.id} onPress={() => { setPeriod(item.id); setSelectedDate(null); setDatesOpen(false); }} />)}
-      </ScrollView>
+    <Sheet visible={datesOpen} title="Wann möchtest du los?" onClose={() => setDatesOpen(false)} tall>
       <View style={styles.calendar}>
-        <EventCalendar key={activeDate ?? today} today={today} selectedDate={activeDate} eventDays={remote.events.map((event) => dayKey(new Date(event.startsAt)))} onSelect={(date) => { setSelectedDate(date); setPeriod('all'); setDatesOpen(false); }} />
+        <EventCalendar key={activeDate ?? today} today={today} selectedDate={activeDate} eventDays={remote.events.map((event) => dayKey(new Date(event.startsAt)))} onSelect={(date) => { setSelectedDate(date); setDatesOpen(false); }} />
       </View>
+      <Button label="Alle Termine anzeigen" variant="secondary" onPress={() => { setSelectedDate(null); setPeriod('all'); setDatesOpen(false); }} />
     </Sheet>
 
-    <Sheet visible={areaOpen} title="Wo?" onClose={() => setAreaOpen(false)} tall>
-      <View style={styles.citySearch}><CitySearch flush label={activeArea?.label ?? 'Deutschland'} locating={location.loading} onLocate={() => void chooseGps()} onSelect={chooseCity} /></View>
-      {waitingForGps && !location.userCoordinate && !location.loading && <Text style={styles.hint}>{location.message}</Text>}
+    <Sheet visible={areaOpen} title="Wo möchtest du feiern?" onClose={() => setAreaOpen(false)} tall>
+      <View style={styles.citySearch}><CitySearch flush label={area?.label ?? 'Deutschland'} locating={location.loading} onLocate={() => void chooseGps()} onSelect={chooseCity} /></View>
+      {choice.kind === 'gps' && !location.userCoordinate && !location.loading && <Text style={styles.hint}>{location.message}</Text>}
       <View style={styles.group}>
         <Text style={styles.label}>Umkreis</Text>
         <View style={styles.radii}>{radii.map((value) => <Chip key={value} label={`${value} km`} selected={areaRadius === value} onPress={() => setAreaRadius(value)} />)}</View>
       </View>
       <Text style={styles.hint}>Es erscheinen nur Events mit bestätigtem Standort. Dein Standort bleibt auf dem Gerät.</Text>
       <View style={styles.sheetActions}>
-        <Button label="Überall" variant="secondary" onPress={() => { setArea(null); setWaitingForGps(false); setAreaOpen(false); }} style={styles.flex} />
-        <Button label="Anzeigen" onPress={() => setAreaOpen(false)} disabled={!activeArea} style={styles.flex} />
+        <Button label="Überall" variant="secondary" onPress={() => { setChoice({ kind: 'everywhere' }); setAreaOpen(false); }} style={styles.flex} />
+        <Button label="Anzeigen" onPress={() => setAreaOpen(false)} disabled={!area} style={styles.flex} />
       </View>
     </Sheet>
 
     <Modal visible={story !== null} animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={closeStory}>
-      {story !== null && <EventStoryViewer events={stories} initialId={story} today={today} onClose={closeStory} onSeen={markSeen} onOpenEvent={(event) => { setStory(null); router.push(eventHref(event, 'discover')); }} />}
+      {story !== null && <EventStoryViewer events={events} initialId={story} today={today} onClose={closeStory} onSeen={markSeen}
+        actionLabel={(event) => toOrganizer(event) ? 'Zum Veranstalter' : 'Event ansehen'}
+        onOpenEvent={(event) => { setStory(null); router.push(eventHref(event, 'discover')); }} />}
     </Modal>
   </Screen>;
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  search: { height: 44, marginHorizontal: gutter, borderRadius: radius.md, backgroundColor: colors.fill, flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.md, gap: space.sm, ...squircle },
-  input: { ...type.body, lineHeight: undefined, color: colors.text, flex: 1, minWidth: 0, height: 44, paddingVertical: 0 },
-  clear: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.faint },
-  chips: { gap: space.sm, paddingHorizontal: gutter, paddingTop: space.md, alignItems: 'center' },
-  chipDivider: { width: StyleSheet.hairlineWidth, height: 20, backgroundColor: colors.separator, marginHorizontal: space.xxs },
-  rail: { paddingTop: space.xl },
+  search: { minHeight: 50, marginHorizontal: gutter, borderRadius: radius.md, borderWidth: 1, borderColor: '#ffffff1c', backgroundColor: '#1b1521', flexDirection: 'row', alignItems: 'center', paddingLeft: space.md, gap: space.sm, ...squircle },
+  input: { ...type.body, lineHeight: undefined, color: colors.text, flex: 1, minWidth: 0, minHeight: 48, paddingVertical: 0 },
+  clear: { width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  chips: { gap: space.sm, paddingHorizontal: gutter, paddingTop: space.md },
+  genres: { marginTop: space.sm, marginHorizontal: gutter, padding: space.md, borderRadius: radius.md, borderWidth: 1, borderColor: '#ffffff14', backgroundColor: colors.surfaceRaised },
+  periods: { gap: space.xxs, paddingHorizontal: gutter - space.md, paddingTop: space.sm },
+  period: { minHeight: 40, justifyContent: 'center', paddingHorizontal: space.md, borderRadius: radius.sm },
+  periodActive: { backgroundColor: '#ffffff12' },
+  periodLabel: { ...type.label, fontSize: 14, color: colors.faint },
+  periodActiveText: { color: colors.text },
   shelf: { paddingHorizontal: gutter },
   heroGap: { width: HERO_GAP },
-  dayRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: gutter, paddingTop: space.sm, paddingBottom: space.md },
-  day: { ...type.headline, color: colors.text },
-  dayCount: { ...type.footnote, color: colors.faint },
-  gridRow: { flexDirection: 'row', gap: space.md, paddingHorizontal: gutter, paddingBottom: space.xl },
-  presetRow: { flexGrow: 0 },
-  presets: { gap: space.sm },
+  fallback: { ...type.footnote, color: colors.muted, paddingHorizontal: gutter, paddingBottom: space.md },
+  gridRow: { gap: space.md, paddingHorizontal: gutter, paddingBottom: space.md },
+  cell: { flex: 1, maxWidth: '50%' },
   calendar: { flex: 1 },
   citySearch: { minHeight: 48, zIndex: 10 },
   group: { gap: space.md },

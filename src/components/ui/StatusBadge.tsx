@@ -16,7 +16,7 @@ export function StatusBadge({ phase, overlay = false }: { phase: EventPhase; ove
 
 const styles = StyleSheet.create({
   badge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, height: 24, borderRadius: radius.pill, backgroundColor: colors.surfaceHigh },
-  overlay: { backgroundColor: '#000000a6' },
+  overlay: { backgroundColor: '#100b15c4' },
   live: { backgroundColor: colors.accent },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.text },
   text: { ...type.overline, fontSize: 11, letterSpacing: 0.3, color: colors.text },

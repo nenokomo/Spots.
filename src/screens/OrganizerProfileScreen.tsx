@@ -9,6 +9,7 @@ import { EventDataState } from '../components/EventDataState';
 import { EventRow } from '../components/EventRow';
 import { EventStoryViewer } from '../components/EventStoryViewer';
 import { SaveEventButton } from '../components/SaveEventButton';
+import { Backdrop } from '../components/Screen';
 import { Button, IconButton } from '../components/ui/Button';
 import { EmptyState, SectionHeader } from '../components/ui/Section';
 import { colors, gutter, radius, space, squircle, type } from '../constants/theme';
@@ -24,7 +25,7 @@ const PAST_PREVIEW = 4;
 const postDate = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: 'numeric', month: 'long', year: 'numeric' });
 
 function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase('de')).join('') || 'S';
+  return name.split(/\s+/).filter((part) => /^\p{L}/u.test(part)).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase('de')).join('') || 'S';
 }
 
 function Avatar({ organizer, size }: { organizer: PublicOrganizer; size: number }) {
@@ -84,6 +85,7 @@ export default function OrganizerProfileScreen() {
     const unavailable = state.status === 'unavailable';
     return (
       <View style={[styles.screen, { paddingTop: insets.top + 8 }]}>
+        <Backdrop />
         <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} plain style={styles.stateBack} />
         {state.status === 'loading' || state.status === 'error'
           ? <EventDataState loading={state.status === 'loading'} error={state.status === 'error' ? state.message : null} onRetry={reload} />
@@ -101,12 +103,13 @@ export default function OrganizerProfileScreen() {
 
   return (
     <View style={styles.screen}>
+      <Backdrop />
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + space.xxxl }} showsVerticalScrollIndicator={false}>
-        <View style={[styles.cover, { height: insets.top + 190 }]}>
+        <View style={[styles.cover, { height: 170, marginTop: insets.top + 8 }]}>
           {organizer.avatarUrl
             ? <Image source={{ uri: organizer.avatarUrl }} blurRadius={40} resizeMode="cover" style={StyleSheet.absoluteFill} />
-            : <LinearGradient colors={['#c922ab', '#5a0f4d', '#000000']} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />}
-          <LinearGradient pointerEvents="none" colors={['#00000066', '#00000000', '#000000']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
+            : <LinearGradient colors={['#c922ab', '#6d1560', '#2a1230']} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />}
+          <LinearGradient pointerEvents="none" colors={['#100b1566', '#100b1500', '#100b1580']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
         </View>
         <View style={styles.identity}>
           <Avatar organizer={organizer} size={104} />
@@ -144,7 +147,7 @@ export default function OrganizerProfileScreen() {
         </>}
       </ScrollView>
 
-      <View pointerEvents="box-none" style={[styles.toolbar, { paddingTop: insets.top + 8 }]}>
+      <View pointerEvents="box-none" style={[styles.toolbar, { paddingTop: insets.top + 18 }]}>
         <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} />
       </View>
 
@@ -159,10 +162,10 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.background },
   stateBack: { backgroundColor: colors.surface, marginLeft: space.lg, marginBottom: space.lg },
-  cover: { overflow: 'hidden' },
-  toolbar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', paddingHorizontal: space.lg },
+  cover: { overflow: 'hidden', marginHorizontal: space.md, borderRadius: radius.xl, ...squircle },
+  toolbar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', paddingHorizontal: space.xl + 2 },
   identity: { alignItems: 'center', marginTop: -56, paddingHorizontal: gutter },
-  avatar: { overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceHigh, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  avatar: { overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceHigh, borderWidth: 3, borderColor: '#1d1123' },
   initials: { fontWeight: '800', color: colors.text, letterSpacing: -0.5 },
   kicker: { ...type.overline, color: colors.pink, marginTop: space.lg },
   name: { ...type.largeTitle, color: colors.text, textAlign: 'center' },

@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../components/Icon';
 import { Screen } from '../components/Screen';
 import { ListGroup, ListRow } from '../components/ui/List';
-import { LargeHeader } from '../components/ui/Section';
+import { PageHeader } from '../components/ui/Section';
 import { tabBarContentInset } from '../constants/navigation';
 import { colors, space, type } from '../constants/theme';
 import { accountClientError } from '../features/accounts/client';
@@ -23,7 +23,7 @@ export default function ProfileScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ paddingBottom: tabBarContentInset(insets.bottom) }} showsVerticalScrollIndicator={false}>
-        <LargeHeader title="Profil" />
+        <PageHeader section="DEIN PROFIL" title="Profil" />
         <View style={styles.content}>
           <View style={styles.identity}>
             <View style={styles.avatar}><Icon name="profile" color={colors.text} size={30} /></View>
