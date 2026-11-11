@@ -49,6 +49,7 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
 
 - **Teil 3b – Goabase geprüft (nur lesend, 2 Anfragen)**: Die API liefert Flyer in `small/medium/large/full` (Import nutzt `small`), Veranstaltername, Eintritt und Line-up als Text, aber **kein Genre-Feld**. Genres aus Freitext wären Raten → nicht umgesetzt. Größere Bilder wären ein neuer Release des eingefrorenen Produktionsimports → Entscheidung Jacint. Am Goabase-Import nichts geändert.
 - **Abschluss**: `PROJECT_STATUS.md` auf den neuen Stand gebracht.
+- **Ticketmaster in Spots-Test aktiv (11.11., Jacint)**: Secret gesetzt, Function `import-ticketmaster` bereitgestellt, einmal per POST ausgelöst: 506 übernommen, 475 sichtbar, Sperre frei, Goabase unverändert. Auf dem Handy mit Testkonfiguration bestätigt: neue Events sichtbar. **Noch kein Zeitplan (Cron)**, Import läuft also nur bei manuellem Aufruf.
 
 ## Läuft gerade
 
@@ -58,14 +59,12 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
 
 1. Branch `feature/event-sources` von Jacint (SQL, Function) und Noyan (Seiten) ansehen lassen, dann pushen und PR gegen `main`
 2. Konto anlegen, als Admin eintragen, Freigabe-Ablauf auf dem Handy testen
-3. Ticketmaster in Spots-Test aktivieren
+3. Zeitplan (Cron) für den Ticketmaster-Import in Spots-Test
 
 ## Offene Punkte (für die Abschlussliste)
 
 - Doku-Entwürfe (Punkt 4) schreibt ein Hilfsagent parallel; Ergebnis noch nicht übernommen.
-- Ticketmaster in Spots-Test aktivieren (Secrets fasse ich nicht an), z. B. durch Jacint:
-  `npx supabase secrets set TICKETMASTER_API_KEY=<Consumer Key> --project-ref nfomkdvotqtlyymomksb`, dann
-  `npx supabase functions deploy import-ticketmaster --project-ref nfomkdvotqtlyymomksb --no-verify-jwt` und einmal per POST mit dem Secret Key aufrufen.
+- Ticketmaster in Spots-Test: regelmäßigen Zeitplan (Cron, alle 6 h) einrichten wie bei Goabase (Vault-Eintrag nötig, Jacint).
 - Zeitplan (Cron) für den Ticketmaster-Import braucht Vault-Einträge → Jacint.
 - Einnahmen-Klausel der Ticketmaster-Bedingungen vor einer Monetarisierung klären.
 - Produktentscheidung: Das Radar zählt nur Events mit Endzeit als „live“ (`isLiveEvent`). Ticketmaster liefert meist keine Endzeit (≈ 90 %), solche Konzerte erscheinen daher vor Beginn als „später heute“, aber nach Beginn nicht als „live“. Ändern? (betrifft auch Goabase)

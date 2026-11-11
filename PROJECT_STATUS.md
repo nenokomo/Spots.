@@ -31,7 +31,7 @@ Zusätzlich auf `feature/event-sources`:
 ## Daten und Backend
 
 - **Produktion** `yhnxdeypkbzyjappuzmv`: unverändert. Events nur aus dem Goabase-Import (Cron alle 2 h), rund 30 veröffentlicht.
-- **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15/16 (Konten), **neu 20** (Ticketmaster-Backend), **21** (Orte + Meldungen; 56 echte Orte um Karlsruhe geladen), **22** (Admin, Entwürfe, `events.venue_id`). Prüfsummen aller neuen Funktionen identisch mit den Dateien; bestehende Events unverändert. Noch kein Admin eingetragen, Ticketmaster-Function nicht bereitgestellt (Secret fehlt).
+- **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15/16 (Konten), **neu 20** (Ticketmaster-Backend), **21** (Orte + Meldungen; 56 echte Orte um Karlsruhe geladen), **22** (Admin, Entwürfe, `events.venue_id`). Prüfsummen aller neuen Funktionen identisch mit den Dateien; bestehende Events unverändert. Noch kein Admin eingetragen. **Ticketmaster-Import läuft** (Function bereitgestellt, 506 Events, 475 sichtbar; auf dem Handy bestätigt), aber noch ohne Zeitplan.
 - SQL 17 (Live Snaps, Meldungen, Ticketarten), 18, 19: **nirgends ausgeführt**.
 - Ticketmaster-Import (`supabase/functions/import-ticketmaster/`): lokal Ende-zu-Ende geprüft (506 Musik-Events in Deutschland, 30 Tage). Details: [docs/TICKETMASTER_IMPORT.md](docs/TICKETMASTER_IMPORT.md).
 - Club-Verzeichnis: Plan in [docs/KARLSRUHE_EVENTS.md](docs/KARLSRUHE_EVENTS.md). Clubzahl für ganz Deutschland **nicht ermittelt** (Overpass-Server am 11.11. überlastet).
@@ -53,7 +53,7 @@ Zusätzlich auf `feature/event-sources`:
 
 ## Fehlt noch
 
-- Ticketmaster in Spots-Test/Produktion aktivieren (Secret, Deploy, Cron); Club-Daten für ganz Deutschland; Ladeweg für Produktion.
+- Ticketmaster: Zeitplan in Spots-Test, später Produktion; Club-Daten für ganz Deutschland; Ladeweg für Produktion.
 - Automatische Event-Entwürfe aus Club-Websites (Claude-API, nur mit Zustimmung der Clubs).
 - Upload-UI für Live Snaps und Beiträge (Development Build, SQL 17–19).
 - Merkliste mit Konto synchronisieren; Passwortreset, Kontolöschung.
@@ -64,5 +64,5 @@ Zusätzlich auf `feature/event-sources`:
 
 1. `feature/event-sources` ansehen (Jacint: SQL 20–22, Edge Function; Noyan: neue Seiten), dann pushen und PR gegen `main`.
 2. Konto in der Test-App anlegen, als Admin eintragen, Freigabe-Ablauf auf dem Handy testen.
-3. Ticketmaster in Spots-Test aktivieren (Secret + Deploy) und einige Tage beobachten.
+3. Zeitplan (Cron) für den Ticketmaster-Import in Spots-Test einrichten und einige Tage beobachten.
 4. Offene Rechtsfragen P1 klären, bevor Clubs angeschrieben werden.
