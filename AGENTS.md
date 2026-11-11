@@ -78,9 +78,13 @@ Requirements:
 - Display recommended upcoming events.
 - Allow users to save interesting events for later.
 
-### 3. Profile – Third Screen
+### 3. Saved – Third Tab
 
-The third screen provides simple personal account functionality.
+The third tab ("Gemerkt") lists the events the user saved, split into upcoming and past.
+
+### 4. Profile – Fourth Tab
+
+The fourth tab provides simple personal account functionality.
 
 Requirements:
 - Account registration and login.
@@ -89,7 +93,7 @@ Requirements:
 - Keep profiles private and minimal.
 - Do not build a social network with followers, public friend lists, or unnecessary social features.
 
-### 4. Event Detail Pages
+### 5. Event Detail Pages
 
 Every event should have its own detail page.
 
@@ -101,7 +105,7 @@ Requirements:
 - Live impressions uploaded by visitors.
 - Access to relevant organizer information.
 
-### 5. Live Snaps – 24-Hour Content
+### 6. Live Snaps – 24-Hour Content
 
 Users and organizers should be able to upload spontaneous photos and short videos to event pages.
 
@@ -137,6 +141,37 @@ Requirements:
 - Prioritize iOS and Android compatibility.
 - Use TypeScript where applicable.
 
+## Language
+
+- German is the primary app language. English is planned as a second language.
+- There is no translation system yet. Do not introduce one (library, string files, refactor of all texts) without explaining the approach and getting approval first — it is an architectural change.
+- Until then: write new user-facing texts in German, keep them short and free of slang that cannot be translated, and avoid building sentences from string fragments (so they can be translated later).
+- Talk to the user in German. Commit messages and `PROJECT_STATUS.md` are German too.
+
+## Test Data
+
+- Local test events and test organizers exist only for development: they are clearly labeled with the prefix `TEST ·`, load only when `__DEV__` is true, and are never written to any database or shipped in a release build (see `src/services/testEvents.ts`).
+- Never show made-up popularity, ticket sales, or visitor numbers in a release build.
+
+## Database and Supabase – Hard Rules
+
+- Production project: `yhnxdeypkbzyjappuzmv`. Test project ("Spots-Test"): `nfomkdvotqtlyymomksb`.
+- Never run SQL, migrations, deployments, imports, or cron changes against **production** without the user's explicit approval for that specific action in the current session.
+- New SQL files under `supabase/ops/` are tested locally first (PGlite tests), then only in the test project. Writing a SQL file is not an approval to run it.
+- Never change or delete existing event rows, UUIDs, or import metadata as a side effect.
+- Never touch `.env.local`, secrets, or the Vault; the app only uses `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+
+## Git and Team
+
+- Never work directly on `main`. Use a feature or experiment branch.
+- Commit, push, merge, or open pull requests only when the user asks.
+- Other team members work on their own branches (for example `Jacint-branch`). Do not modify, rebase, or delete other people's branches.
+- Ownership:
+  - **Jacint – backend**: `supabase/` (SQL, migrations, Edge Functions), Goabase import and cron, database schema and RLS.
+  - **Noyan – design**: `src/constants/theme.ts`, `src/components/ui/`, the visual design of screens and components.
+- Changes in these areas are allowed when the user asks for them. In the summary, always say which owner's area was touched (for example "betrifft Jacints Backend") so the team can coordinate. Before larger rewrites in someone else's area (new structure, deleting or replacing their files), ask first.
+- The contract between app and backend is documented in `docs/ORGANIZER_ARCHITECTURE.md`; do not break it silently.
+
 ## Project Progress and Continuity
 
 Maintain a `PROJECT_STATUS.md` file in the project root.
@@ -151,6 +186,8 @@ Use this file to document:
 At the beginning of a new development task, inspect the actual codebase and the project status file.
 
 After completing meaningful changes, update the project status file so future coding sessions can understand the current state.
+
+Keep `PROJECT_STATUS.md` short (about 60–80 lines): it describes only the **current** state. Replace outdated statements instead of adding contradicting ones. Move finished rounds and long reports to `docs/history/`.
 
 Do not claim a feature is complete unless it has actually been implemented and appropriately verified.
 
