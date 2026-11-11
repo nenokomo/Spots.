@@ -50,6 +50,7 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
 - **Teil 3b – Goabase geprüft (nur lesend, 2 Anfragen)**: Die API liefert Flyer in `small/medium/large/full` (Import nutzt `small`), Veranstaltername, Eintritt und Line-up als Text, aber **kein Genre-Feld**. Genres aus Freitext wären Raten → nicht umgesetzt. Größere Bilder wären ein neuer Release des eingefrorenen Produktionsimports → Entscheidung Jacint. Am Goabase-Import nichts geändert.
 - **Abschluss**: `PROJECT_STATUS.md` auf den neuen Stand gebracht.
 - **Ticketmaster in Spots-Test aktiv (11.11., Jacint)**: Secret gesetzt, Function `import-ticketmaster` bereitgestellt, einmal per POST ausgelöst: 506 übernommen, 475 sichtbar, Sperre frei, Goabase unverändert. Auf dem Handy mit Testkonfiguration bestätigt: neue Events sichtbar. **Noch kein Zeitplan (Cron)**, Import läuft also nur bei manuellem Aufruf.
+- **Admin-Konto in Spots-Test (11.11.)**: Konto von Jacint angelegt, bestätigt, Anmeldung in der App klappt, als Admin eingetragen (ein früheres Testkonto mit vergessenem Passwort auf Wunsch gelöscht). Freigabe-Ablauf selbst noch nicht durchgespielt.
 
 ## Läuft gerade
 
@@ -70,7 +71,7 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
 - Produktentscheidung: Das Radar zählt nur Events mit Endzeit als „live“ (`isLiveEvent`). Ticketmaster liefert meist keine Endzeit (≈ 90 %), solche Konzerte erscheinen daher vor Beginn als „später heute“, aber nach Beginn nicht als „live“. Ändern? (betrifft auch Goabase)
 - Profil zeigt bei „Eventdaten“ weiterhin nur „Goabase“; anpassen, sobald Ticketmaster in Produktion läuft.
 - Die Filterleiste hat jetzt 7 Chips; Gestaltung/Reihenfolge mit Noyan abstimmen.
-- Admin eintragen (nach Kontoerstellung in Spots-Test): `insert into spots_admin_private.admins(user_id, note) select id, 'Spots-Team' from auth.users where email = '<deine E-Mail>';`
+- Bestätigungs- und Passwort-Mails in Spots-Test leiten auf `localhost` weiter: im Dashboard unter Authentication → URL Configuration eine richtige Site-URL/Redirect-URL eintragen.
 - OSM-Import für ganz Deutschland später wiederholen (`node scripts/fetch-osm-venues.cjs`, dann laden mit Service-Rolle). Für die Produktion braucht es ein kleines Ladeskript mit Service-Key, das Jacint ausführt.
 - Automatischer Erotik-Filter greift nur bei eindeutigen Merkmalen; Stichproben durch das Team bleiben nötig.
 - Doku-Entwürfe liegen in `docs/entwuerfe/` (Mails, Datenschutz, Nutzungsbedingungen, App-Texte DE/EN, 25 Rechtsfragen). Befunde daraus: Konto löschen fehlt (Apple/Google-Pflicht); Melden in SQL 17 nur mit Konto (DSA verlangt Melden für alle); `live_snaps.author_id` wäre laut SQL 17 öffentlich lesbar (vor dem Einspielen korrigieren, Jacint); Ortssuche schickt Suchtext an Open-Meteo (Nutzungsbedingungen prüfen); keine Links zu Datenschutz/Impressum in der App; EXIF-Daten bei Uploads entfernen.
