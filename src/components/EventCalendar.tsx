@@ -1,69 +1,99 @@
-import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { colors } from '../constants/theme';
+import { useMemo, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { colors, space, type } from '../constants/theme';
 
 type Props = { today: string; selectedDate: string | null; eventDays: string[]; onSelect: (date: string) => void };
 
+const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const ROWS = 6; // every month gets six week rows, so all pages have the same height
+const HEADER = 64;
+const monthName = new Intl.DateTimeFormat('de-DE', { month: 'long', timeZone: 'UTC' });
+const dayLabel = new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+function monthKey(startYear: number, startMonth: number, index: number) {
+  return new Date(Date.UTC(startYear, startMonth - 1 + index, 1)).toISOString().slice(0, 7);
+}
+
+/**
+ * Month view in the style of Apple Calendar: exactly one month fills the area,
+ * scrolling vertically snaps to the next or previous month.
+ */
 export function EventCalendar({ today, selectedDate, eventDays, onSelect }: Props) {
-  const { fontScale } = useWindowDimensions();
-  const rowHeight = Math.max(44, Math.ceil(24 * fontScale + 12));
-  const headingHeight = Math.max(44, Math.ceil(24 * fontScale + 16));
+  const [pageHeight, setPageHeight] = useState(0);
   const [startYear, startMonth] = today.slice(0, 7).split('-').map(Number);
   const [selectedYear, selectedMonth] = (selectedDate ?? today).slice(0, 7).split('-').map(Number);
   const initialIndex = Math.max(0, (selectedYear - startYear) * 12 + selectedMonth - startMonth);
   const [monthCount, setMonthCount] = useState(() => Math.max(12, initialIndex + 12));
-  let offset = 0;
-  const months: { month: string; length: number; offset: number }[] = [];
-  for (let index = 0; index < monthCount; index += 1) {
-    const date = new Date(Date.UTC(startYear, startMonth - 1 + index, 1));
-    const weeks = Math.ceil(((date.getUTCDay() + 6) % 7 + new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate()) / 7);
-    const length = headingHeight + weeks * rowHeight + 20;
-    months.push({ month: date.toISOString().slice(0, 7), length, offset });
-    offset += length;
-  }
+  const months = useMemo(() => Array.from({ length: monthCount }, (_, index) => monthKey(startYear, startMonth, index)), [monthCount, startYear, startMonth]);
+  const eventSet = useMemo(() => new Set(eventDays), [eventDays]);
 
-  return <View style={styles.container}>
-    <View style={styles.grid}>{['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day) => <View key={day} style={styles.cell}><Text style={styles.weekday}>{day}</Text></View>)}</View>
-    <FlatList
-      accessibilityLabel="Kalender, nach unten zu weiteren Monaten scrollen"
-      style={styles.monthList}
-      data={months}
-      keyExtractor={(item) => item.month}
-      initialScrollIndex={initialIndex}
-      getItemLayout={(_, index) => ({ length: months[index].length, offset: months[index].offset, index })}
-      initialNumToRender={3}
-      windowSize={5}
-      onEndReached={() => setMonthCount((count) => count + 12)}
-      onEndReachedThreshold={0.5}
-      renderItem={({ item }) => <CalendarMonth today={today} selectedDate={selectedDate} eventDays={eventDays} onSelect={onSelect} month={item.month} rowHeight={rowHeight} headingHeight={headingHeight} />}
-    />
-    <Text style={styles.legend}>● Events vorhanden · vergangene Tage sind deaktiviert</Text>
-  </View>;
+  return (
+    <View style={styles.container}>
+      <View style={styles.weekdays}>{WEEKDAYS.map((day, index) => <Text key={day} style={[styles.weekday, index >= 5 && styles.weekend]}>{day}</Text>)}</View>
+      <View style={styles.pages} onLayout={({ nativeEvent }) => setPageHeight(Math.floor(nativeEvent.layout.height))}>
+        {pageHeight > 0 && <FlatList
+          accessibilityLabel="Kalender, nach unten wischen für den nächsten Monat"
+          data={months}
+          keyExtractor={(item) => item}
+          pagingEnabled
+          decelerationRate="fast"
+          snapToInterval={pageHeight}
+          showsVerticalScrollIndicator={false}
+          initialScrollIndex={initialIndex}
+          getItemLayout={(_, index) => ({ length: pageHeight, offset: pageHeight * index, index })}
+          initialNumToRender={2}
+          windowSize={3}
+          onEndReached={() => setMonthCount((count) => count + 12)}
+          onEndReachedThreshold={1}
+          renderItem={({ item }) => <Month month={item} height={pageHeight} today={today} selectedDate={selectedDate} eventSet={eventSet} onSelect={onSelect} />}
+        />}
+      </View>
+      <View style={styles.legend}><View style={styles.legendDot} /><Text style={styles.legendText}>Tage mit Events · nach unten wischen für den nächsten Monat</Text></View>
+    </View>
+  );
 }
 
-function CalendarMonth({ today, selectedDate, eventDays, onSelect, month, rowHeight, headingHeight }: Props & { month: string; rowHeight: number; headingHeight: number }) {
+function Month({ month, height, today, selectedDate, eventSet, onSelect }: { month: string; height: number; today: string; selectedDate: string | null; eventSet: Set<string>; onSelect: (date: string) => void }) {
   const [year, monthNumber] = month.split('-').map(Number);
   const first = new Date(Date.UTC(year, monthNumber - 1, 1));
   const offset = (first.getUTCDay() + 6) % 7;
   const days = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
-  const cells = Math.ceil((offset + days) / 7) * 7;
-  const title = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(first);
+  const rowHeight = Math.max(40, Math.floor((height - HEADER) / ROWS));
+  const currentYear = Number(today.slice(0, 4));
 
   return (
-    <View style={styles.month}>
-      <View style={[styles.heading, { height: headingHeight }]}>
-        <Text accessibilityRole="header" style={styles.title}>{title}</Text>
+    <View style={{ height }}>
+      <View style={styles.header}>
+        <Text accessibilityRole="header" style={styles.month}>{monthName.format(first)}</Text>
+        {year !== currentYear && <Text style={styles.year}>{year}</Text>}
       </View>
       <View style={styles.grid}>
-        {Array.from({ length: cells }, (_, index) => {
+        {Array.from({ length: ROWS * 7 }, (_, index) => {
           const day = index - offset + 1;
           if (day < 1 || day > days) return <View key={index} style={[styles.cell, { height: rowHeight }]} />;
           const key = `${month}-${String(day).padStart(2, '0')}`;
-          const disabled = key < today;
+          const past = key < today;
+          const isToday = key === today;
           const selected = key === selectedDate;
-          const hasEvents = eventDays.includes(key);
-          const label = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(year, monthNumber - 1, day)));
-          return <View key={index} style={[styles.cell, { height: rowHeight }]}><Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={hasEvents ? 'Events für diesen Tag vorhanden' : 'Events für diesen Tag anzeigen'} accessibilityState={{ selected, disabled }} disabled={disabled} onPress={() => onSelect(key)} style={[styles.day, { height: rowHeight }, key === today && styles.today, selected && styles.selected, disabled && styles.disabled]}><Text style={[styles.dayText, selected && styles.selectedText]}>{day}</Text><View style={[styles.dot, hasEvents && !disabled && styles.eventDot, selected && hasEvents && styles.selectedDot]} /></Pressable></View>;
+          const hasEvents = eventSet.has(key);
+          return (
+            <View key={index} style={[styles.cell, { height: rowHeight }, index % 7 === 0 && styles.rowStart]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${dayLabel.format(new Date(Date.UTC(year, monthNumber - 1, day)))}${hasEvents ? ', Events vorhanden' : ''}`}
+                accessibilityState={{ selected, disabled: past }}
+                disabled={past}
+                onPress={() => onSelect(key)}
+                hitSlop={4}
+                style={styles.dayTouch}
+              >
+                <View style={[styles.circle, selected && styles.circleSelected, isToday && !selected && styles.circleToday]}>
+                  <Text style={[styles.day, past && styles.dayPast, isToday && styles.dayToday, selected && styles.daySelected]}>{day}</Text>
+                </View>
+                <View style={[styles.dot, hasEvents && !past && styles.dotVisible]} />
+              </Pressable>
+            </View>
+          );
         })}
       </View>
     </View>
@@ -72,21 +102,27 @@ function CalendarMonth({ today, selectedDate, eventDays, onSelect, month, rowHei
 
 const styles = StyleSheet.create({
   container: { flex: 1, minHeight: 0 },
-  monthList: { flex: 1 },
-  month: { paddingBottom: 20 },
-  heading: { justifyContent: 'center', paddingHorizontal: 8 },
-  title: { color: colors.text, fontSize: 20, fontWeight: '700' },
+  weekdays: { flexDirection: 'row', paddingBottom: space.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.separator },
+  weekday: { flex: 1, textAlign: 'center', ...type.footnote, fontSize: 12, fontWeight: '600', color: colors.muted },
+  weekend: { color: colors.faint },
+  pages: { flex: 1, overflow: 'hidden' },
+  header: { height: HEADER, flexDirection: 'row', alignItems: 'baseline', gap: space.sm, paddingTop: space.lg, paddingHorizontal: space.xs },
+  month: { ...type.title, color: colors.text },
+  year: { ...type.title3, color: colors.faint },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: '14.285714%', minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  weekday: { color: colors.muted, fontSize: 11 },
-  day: { width: '100%', minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1, borderColor: 'transparent', gap: 3 },
-  today: { borderColor: '#c922ab80' },
-  selected: { backgroundColor: colors.accent, borderColor: colors.pink },
-  disabled: { opacity: 0.28 },
-  dayText: { color: colors.text, fontSize: 13 },
-  selectedText: { fontWeight: '800' },
-  dot: { height: 4, width: 4, borderRadius: 2, backgroundColor: 'transparent' },
-  eventDot: { backgroundColor: colors.pink },
-  selectedDot: { backgroundColor: colors.text },
-  legend: { color: colors.muted, fontSize: 10, lineHeight: 16, marginTop: 12, textAlign: 'center' },
+  cell: { width: '14.285714%', alignItems: 'center', justifyContent: 'flex-start', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#ffffff12' },
+  rowStart: {},
+  dayTouch: { alignItems: 'center', paddingTop: space.xs, gap: 3 },
+  circle: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  circleSelected: { backgroundColor: colors.accent },
+  circleToday: { borderWidth: 1.5, borderColor: colors.pink },
+  day: { ...type.callout, fontSize: 17, color: colors.text },
+  dayPast: { color: '#ffffff40' },
+  dayToday: { color: colors.pink, fontWeight: '700' },
+  daySelected: { color: colors.text, fontWeight: '700' },
+  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: 'transparent' },
+  dotVisible: { backgroundColor: colors.pink },
+  legend: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs, paddingTop: space.sm },
+  legendDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.pink },
+  legendText: { ...type.footnote, fontSize: 11, color: colors.faint },
 });

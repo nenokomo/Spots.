@@ -59,6 +59,8 @@ Eigener Branch von feature/design-refresh. Nur Oberfläche neu; Datenschicht, ze
 - Eventseite poster-first: Flyer füllt ~64 % des Bildschirms, darüber schwebt eine Glas-Karte mit Kicker, Titel und Wesentlichem (Tag · Uhrzeit · Ort), darunter Veranstalter-Kachel, Zeilenliste (Route, Tickets, Genres), Ticketarten, Beschreibung, Live Snaps; feste Leiste unten.
 - Upload-UI für Beiträge und Bilder weiterhin offen (braucht SQL 17–19 in Spots-Test, `expo-image-picker`, Development Build).
 
+**Zwölfte Runde**: Kalender in Entdecken im Stil des Apple-Kalenders (genau ein Monat pro Seite, vertikal einrastendes Blättern, heute pink umrandet, Auswahl gefüllt, Punkt für Tage mit Events, vergangene Tage ausgegraut). Radar: Umkreis steht jetzt im Filter-Button oben rechts („⚙ 30 km“), die separate Umkreis-Pille entfällt.
+
 **Elfte Runde**: Umkreis-Pille sitzt unten links über dem Panel, auf einer Höhe mit dem Standort-Button (Web-Kartenhinweis dafür mittig). Überschrift bei laufenden Events „Partys heute“ statt „Jetzt los“.
 
 **Zehnte Runde**: Der Radar-Umbau der neunten Runde wurde auf Wunsch zurückgenommen (RadarScreen, RadarMap nativ/web auf den Stand von Commit 69d875d). Die Entdecken-Änderung der neunten Runde (Untertitel entfernt) bleibt.

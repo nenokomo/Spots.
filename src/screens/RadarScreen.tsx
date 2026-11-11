@@ -121,10 +121,12 @@ export default function RadarScreen() {
           <Text numberOfLines={1} style={styles.placeLabel}>{location.loading ? 'Standort …' : location.label}</Text>
           <Icon name="down" size={12} color={colors.muted} />
         </PressableScale>
-        <View>
-          <IconButton icon="sliders" accessibilityLabel="Filter" onPress={() => setFilterOpen(true)} />
+        <PressableScale accessibilityRole="button" accessibilityLabel={`Filter, Umkreis ${radiusLabel}${category !== 'Alle' ? `, ${category}` : ''}`} onPress={() => setFilterOpen(true)} scaleTo={0.96} style={styles.filterPill}>
+          <GlassBackdrop radius={22} />
+          <Icon name="sliders" size={16} color={colors.text} />
+          <Text style={styles.filterPillText}>{radiusLabel}</Text>
           {filtered && <View pointerEvents="none" style={styles.filterDot} />}
-        </View>
+        </PressableScale>
       </View>
 
       {previewVisible && (
@@ -136,12 +138,6 @@ export default function RadarScreen() {
           </View>
         </View>
       )}
-
-      <View pointerEvents="none" style={[styles.radiusPill, { bottom: panelHeight + space.md + 4 }]}>
-        <GlassBackdrop radius={18} />
-        <Icon name="radar" size={14} color={colors.pink} />
-        <Text style={styles.radiusText}>{radiusLabel} Umkreis</Text>
-      </View>
 
       <View pointerEvents="box-none" style={[styles.locate, { bottom: panelHeight + space.md }]}>
         <IconButton icon="locate" accessibilityLabel="Zu meinem Standort, 30 Kilometer Umkreis" onPress={() => void reset()} />
@@ -198,9 +194,9 @@ const styles = StyleSheet.create({
   top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingHorizontal: space.lg },
   place: { flexShrink: 1, height: 44, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, borderRadius: 22, overflow: 'hidden' },
   placeLabel: { ...type.headline, fontSize: 16, color: colors.text, flexShrink: 1 },
-  radiusPill: { position: 'absolute', left: space.lg, height: 36, flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingHorizontal: space.md, borderRadius: 18, overflow: 'hidden' },
-  radiusText: { ...type.label, fontSize: 13, color: colors.text },
-  filterDot: { position: 'absolute', top: 2, right: 2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent, borderWidth: 2, borderColor: colors.background },
+  filterPill: { height: 44, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, borderRadius: 22, overflow: 'hidden' },
+  filterPillText: { ...type.headline, fontSize: 16, color: colors.text },
+  filterDot: { position: 'absolute', top: 4, right: 4, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent, borderWidth: 2, borderColor: colors.background },
   locate: { position: 'absolute', right: space.lg },
   panel: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.background, borderTopLeftRadius: corner.xl, borderTopRightRadius: corner.xl, borderTopWidth: 1, borderColor: '#b872ac50', overflow: 'hidden', ...squircle },
   panelHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingHorizontal: gutter, paddingTop: space.lg, paddingBottom: space.xs },
