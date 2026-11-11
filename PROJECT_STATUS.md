@@ -44,6 +44,13 @@ Eigener Branch von feature/design-refresh. Nur Oberfläche neu; Datenschicht, ze
 - Pin antippen öffnet wieder die Vorschau-Box über dem Panel; Tipp auf die Box führt zur Eventseite, Tipp daneben schließt sie. Verschieben der Karte oder Tab-Wechsel schließt sie ebenfalls.
 - Scan-Ablauf (`useRadarIntro`) ist unverändert gegenüber dem alten Design; der gemeldete „Bug“ war die während des Scans gesperrte Karte plus die versetzte Mitte, beides in Runde 4 behoben.
 
+**Siebte Runde**
+- Tab-Leiste: aktives Icon nur weiß, ohne Kreis dahinter.
+- Radar: Vorschau-Box erscheint mittig über der Karte statt am unteren Kartenrand.
+- Gemerkt: Events als Glas-Karten (`GlassBackdrop variant="card"`), Zeilen höher mit größerem Bild (`EventRow large`).
+- Eventseite neu: Artwork-Karte mit Zurück/Teilen/Merken darauf, Genre-Kicker, Titel, Veranstalter-Link, Fakten-Leiste (Datum · Uhrzeit · Ort/Route) auf Glas, Tickets, Beschreibung, Live Snaps; feste Leiste unten mit „Infos & Tickets“ und „Route“.
+- Veranstalterseite neu: Banner mit überlappendem Logo, Name und Ort daneben, Beschreibung und Website, Stories, hervorgehobenes Event, dann Chips „Weitere · Vergangen · Beiträge“ mit Glas-Karten.
+
 **Geprüft**: 96/96 Tests (mit PGlite), Expo-Lint, Typecheck (Stand dritte Runde; Veranstalterseite jetzt mit Testdaten visuell geprüft). Zuvor: 94/94 Tests, Expo-Lint, Typecheck. Web-Vorschau 375 × 812: Radar (Karlsruhe mit Testevents, Pins, Listen-Panel), Entdecken, Story-Ansicht, Eventdetail, Gemerkt (leer), Profil.
 
 **Nicht geprüft**: kein iOS-/Android-Gerät. Besonders offen: `mapPadding` der nativen Karte (verschiebt Kartenmitte und Anbieter-Logo über das Karussell), neue Pins als native Marker, Profil als natives Modal, Glas-Effekt, Schrift (im Browser Segoe UI statt San Francisco). Veranstalterseite mit Daten und Gemerkt mit Einträgen im neuen Stil nicht visuell geprüft.

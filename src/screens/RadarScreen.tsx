@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   moreText: { ...type.callout, color: colors.pink },
   row: { paddingHorizontal: gutter },
   previewLayer: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40 },
-  preview: { position: 'absolute', left: space.lg, right: space.lg, bottom: space.md, paddingHorizontal: space.md, borderRadius: corner.xl, overflow: 'hidden', borderWidth: 1, borderColor: '#de5ab970', ...squircle },
+  preview: { position: 'absolute', left: space.lg, right: space.lg, top: '50%', marginTop: -46, paddingHorizontal: space.md, borderRadius: corner.xl, overflow: 'hidden', borderWidth: 1, borderColor: '#de5ab970', ...squircle },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: gutter + 68 + space.md },
   empty: { ...type.callout, color: colors.faint, paddingHorizontal: gutter, paddingTop: space.lg },
   citySearch: { minHeight: 48, zIndex: 10 },

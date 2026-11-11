@@ -4,12 +4,13 @@ import { ActivityIndicator, SectionList, StyleSheet, Text, View } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventDataState } from '../components/EventDataState';
 import { EventRow } from '../components/EventRow';
+import { GlassBackdrop } from '../components/GlassBackdrop';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Screen } from '../components/Screen';
 import { Button } from '../components/ui/Button';
 import { EmptyState, PageHeader } from '../components/ui/Section';
 import { tabBarContentInset } from '../constants/navigation';
-import { colors, gutter, space, type } from '../constants/theme';
+import { colors, gutter, radius, space, squircle, type } from '../constants/theme';
 import { useSavedEventDetails } from '../hooks/useEvents';
 import { useNow } from '../hooks/useNow';
 import { useSavedEvents } from '../hooks/useSavedEvents';
@@ -48,7 +49,7 @@ export default function SavedEventsScreen() {
       contentContainerStyle={[styles.list, { paddingBottom: tabBarContentInset(insets.bottom) }]}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       renderSectionHeader={({ section }) => <Text accessibilityRole="header" style={styles.section}>{section.title}</Text>}
-      renderItem={({ item }) => <View style={styles.row}><EventRow event={item} href={eventHref(item, 'saved')} now={now} today={today} trailing={<SaveEventButton id={item.id} title={item.title} size={36} />} /></View>}
+      renderItem={({ item }) => <View style={styles.row}><View style={styles.card}><GlassBackdrop radius={radius.lg} variant="card" /><EventRow event={item} href={eventHref(item, 'saved')} now={now} today={today} large trailing={<SaveEventButton id={item.id} title={item.title} size={38} />} /></View></View>}
       ListHeaderComponent={<View>
         <PageHeader section="DEINE AUSWAHL" title="Gemerkt" subtitle={ready && saved.length > 0 ? `${saved.length} ${saved.length === 1 ? 'Event' : 'Events'} · nur auf diesem Gerät` : 'Gute Nächte beginnen mit einem Plan.'} />
         {error && <View style={styles.notice}><Text accessibilityRole="alert" style={styles.note}>{error}</Text><Button label="Erneut versuchen" variant="ghost" size="sm" onPress={reload} disabled={busy} /></View>}
@@ -66,7 +67,8 @@ const styles = StyleSheet.create({
   list: { flexGrow: 1 },
   section: { ...type.title3, color: colors.text, paddingHorizontal: gutter, paddingTop: space.xl, paddingBottom: space.xxs },
   row: { paddingHorizontal: gutter },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: gutter + 68 + space.md },
+  separator: { height: space.md },
+  card: { borderRadius: radius.lg, overflow: 'hidden', ...squircle },
   note: { ...type.footnote, color: colors.faint },
   missing: { paddingHorizontal: gutter, paddingTop: space.sm },
   notice: { marginHorizontal: gutter, padding: space.md, borderRadius: 14, backgroundColor: colors.surface, gap: space.xs },

@@ -7,8 +7,8 @@ import { floatingTabBar } from '../../constants/navigation';
 import { colors } from '../../constants/theme';
 
 function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
-  // The selected tab sits on a quiet highlight, like the system tab bar.
-  return <View pointerEvents="none" style={[styles.icon, focused && styles.iconFocused]}><Icon name={name} size={22} color={focused ? colors.text : colors.faint} filled={focused && name === 'heart'} /></View>;
+  // Selected tab: white icon, no highlight.
+  return <View pointerEvents="none" style={styles.icon}><Icon name={name} size={22} color={focused ? colors.text : colors.faint} filled={focused && name === 'heart'} /></View>;
 }
 
 export default function TabLayout() {
@@ -38,6 +38,5 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   capsule: { ...StyleSheet.absoluteFill, borderRadius: 33 },
-  icon: { width: 58, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  iconFocused: { backgroundColor: '#ffffff1f' },
+  icon: { width: 58, height: 28, alignItems: 'center', justifyContent: 'center' },
 });
