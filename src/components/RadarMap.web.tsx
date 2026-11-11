@@ -11,7 +11,7 @@ function project(latitude: number, longitude: number, zoom: number) {
 }
 
 // react-native-maps is native-only. Render real map tiles for browser previews.
-export default function RadarMap({ center, radius, userCoordinate, events, onSelect, onCenterChange, onVisibleRadiusChange, scan, topInset = 0, bottomInset = 0, locked = false }: RadarMapProps) {
+export default function RadarMap({ center, radius, userCoordinate, events, onSelect, venues = [], onSelectVenue, onCenterChange, onVisibleRadiusChange, scan, topInset = 0, bottomInset = 0, locked = false }: RadarMapProps) {
   const [viewport, setViewport] = useState({ source: center, center });
   const [zoomState, setZoomState] = useState({ center, radius, factor: 1 });
   const zoomFactor = zoomState.center === center && zoomState.radius === radius ? zoomState.factor : 1;
@@ -61,6 +61,12 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.tint]} />
       {userCoordinate && <View accessibilityLabel="Dein Standort" pointerEvents="none" style={[styles.locationDot, { left: layout.width / 2 + (project(userCoordinate.latitude, userCoordinate.longitude, zoom).x - origin.x) * scale - 8, top: centerY + (project(userCoordinate.latitude, userCoordinate.longitude, zoom).y - origin.y) * scale - 8 }]} />}
       {scan.scanning && <RadarOverlay size={size} rotation={scan.rotation} opacity={scan.opacity} />}
+      {venues.map((venue) => {
+        const point = project(venue.coordinate.latitude, venue.coordinate.longitude, zoom);
+        const left = layout.width / 2 + (point.x - origin.x) * scale;
+        const top = centerY + (point.y - origin.y) * scale;
+        return <Pressable key={`venue-${venue.id}`} onPress={() => onSelectVenue?.(venue.id)} accessibilityRole="button" accessibilityLabel={`${venue.name}, Ort öffnen`} style={[styles.venueHit, { left: left - 11, top: top - 11 }]}><View style={styles.venueDot} /></Pressable>;
+      })}
       {events.map((event) => {
         const point = project(event.coordinate.latitude, event.coordinate.longitude, zoom);
         const left = layout.width / 2 + (point.x - origin.x) * scale;
@@ -82,6 +88,9 @@ const styles = StyleSheet.create({
   zoomControls: { position: 'absolute', right: 16, borderRadius: 22, overflow: 'hidden', backgroundColor: '#1c1c1ed9' },
   zoomButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   zoomText: { fontSize: 24, color: '#ffffff' },
+  // Clubs: klein und grau, klar anders als die pinken Event-Pins.
+  venueHit: { position: 'absolute', width: 22, height: 22, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
+  venueDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#c9c7d1', borderWidth: 2, borderColor: '#2a292e' },
   markerTouch: { position: 'absolute', width: 54, height: 66, justifyContent: 'center', alignItems: 'center' },
   attribution: { position: 'absolute', alignSelf: 'center', bottom: 6, padding: 3, backgroundColor: '#191c27cc', borderRadius: 4 },
   attributionText: { color: '#bbc1cb', fontSize: 8 },

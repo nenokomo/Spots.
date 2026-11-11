@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Switch, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CategoryFilters } from '../components/CategoryFilters';
 import { CitySearch } from '../components/CitySearch';
@@ -21,6 +21,7 @@ import { useLiveEvents, useUpcomingEvents } from '../hooks/useEvents';
 import { useLocation } from '../hooks/useLocation';
 import { useNow } from '../hooks/useNow';
 import { useRadarIntro } from '../hooks/useRadarIntro';
+import { useVenuesNear } from '../hooks/useVenues';
 import { useToday } from '../hooks/useToday';
 import { eventHref } from '../navigation/eventRoutes';
 import { isLocatedEvent, matchesCategory, type LocatedEvent } from '../types/events';
@@ -64,6 +65,12 @@ export default function RadarScreen() {
     return { mapEvents: [...running, ...tonight], liveCount: running.length };
   }, [live.events, upcoming.events, category, searchCenter, radius, now]);
   const radar = useRadarIntro(mapEvents);
+  const [showClubs, setShowClubs] = useState(true);
+  const nearbyVenues = useVenuesNear(showClubs ? searchCenter : null, radius);
+  // Orte erst nach dem Scan (die Animation gehört den Events) und begrenzt, damit die Karte flüssig bleibt.
+  const mapVenues = useMemo(() => showClubs && !radar.scanning
+    ? nearbyVenues.venues.slice(0, 250).map(({ id, name, coordinate }) => ({ id, name, coordinate })) : [],
+  [showClubs, radar.scanning, nearbyVenues.venues]);
 
   // Quiet around here: offer the nearest real upcoming events instead of an empty panel. List only, no pins.
   const nearest = useMemo(() => mapEvents.length > 0 ? [] : upcoming.events
@@ -111,6 +118,7 @@ export default function RadarScreen() {
       {/* The map runs under the panel's rounded corners, so no background shows through there. */}
       <View style={[styles.map, { bottom: panelHeight - corner.xl }]}>
         <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={select}
+          venues={mapVenues} onSelectVenue={(id) => router.push({ pathname: '/venue/[id]', params: { id } })}
           onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} topInset={topInset} bottomInset={corner.xl} locked={radar.scanning} />
       </View>
 
@@ -183,6 +191,10 @@ export default function RadarScreen() {
       <Sheet visible={filterOpen} title="Filter" onClose={() => setFilterOpen(false)}>
         <View style={styles.group}><Text style={styles.label}>Worauf hast du Lust?</Text><CategoryFilters value={category} onChange={setCategory} /></View>
         <View style={styles.group}><Text style={styles.label}>Umkreis</Text><RadiusSlider value={radius} onChange={setRadius} /></View>
+        <View style={styles.toggle}>
+          <View style={styles.toggleCopy}><Text style={styles.label}>Clubs auf der Karte</Text><Text style={styles.hint}>Graue Punkte: Clubs und Locations, keine laufenden Partys.</Text></View>
+          <Switch value={showClubs} onValueChange={setShowClubs} trackColor={{ true: colors.accent, false: colors.surfaceHigh }} accessibilityLabel="Clubs auf der Karte anzeigen" />
+        </View>
         <Button label="Fertig" onPress={() => setFilterOpen(false)} />
       </Sheet>
     </View>
@@ -216,5 +228,7 @@ const styles = StyleSheet.create({
   citySearch: { minHeight: 48, zIndex: 10 },
   hint: { ...type.footnote, color: colors.faint },
   group: { gap: space.md },
+  toggle: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  toggleCopy: { flex: 1, gap: 2 },
   label: { ...type.headline, color: colors.text },
 });
