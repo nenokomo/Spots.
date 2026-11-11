@@ -155,7 +155,7 @@ const jsonLd = [
       </div>
       <ul class="fgrid">
         {features.map((f, i) => (
-          <li class="card" data-reveal style={`--i:${i % 4}`}>
+          <li class="card card--row" data-reveal style={`--i:${i % 4}`}>
             <span class="fgrid__icon"><Icon name={f.icon} /></span>
             <h3 class="h3">{f.title}</h3>
             <p>{f.text}</p>
@@ -276,7 +276,7 @@ const jsonLd = [
 
   /* Gäste-Perspektive */
   .guest__in { display: grid; gap: 3.5rem; align-items: center; }
-  .guest__phones { position: relative; display: flex; justify-content: center; --pw: clamp(190px, 50vw, 270px); padding-right: 3.5rem; }
+  .guest__phones { position: relative; display: flex; width: max-content; max-width: 100%; margin-inline: auto; --pw: clamp(190px, 50vw, 270px); padding-right: 3.5rem; }
   .guest__phones :global(.guest__snap) { position: absolute; right: 0; bottom: -2.5rem; --pw: clamp(130px, 33vw, 180px); }
   .guest__copy { display: grid; gap: 1.25rem; justify-items: start; }
   @media (min-width: 900px) { .guest__in { grid-template-columns: 1fr 1fr; gap: 5rem; } .guest__phones { padding-right: 5rem; } }

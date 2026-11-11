@@ -127,7 +127,7 @@
   conic-gradient(from 163deg at 50% -10%, rgb(0 0 0 / 0) 0 7deg, rgb(255 240 250 / 0.34) 10deg 14deg, rgb(0 0 0 / 0) 18deg),
   radial-gradient(ellipse 90% 46% at 50% 76%, rgb(201 34 171 / 0.62), rgb(0 0 0 / 0) 70%),
   radial-gradient(ellipse 60% 30% at 20% 60%, rgb(80 120 255 / 0.3), rgb(0 0 0 / 0) 70%); }
-.snap__crowd { position: absolute; left: -12%; bottom: 0; width: 124%; height: 46%; }
+.snap__crowd { position: absolute; left: -6%; bottom: 0; width: 112%; height: 31%; }
 .snap__bars { position: absolute; z-index: 5; top: 14.5cqw; left: 4cqw; right: 4cqw; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2cqw; }
 .snap__bars span { height: 0.9cqw; border-radius: 999px; background: rgb(255 255 255 / 0.3); overflow: hidden; }
 .snap__bars span:nth-child(-n + 2) { background: #fff; }
