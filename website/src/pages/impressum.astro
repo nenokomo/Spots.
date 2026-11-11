@@ -1,0 +1,50 @@
+---
+import Base from '../layouts/Base.astro';
+import { site, todo } from '../config/site';
+const l = site.legal;
+const ph = (value: string, label: string) => value || `[TODO: ${label}]`;
+---
+<Base title="Impressum – Spots" description="Impressum von Spots." noindex>
+  <section class="section">
+    <div class="wrap prose">
+      <p class="eyebrow">Rechtliches</p>
+      <h1 class="h2 legal-title">Impressum</h1>
+      <p class="legal-note">Entwurf – vor Veröffentlichung von einer Fachperson prüfen lassen. Platzhalter sind <span class="ph">[TODO: …]</span> markiert.</p>
+
+      <h2>Angaben gemäß § 5 DDG</h2>
+      <p>
+        <span class:list={{ ph: !l.company }}>{ph(l.company, 'Name / Firma')}</span>{l.legalForm ? ` (${l.legalForm})` : <span class="ph"> [TODO: Rechtsform]</span>}<br />
+        <span class:list={{ ph: !l.street }}>{ph(l.street, 'Straße und Hausnummer')}</span><br />
+        <span class:list={{ ph: !l.city }}>{ph(l.city, 'PLZ und Ort')}</span><br />
+        Deutschland
+      </p>
+      <p><strong>Vertreten durch:</strong> <span class:list={{ ph: !l.representatives }}>{ph(l.representatives, 'Vertretungsberechtigte Person(en)')}</span></p>
+
+      <h2>Kontakt</h2>
+      <p>
+        E-Mail: {site.contactEmail ? <a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a> : <span class="ph">{todo('', 'Kontakt-Mail')}</span>}<br />
+        Telefon: <span class:list={{ ph: !l.phone }}>{ph(l.phone, 'Telefon')}</span>
+      </p>
+
+      <h2>Register und Umsatzsteuer</h2>
+      <p>
+        <span class:list={{ ph: !l.register }}>{ph(l.register, 'Registergericht und -nummer, falls vorhanden – sonst Absatz entfernen')}</span><br />
+        Umsatzsteuer-ID nach § 27a UStG: <span class:list={{ ph: !l.vatId }}>{ph(l.vatId, 'USt-IdNr., falls vorhanden – sonst Zeile entfernen')}</span>
+      </p>
+
+      <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+      <p><span class:list={{ ph: !l.responsible }}>{ph(l.responsible, 'Name und Anschrift der verantwortlichen Person')}</span></p>
+
+      <h2>Verbraucherstreitbeilegung</h2>
+      <p>Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen. <span class="ph">[TODO: Prüfen, ob dieser Hinweis nach § 36 VSBG nötig ist.]</span></p>
+
+      <h2>Haftung für Inhalte und Links</h2>
+      <p>Wir erstellen die Inhalte dieser Website mit Sorgfalt. Für Angaben zu Veranstaltungen, die von Veranstaltern oder aus externen Quellen stammen, übernehmen wir keine Gewähr. Diese Website enthält Links zu externen Websites, auf deren Inhalte wir keinen Einfluss haben; für diese Inhalte ist der jeweilige Anbieter verantwortlich. Werden uns Rechtsverletzungen bekannt, entfernen wir entsprechende Inhalte oder Links umgehend.</p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .legal-title { margin: 1rem 0 1.5rem; }
+  .legal-note { padding: 0.9rem 1.1rem; border-radius: var(--radius-sm); border: 1px dashed var(--magenta-hi); color: var(--text-dim); font-size: 0.9375rem; }
+</style>

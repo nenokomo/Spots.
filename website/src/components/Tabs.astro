@@ -1,0 +1,9 @@
+---
+import Icon from './Icon.astro';
+interface Props { active?: 'radar' | 'search' | 'heart' | 'user' }
+const { active = 'radar' } = Astro.props;
+const tabs = [['radar', 'Radar'], ['search', 'Entdecken'], ['heart', 'Gemerkt'], ['user', 'Profil']] as const;
+---
+<div class="tabs">
+  {tabs.map(([icon, label]) => <div class:list={{ on: icon === active }}><Icon name={icon} />{label}</div>)}
+</div>

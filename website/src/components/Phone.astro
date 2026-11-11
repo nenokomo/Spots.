@@ -1,0 +1,11 @@
+---
+// Telefonrahmen für die App-Mockups. Der Inhalt ist rein dekorativ; „label“ beschreibt ihn für Screenreader.
+interface Props { label: string; class?: string; time?: string }
+const { label, class: cls, time = '22:47' } = Astro.props;
+---
+<div class:list={['phone', cls]} role="img" aria-label={label}>
+  <div class="phone__screen" aria-hidden="true">
+    <div class="scr" style="pointer-events:none"><div class="scr__status"><span>{time}</span><span></span></div></div>
+    <slot />
+  </div>
+</div>

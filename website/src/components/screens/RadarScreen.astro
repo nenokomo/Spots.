@@ -1,0 +1,58 @@
+---
+// Live-Radar. Die Karte ist eine abstrahierte Fächerstadt: Straßen strahlen vom Mittelpunkt aus – wie der Radar selbst.
+import Icon from '../Icon.astro';
+import Tabs from '../Tabs.astro';
+interface Props { preview?: boolean }
+const { preview = false } = Astro.props;
+const cx = 150;
+const cy = 178;
+const rays = Array.from({ length: 32 }, (_, i) => {
+  const a = ((i * 11.25 - 90) * Math.PI) / 180;
+  return { x1: cx + Math.cos(a) * 20, y1: cy + Math.sin(a) * 20, x2: cx + Math.cos(a) * 330, y2: cy + Math.sin(a) * 330, major: i % 4 === 0 };
+});
+const venues = [[18, 22], [84, 40], [40, 84], [62, 14], [90, 78], [12, 58], [55, 70]];
+---
+<div class="scr">
+  <div class="radar-map">
+    <svg viewBox="0 0 300 380" preserveAspectRatio="xMidYMid slice">
+      <path d="M-10 60C30 120 8 190 30 250s20 90 4 140h-50V60Z" fill="#101013" />
+      <path d="M-4 60C36 120 14 190 36 250s20 90 4 140" fill="none" stroke="#24232a" stroke-width="5" />
+      {rays.map((r) => <line x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2} stroke={r.major ? '#322f39' : '#27252d'} stroke-width={r.major ? 2.2 : 1.1} />)}
+      <circle cx={cx} cy={cy} r="20" fill="#16151a" stroke="#322f39" stroke-width="2" />
+      <circle cx={cx} cy={cy} r="48" fill="none" stroke="#2c2a33" stroke-width="1.6" />
+      <path d={`M10 ${cy + 62}H290M22 ${cy + 104}H284M40 ${cy + 150}H270`} stroke="#322f39" stroke-width="2.6" />
+      <path d={`M10 ${cy - 92}H290`} stroke="#27252d" stroke-width="1.4" />
+      {[58, 116, 174].map((r) => <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgb(226 60 196 / 0.32)" stroke-width="1" />)}
+    </svg>
+    <div class="radar-sweep"></div>
+    {venues.map(([x, y]) => <span class="vdot" style={`left:${x}%;top:${y}%`}></span>)}
+    <span class="radar-me"></span>
+    <span class="pin" style="left:29%;top:31%;--d:.5s"><span class="fly fly--1"></span></span>
+    <span class="pin" style="left:71%;top:60%;--d:.9s"><span class="fly fly--2"></span></span>
+    <span class="pin" style="left:25%;top:69%;--d:1.3s"><span class="fly fly--3"></span></span>
+    <span class="pin pin--later" style="left:76%;top:25%;--d:1.7s"><span class="fly fly--4"></span></span>
+  </div>
+  <div class="pill pill--l"><Icon name="pin" />Karlsruhe<Icon name="down" /></div>
+  <div class="pill pill--r"><Icon name="sliders" />30 km</div>
+  {preview && (
+    <div class="radar-prev">
+      <span class="fly fly--1"></span>
+      <div><div class="kick">Live · bis 05:00</div><div class="etitle">Tiefgang</div><div class="emeta">Techno · Kellerclub · 0,4 km</div></div>
+    </div>
+  )}
+  <div class="radar-panel">
+    <div class="panel-head"><b>Partys heute</b><span>Alle ›</span></div>
+    <div class="panel-sub">3 laufen gerade · 1 startet später</div>
+    <div class="erow">
+      <span class="fly fly--1"></span>
+      <div><div class="kick">Live · bis 05:00</div><div class="etitle">Tiefgang</div><div class="emeta">Kellerclub · 0,4 km</div></div>
+      <Icon name="heart" />
+    </div>
+    <div class="erow">
+      <span class="fly fly--2"></span>
+      <div><div class="kick">Live · bis 03:00</div><div class="etitle">Sundowner Sessions</div><div class="emeta">Dachterrasse · 1,1 km</div></div>
+      <Icon name="heart" />
+    </div>
+  </div>
+  <Tabs active="radar" />
+</div>

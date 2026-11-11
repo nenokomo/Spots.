@@ -1,0 +1,37 @@
+---
+// Download-Buttons. Solange kein Store-Link hinterlegt ist ([TODO: Store-Link] in src/config/site.ts),
+// führen sie zum Download-Abschnitt der Startseite.
+// [TODO: Offizielle Badges] Vor dem Livegang durch die offiziellen Badges von Apple und Google ersetzen
+// (Vorgaben der Stores beachten).
+import Icon from './Icon.astro';
+import { site } from '../config/site';
+interface Props { tone?: 'paper' | 'ink' }
+const { tone = 'paper' } = Astro.props;
+const stores = [
+  { small: 'Laden im', big: 'App Store', url: site.appStoreUrl },
+  { small: 'Jetzt bei', big: 'Google Play', url: site.playStoreUrl },
+];
+---
+<div class="stores">
+  {stores.map((s) => (
+    <a class:list={['store', `store--${tone}`]} href={s.url || '/#download'} data-todo={s.url ? undefined : 'Store-Link'} rel={s.url ? 'noopener' : undefined}>
+      <Icon name="download" />
+      <span><small>{s.small}</small>{s.big}</span>
+    </a>
+  ))}
+  {import.meta.env.DEV && stores.some((s) => !s.url) && <p class="stores__todo">[TODO: Store-Link]</p>}
+</div>
+
+<style>
+  .stores { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+  .store { display: inline-flex; align-items: center; gap: 0.75rem; min-height: 58px; padding: 0.55rem 1.35rem 0.55rem 1.1rem; border-radius: 16px; font-weight: 750; font-size: 1.125rem; line-height: 1.1; letter-spacing: -0.01em; transition: transform 0.25s var(--ease), background-color 0.25s var(--ease); }
+  .store:hover { transform: translateY(-2px); }
+  .store:active { transform: scale(0.98); }
+  .store :global(svg) { width: 1.5rem; height: 1.5rem; flex: none; }
+  .store small { display: block; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.02em; opacity: 0.72; margin-bottom: 1px; }
+  .store--paper { background: var(--paper); color: var(--ink); }
+  .store--paper:hover { background: #fff; }
+  .store--ink { background: var(--ink); color: var(--paper); }
+  .store--ink:hover { background: #000; }
+  .stores__todo { flex-basis: 100%; color: var(--magenta-hi); font-size: 0.8125rem; font-weight: 600; }
+</style>

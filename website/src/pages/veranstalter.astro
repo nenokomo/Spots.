@@ -1,0 +1,331 @@
+---
+import Base from '../layouts/Base.astro';
+import Phone from '../components/Phone.astro';
+import Icon from '../components/Icon.astro';
+import Faq from '../components/Faq.astro';
+import Dashboard from '../components/Dashboard.astro';
+import ContactForm from '../components/ContactForm.astro';
+import TodoBlock from '../components/TodoBlock.astro';
+import OrganizerScreen from '../components/screens/OrganizerScreen.astro';
+import RadarScreen from '../components/screens/RadarScreen.astro';
+import SnapScreen from '../components/screens/SnapScreen.astro';
+
+const benefits = [
+  { icon: 'clock', title: 'Gefunden, wenn entschieden wird', text: 'Die meisten entscheiden am Abend selbst, wo es hingeht. Genau dann zeigt Spots dein Event – live auf der Karte, bei Leuten in deiner Nähe.' },
+  { icon: 'music', title: 'Die richtigen Gäste', text: 'Wer nach Techno filtert, findet deine Techno-Nacht. Spots bringt dir Leute, die deinen Sound suchen – nicht irgendwelche Klicks.' },
+  { icon: 'bolt', title: 'Kein Algorithmus-Glücksspiel', text: 'Jedes veröffentlichte Event erscheint auf dem Radar. Sortiert nach Zeit und Entfernung, nicht nach Werbebudget.' },
+  { icon: 'store', title: 'Kostenlos eintragen', text: 'Kein Abo, keine Grundgebühr. Dein Profil, deine Events und deine Statistiken kosten dich nichts.' },
+] as const;
+
+const steps = [
+  { title: 'Anfrage senden', text: 'Ein kurzes Formular reicht. Wir melden uns innerhalb von zwei Werktagen.' },
+  { title: 'Freigeschaltet werden', text: 'Wir prüfen kurz, dass du wirklich du bist. So kann sich niemand als dein Club ausgeben.' },
+  { title: 'Event anlegen', text: 'Titel, Zeit, Genre, Flyer, Ticket-Link. Dauert ein paar Minuten, geht vom Handy oder vom Laptop.' },
+  { title: 'Auf dem Radar', text: 'Dein Event ist sofort live. Gäste finden es, merken es sich und starten die Route zu dir.' },
+];
+
+const features = [
+  { icon: 'pin', title: 'Deine Veranstalterseite', text: 'Ein Profil mit allen kommenden Events, Beiträgen und Infos. Ein Link für deine Bio, der immer aktuell ist.' },
+  { icon: 'edit', title: 'Events selbst pflegen', text: 'Anlegen, ändern, absagen. Jede Änderung ist sofort in der App – auch eine kurzfristige Line-up-Änderung um 22 Uhr.' },
+  { icon: 'chart', title: 'Dashboard & Statistiken', text: 'Aufrufe, Merkungen, Ticket-Klicks und Routen pro Event. Du siehst, was ankommt, und planst die nächste Nacht besser.' },
+  { icon: 'camera', title: 'Live Snaps', text: 'Zeig, wie voll der Floor gerade ist. Deine Gäste und dein Team teilen die Stimmung – 24 Stunden, dann ist sie wieder weg.' },
+  { icon: 'ticket', title: 'Tickets & Einlass', text: 'Verlinke deinen Ticketshop oder verkaufe direkt über Spots: digitale Tickets, QR-Einlass, Kontingente, Rabattcodes.' },
+  { icon: 'users', title: 'Team-Zugänge', text: 'Booker, Social-Media, Türsteher: Gib deinem Team eigene Zugänge, ohne Passwörter zu teilen.' },
+  { icon: 'megaphone', title: 'Hervorgehobene Events', text: 'Mehr Sichtbarkeit für deine große Nacht – klar als hervorgehoben gekennzeichnet, ohne den Radar für Gäste zu verfälschen.' },
+  { icon: 'shield', title: 'Verifiziertes Profil', text: 'Nur du verwaltest deinen Club. Events, die wir schon aus öffentlichen Quellen zeigen, übernimmst du mit einem Klick.' },
+] as const;
+
+const faq = [
+  { q: 'Was kostet mich Spots?', a: 'Eintragen, dein Profil, deine Events und deine Statistiken sind kostenlos – ohne Abo und ohne Grundgebühr. Wenn du Tickets direkt über Spots verkaufst, fällt eine Servicegebühr pro Ticket an. [TODO: Konditionen Ticketing]' },
+  { q: 'Wie schnell ist mein Event online?', a: 'Nach der Freischaltung sofort. Du legst das Event an, tippst auf „Veröffentlichen“ und es erscheint direkt auf dem Radar und in der Suche.' },
+  { q: 'Mein Club taucht schon in Spots auf – wie kommt das?', a: 'Spots zeigt auch Events aus öffentlichen Quellen, zum Beispiel von Ticketanbietern, und die Clubs einer Stadt als Orte auf der Karte. Sobald du freigeschaltet bist, übernimmst du dein Profil und pflegst alles selbst.' },
+  { q: 'Wer sieht meine Statistiken?', a: 'Nur du und die Leute, denen du einen Team-Zugang gibst. Wir zeigen dir zusammengefasste Zahlen pro Event – keine Daten über einzelne Gäste.' },
+  { q: 'Was ist mit privaten Partys und Adressen?', a: 'Du entscheidest, was öffentlich ist. Private Adressen zeigen wir nie ohne deine Freigabe – bei Bedarf erscheint nur ein ungefährer Ort.' },
+  { q: 'Wie werden Live Snaps moderiert?', a: 'Gäste und dein Team können unpassende Snaps melden, wir prüfen jede Meldung. Gemeldete Inhalte werden schnell ausgeblendet, und nach 24 Stunden verschwinden Snaps ohnehin automatisch.' },
+  { q: 'Brauche ich technisches Wissen?', a: 'Nein. Wenn du einen Instagram-Post absetzen kannst, kannst du auch ein Event in Spots anlegen.' },
+  { q: 'Gibt es Spots nur in Karlsruhe?', a: 'Wir starten in Karlsruhe und wachsen Stadt für Stadt. Du veranstaltest woanders? Schreib uns trotzdem – Veranstalter aus der Region nehmen wir gern schon jetzt auf.' },
+];
+
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
+];
+---
+<Base
+  title="Spots für Veranstalter – Mehr Gäste für deine Nacht"
+  description="Bring dein Event auf den Live-Radar von Spots: kostenlos eintragen, die richtigen Gäste erreichen, Statistiken sehen. Jetzt Partner werden – Start in Karlsruhe."
+  og="/og-veranstalter.png"
+  audience="organizer"
+  jsonLd={jsonLd}
+>
+  <!-- Hero -->
+  <section class="ohero">
+    <div class="wrap ohero__in">
+      <div class="ohero__copy">
+        <p class="eyebrow eyebrow--live" data-reveal>Für Clubs, Bars &amp; Event-Crews</p>
+        <h1 class="display ohero__title" data-reveal style="--i:1"><span>Dein Event.</span><span>Auf ihrem</span><span class="accent">Radar.</span></h1>
+        <p class="lead" data-reveal style="--i:2">Spots zeigt deine Party genau den Leuten, die heute Abend noch nicht wissen, wohin – live auf der Karte, in dem Moment, in dem sie losgehen. Eintragen ist kostenlos.</p>
+        <div class="ohero__cta" data-reveal style="--i:3">
+          <a class="btn btn--primary" href="#kontakt">Partner werden <Icon name="arrow" class="arrow" /></a>
+          <a class="btn btn--ghost" href="#ablauf">So funktioniert's</a>
+        </div>
+      </div>
+      <div class="ohero__visual" data-reveal style="--i:2">
+        <Dashboard />
+        <Phone class="ohero__phone" label="Beispielansicht der App: Event anlegen mit Titel, Datum, Uhrzeit, Genre, Ticket-Link und Flyer." time="16:05"><OrganizerScreen /></Phone>
+      </div>
+    </div>
+  </section>
+
+  <!-- Fakten-Band -->
+  <section class="ofacts" aria-label="Spots für Veranstalter in Zahlen">
+    <div class="wrap ofacts__in">
+      <div data-reveal><b>0 €</b><span>Grundgebühr. Kein Abo, keine Vertragslaufzeit.</span></div>
+      <div data-reveal style="--i:1"><b>Live</b><span>Dein Event auf der Karte, solange die Party läuft.</span></div>
+      <div data-reveal style="--i:2"><b>1 Link</b><span>Deine Veranstalterseite mit allen Events – für jede Bio.</span></div>
+    </div>
+  </section>
+
+  <!-- Nutzen -->
+  <section class="section" id="vorteile">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow" data-reveal>Was du davon hast</p>
+        <h2 class="h2" data-reveal style="--i:1">Reichweite, wenn<br />sie zählt: <span class="accent">heute Abend.</span></h2>
+        <p class="lead" data-reveal style="--i:2">Posts gehen im Feed unter, Flyer im Briefkasten. Spots erreicht Leute in dem Moment, in dem sie entscheiden, wo die Nacht hingeht – in deiner Nähe und mit Lust auf deinen Sound.</p>
+      </div>
+      <ul class="ben">
+        {benefits.map((b, i) => (
+          <li data-reveal style={`--i:${i % 2}`}>
+            <span class="ben__icon"><Icon name={b.icon} /></span>
+            <div><h3 class="h3">{b.title}</h3><p>{b.text}</p></div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Gäste-Perspektive -->
+  <section class="section section--line guest">
+    <div class="wrap guest__in">
+      <div class="guest__phones" data-reveal>
+        <Phone label="Beispielansicht der App: Radar mit einer laufenden Party und deren Vorschau."><RadarScreen preview /></Phone>
+        <Phone class="guest__snap" label="Beispielansicht der App: Live Snap von einer vollen Tanzfläche." time="01:12"><SnapScreen /></Phone>
+      </div>
+      <div class="guest__copy">
+        <p class="eyebrow" data-reveal>So sehen dich deine Gäste</p>
+        <h2 class="h2 h2--sm" data-reveal style="--i:1">Ein pinker Punkt.<br />Mitten in ihrer Nacht.</h2>
+        <p class="lead" data-reveal style="--i:2">Läuft dein Event, leuchtet es auf dem Radar. Ein Tipp zeigt Musik, Uhrzeit und Entfernung, Live Snaps zeigen die Stimmung auf deinem Floor. Mit einem weiteren Tipp ist die Route gestartet – oder das Ticket gekauft.</p>
+        <ul class="ticks" data-reveal style="--i:3">
+          <li>Live-Status, solange deine Party läuft</li>
+          <li>Filter nach Genre bringen dir die passenden Gäste</li>
+          <li>Merkliste: Wer dein Event speichert, kommt am Abend wieder</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ablauf -->
+  <section class="section on-paper" id="ablauf">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow" data-reveal>So kommt dein Event in die App</p>
+        <h2 class="h2" data-reveal style="--i:1">Vier Schritte.<br />Keine Agentur nötig.</h2>
+      </div>
+      <ol class="steps">
+        {steps.map((s, i) => (
+          <li data-reveal style={`--i:${i}`}>
+            <span class="num">0{i + 1}</span>
+            <h3 class="h3">{s.title}</h3>
+            <p>{s.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section" id="features">
+    <div class="wrap">
+      <div class="feat-head">
+        <div class="head">
+          <p class="eyebrow" data-reveal>Alles für deine Events</p>
+          <h2 class="h2" data-reveal style="--i:1">Dein Werkzeug<br />für volle Floors.</h2>
+          <p class="lead" data-reveal style="--i:2">Von der Ankündigung bis zur Auswertung: Mit Spots pflegst du deine Events an einem Ort und siehst danach, was funktioniert hat.</p>
+        </div>
+      </div>
+      <ul class="fgrid">
+        {features.map((f, i) => (
+          <li class="card" data-reveal style={`--i:${i % 4}`}>
+            <span class="fgrid__icon"><Icon name={f.icon} /></span>
+            <h3 class="h3">{f.title}</h3>
+            <p>{f.text}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Fair -->
+  <section class="section section--line fair">
+    <div class="wrap fair__in">
+      <div>
+        <p class="eyebrow" data-reveal>Fair von Anfang an</p>
+        <h2 class="h2 h2--sm" data-reveal style="--i:1">Wir verdienen erst,<br />wenn du verdienst.</h2>
+      </div>
+      <div class="fair__list" data-reveal style="--i:2">
+        <p class="lead">Kein Abo, keine Grundgebühr, keine Vertragslaufzeit. Eintragen, Profil und Statistiken sind kostenlos. Nur wenn du Tickets direkt über Spots verkaufst, fällt eine Servicegebühr pro Ticket an.</p>
+        <ul class="ticks">
+          <li>Jederzeit kündbar, weil es nichts zu kündigen gibt</li>
+          <li>Hervorgehobene Events sind immer klar gekennzeichnet</li>
+          <li>Deine Gäste-Daten bleiben bei dir – wir verkaufen keine Daten</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gründungspartner -->
+  <section class="section on-magenta founders">
+    <div class="wrap founders__in">
+      <div>
+        <p class="founders__over" data-reveal>Start in Karlsruhe</p>
+        <h2 class="h2" data-reveal style="--i:1">Werde einer unserer ersten Partner.</h2>
+      </div>
+      <ul class="founders__list">
+        <li data-reveal style="--i:1"><b>Von Tag eins sichtbar</b><span>Deine Events sind auf dem Radar, wenn die ersten Gäste die App öffnen.</span></li>
+        <li data-reveal style="--i:2"><b>Direkter Draht</b><span>Du hast einen festen Ansprechpartner aus unserem Team, kein Ticketsystem.</span></li>
+        <li data-reveal style="--i:3"><b>Mitreden</b><span>Was Veranstalter brauchen, bauen wir als Nächstes. Dein Feedback landet direkt bei uns.</span></li>
+        <li data-reveal style="--i:4"><b>Gemeinsam zum Start</b><span>Wir stellen unsere ersten Partner zum Launch auf unseren Kanälen vor.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Kontakt -->
+  <section class="section" id="kontakt">
+    <div class="wrap contact">
+      <div class="contact__copy">
+        <p class="eyebrow" data-reveal>Partner werden</p>
+        <h2 class="h2 h2--sm" data-reveal style="--i:1">Lass uns über deine nächste Nacht reden.</h2>
+        <p class="lead" data-reveal style="--i:2">Erzähl uns kurz, wer du bist. Wir melden uns innerhalb von zwei Werktagen und schalten dich frei – unverbindlich und kostenlos.</p>
+        <TodoBlock title="Ansprechpartner">Foto, Name und Rolle der Person, die sich bei Veranstaltern meldet – macht die Anfrage persönlicher.</TodoBlock>
+        <TodoBlock title="Partner-Logos">Logos der ersten Clubs – erst eintragen, wenn sie zugestimmt haben.</TodoBlock>
+      </div>
+      <div class="contact__form" data-reveal style="--i:1"><ContactForm /></div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section on-paper" id="faq">
+    <div class="wrap faqs">
+      <div class="head">
+        <p class="eyebrow" data-reveal>Fragen von Veranstaltern</p>
+        <h2 class="h2 h2--sm" data-reveal style="--i:1">Gut zu wissen.</h2>
+        <p class="muted" data-reveal style="--i:2">Deine Frage ist nicht dabei? <a class="inline" href="#kontakt">Schreib uns</a> – wir antworten persönlich.</p>
+      </div>
+      <Faq items={faq} />
+    </div>
+  </section>
+
+  <!-- Abschluss -->
+  <section class="section section--tight end">
+    <div class="wrap end__in">
+      <h2 class="display" data-reveal><span>Mach den Floor</span><span class="accent">voll.</span></h2>
+      <a class="btn btn--primary" href="#kontakt" data-reveal style="--i:1">Partner werden <Icon name="arrow" class="arrow" /></a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* Hero */
+  .ohero { position: relative; overflow: clip; padding-block: clamp(1.5rem, 5vw, 3.5rem) clamp(3.5rem, 8vw, 6rem); }
+  .ohero::before { content: ''; position: absolute; right: -20%; top: -10%; width: 70rem; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgb(201 34 171 / 0.22), transparent 60%); pointer-events: none; }
+  .ohero__in { position: relative; display: grid; gap: clamp(3rem, 8vw, 4.5rem); align-items: center; }
+  .ohero__copy { display: grid; gap: 1.5rem; justify-items: start; }
+  .ohero__title { font-size: clamp(4.4rem, 21vw, 8rem); }
+  .ohero__title span { display: block; white-space: nowrap; }
+  .ohero__cta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; }
+  .ohero__visual { position: relative; padding-bottom: 3rem; --pw: clamp(150px, 38vw, 210px); }
+  .ohero__visual :global(.ohero__phone) { position: absolute; right: -0.5rem; bottom: -1rem; }
+  .ohero__visual :global(.dash) { width: 92%; }
+  @media (min-width: 1000px) {
+    .ohero__in { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: min(calc(100svh - var(--header-h) - 6rem), 720px); }
+    .ohero__title { font-size: clamp(6rem, 9.2vw, 9.25rem); }
+    .ohero__visual { --pw: clamp(180px, 15vw, 220px); padding-bottom: 4rem; }
+    .ohero__visual :global(.ohero__phone) { right: -1rem; bottom: -2rem; }
+  }
+
+  /* Fakten */
+  .ofacts { border-block: 1px solid var(--line); }
+  .ofacts__in { display: grid; }
+  .ofacts__in > div { display: grid; gap: 0.35rem; padding-block: 1.75rem; }
+  .ofacts__in > div + div { border-top: 1px solid var(--line); }
+  .ofacts b { font-stretch: 62%; font-weight: 900; text-transform: uppercase; font-size: clamp(2.75rem, 6vw, 4rem); line-height: 0.9; color: var(--magenta-hi); }
+  .ofacts span { color: var(--text-dim); max-width: 22rem; }
+  @media (min-width: 760px) {
+    .ofacts__in { grid-template-columns: repeat(3, 1fr); }
+    .ofacts__in > div { padding: 2.5rem 2rem 2.5rem 0; }
+    .ofacts__in > div + div { border-top: 0; border-left: 1px solid var(--line); padding-left: 2rem; }
+  }
+
+  /* Nutzen */
+  .ben { display: grid; gap: 1px; background: var(--line); border-block: 1px solid var(--line); }
+  .ben li { display: grid; grid-template-columns: auto 1fr; gap: 1.25rem; padding: clamp(1.5rem, 3.5vw, 2.5rem) 0; background: var(--ink); }
+  .ben p { color: var(--text-dim); margin-top: 0.4rem; max-width: 30rem; }
+  .ben__icon, .fgrid__icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: rgb(201 34 171 / 0.16); color: var(--magenta-hi); }
+  .ben__icon :global(svg), .fgrid__icon :global(svg) { width: 1.3rem; height: 1.3rem; }
+  @media (min-width: 860px) { .ben { grid-template-columns: 1fr 1fr; column-gap: 1px; } .ben li { padding-inline: 0 2.5rem; } .ben li:nth-child(even) { padding-inline: 2.5rem 0; } }
+
+  /* Gäste-Perspektive */
+  .guest__in { display: grid; gap: 3.5rem; align-items: center; }
+  .guest__phones { position: relative; display: flex; justify-content: center; --pw: clamp(190px, 50vw, 270px); padding-right: 3.5rem; }
+  .guest__phones :global(.guest__snap) { position: absolute; right: 0; bottom: -2.5rem; --pw: clamp(130px, 33vw, 180px); }
+  .guest__copy { display: grid; gap: 1.25rem; justify-items: start; }
+  @media (min-width: 900px) { .guest__in { grid-template-columns: 1fr 1fr; gap: 5rem; } .guest__phones { padding-right: 5rem; } }
+
+  /* Schritte */
+  .steps { display: grid; gap: 2.25rem; }
+  .steps li { display: grid; gap: 0.55rem; align-content: start; padding-top: 1.5rem; border-top: 2px solid var(--ink); }
+  .steps .num { font-size: clamp(3.5rem, 7vw, 5rem); margin-bottom: 0.3rem; }
+  .steps p { color: var(--text-dim); }
+  @media (min-width: 700px) { .steps { grid-template-columns: repeat(2, 1fr); gap: 2.5rem 2rem; } }
+  @media (min-width: 1080px) { .steps { grid-template-columns: repeat(4, 1fr); } }
+
+  /* Features */
+  .feat-head { margin-bottom: clamp(2.5rem, 6vw, 4rem); }
+  .feat-head .head { margin-bottom: 0; }
+  @media (min-width: 1000px) { .feat-head .head { grid-template-columns: 1.15fr 0.85fr; column-gap: 4rem; align-items: end; } .feat-head .head .eyebrow { grid-column: 1 / -1; } .feat-head .head .lead { padding-bottom: 0.4rem; } }
+  .fgrid { display: grid; gap: 1rem; }
+  .fgrid__icon { margin-bottom: 1.25rem; }
+  @media (min-width: 640px) { .fgrid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1080px) { .fgrid { grid-template-columns: repeat(4, 1fr); } }
+
+  /* Fair */
+  .fair__in { display: grid; gap: 2rem; }
+  .fair__list { display: grid; gap: 1.5rem; }
+  @media (min-width: 900px) { .fair__in { grid-template-columns: 1fr 1fr; gap: 4rem; } }
+
+  /* Gründungspartner */
+  .founders__in { display: grid; gap: 2.5rem; }
+  .founders__over { font-stretch: 125%; font-weight: 600; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 1.25rem; }
+  .founders__list { display: grid; gap: 0; border-top: 1px solid rgb(255 255 255 / 0.35); }
+  .founders__list li { display: grid; gap: 0.3rem; padding-block: 1.25rem; border-bottom: 1px solid rgb(255 255 255 / 0.35); }
+  .founders__list b { font-size: 1.1875rem; font-weight: 750; }
+  .founders__list span { color: rgb(255 255 255 / 0.88); }
+  @media (min-width: 900px) { .founders__in { grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; } }
+
+  /* Kontakt */
+  .contact { display: grid; gap: 3rem; }
+  .contact__copy { display: grid; gap: 1.25rem; align-content: start; }
+  .contact__form { padding: clamp(1.25rem, 4vw, 2.5rem); border-radius: var(--radius); border: 1px solid var(--line); background: var(--ink-2); }
+  @media (min-width: 1000px) { .contact { grid-template-columns: 0.85fr 1.15fr; gap: 4rem; } .contact__copy { position: sticky; top: calc(var(--header-h) + 2rem); align-self: start; } }
+
+  /* FAQ */
+  .faqs { display: grid; gap: 1rem; }
+  .faqs .head { margin-bottom: 1.5rem; }
+  .inline { text-decoration: underline; text-underline-offset: 3px; color: var(--ink); font-weight: 600; }
+  @media (min-width: 900px) { .faqs { grid-template-columns: 0.8fr 1.2fr; gap: 4rem; } .faqs .head { position: sticky; top: calc(var(--header-h) + 2rem); align-self: start; } }
+
+  /* Abschluss */
+  .end__in { display: grid; gap: 2rem; justify-items: start; }
+  .end .display { font-size: clamp(3.75rem, 16vw, 10rem); }
+  .end .display span { display: block; }
+</style>

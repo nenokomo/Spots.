@@ -1,0 +1,13 @@
+---
+// Platzhalter für Inhalte, die wir erst mit echten Daten füllen (Partner-Logos, Stimmen, Zahlen).
+// Nur in der Entwicklung (npm run dev) sichtbar – in der veröffentlichten Seite erscheint nichts,
+// bis der Baustein durch echten Inhalt ersetzt wird. Nie mit erfundenen Daten füllen.
+interface Props { title: string }
+const { title } = Astro.props;
+---
+{import.meta.env.DEV && (
+  <div class="todo" data-todo={title}>
+    <strong>[TODO: {title}]</strong>
+    <slot />
+  </div>
+)}

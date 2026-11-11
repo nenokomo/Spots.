@@ -1,0 +1,29 @@
+---
+// Live Snap im Vollbild. Statt eines Fotos: Lichtkegel und eine gezeichnete Menge.
+const heads = [[14, 86, 15], [52, 72, 17], [92, 90, 14], [128, 68, 18], [170, 84, 16], [206, 66, 17], [246, 88, 15], [286, 74, 17], [318, 92, 14]];
+const arms = [[40, 70, 30, 22], [118, 62, 132, 8], [198, 60, 184, 14], [262, 78, 280, 30], [300, 70, 292, 20]];
+---
+<div class="scr snap">
+  <div class="snap__lights"></div>
+  <svg class="snap__crowd" viewBox="0 0 330 130" preserveAspectRatio="xMidYMax slice">
+    <g fill="#060409" stroke="#060409" stroke-linecap="round">
+      {arms.map(([x1, y1, x2, y2]) => <line x1={x1} y1={y1} x2={x2} y2={y2} stroke-width="9" />)}
+      {heads.map(([x, y, r]) => (
+        <>
+          <circle cx={x} cy={y} r={r} stroke="none" />
+          <rect x={x - r * 1.7} y={y + r * 0.8} width={r * 3.4} height="80" rx={r * 1.2} stroke="none" />
+        </>
+      ))}
+    </g>
+  </svg>
+  <div class="snap__bars"><span></span><span></span><span></span><span></span></div>
+  <div class="snap__head">
+    <span class="fly fly--1"></span>
+    <div><b>Tiefgang</b><small>Kellerclub · vor 3 Min.</small></div>
+    <span class="snap__live">LIVE</span>
+  </div>
+  <div class="snap__foot">
+    <span class="snap__cap">Mainfloor · gerade richtig voll</span>
+    <div class="snap__cta">Zum Event</div>
+  </div>
+</div>

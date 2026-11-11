@@ -1,0 +1,346 @@
+---
+import Base from '../layouts/Base.astro';
+import Phone from '../components/Phone.astro';
+import Icon from '../components/Icon.astro';
+import Faq from '../components/Faq.astro';
+import StoreButtons from '../components/StoreButtons.astro';
+import TodoBlock from '../components/TodoBlock.astro';
+import RadarScreen from '../components/screens/RadarScreen.astro';
+import ExploreScreen from '../components/screens/ExploreScreen.astro';
+import EventScreen from '../components/screens/EventScreen.astro';
+import SnapScreen from '../components/screens/SnapScreen.astro';
+import { site } from '../config/site';
+
+const genres = ['Techno', 'House', 'Hip-Hop', 'Konzerte', 'Clubnächte', 'Open Air', 'Drum & Bass', 'Studi-Partys', 'Festivals', 'Afterhour'];
+
+const steps = [
+  { title: 'Aufmachen', text: 'Der Radar scannt deine Umgebung und zeigt dir sofort, was gerade läuft und was später noch startet.' },
+  { title: 'Reinschauen', text: 'Tipp auf einen Spot: Musik, Uhrzeit, Eintritt. Live Snaps zeigen dir, wie voll es wirklich ist.' },
+  { title: 'Losgehen', text: 'Route starten, Ticket sichern, Leute einsammeln. Der Rest ist euer Abend.' },
+];
+
+const highlights = [
+  { icon: 'bolt', title: 'Sofort startklar', text: 'App auf, Radar läuft. Zum Stöbern brauchst du kein Konto und keine Anmeldung.' },
+  { icon: 'music', title: 'Dein Sound', text: 'Filter nach Techno, House, Hip-Hop, Konzerten und mehr. Du siehst nur, worauf du Lust hast.' },
+  { icon: 'pin', title: 'Jeder Club auf der Karte', text: 'Alle Clubs und Locations deiner Stadt – auch an Abenden, an denen dort nichts eingetragen ist.' },
+  { icon: 'heart', title: 'Merkliste', text: 'Speicher, was gut klingt. Am Wochenende weißt du schon, wo es hingeht.' },
+  { icon: 'lock', title: 'Privat statt Social', text: 'Keine Follower, keine Freundeslisten, kein Feed. Spots zeigt dir die Nacht, nicht dein Profil.' },
+  { icon: 'shield', title: 'Echte Events', text: 'Jedes Event kommt direkt vom Veranstalter oder aus einer geprüften Quelle. Keine Fake-Einträge.' },
+] as const;
+
+const faq = [
+  { q: 'Was kostet Spots?', a: 'Nichts. Spots ist für dich komplett kostenlos – ohne Abo und ohne versteckte Kosten.' },
+  { q: 'Brauche ich ein Konto?', a: 'Zum Entdecken nicht. Radar, Suche und Merkliste funktionieren sofort. Ein Konto brauchst du nur, wenn du selbst Live Snaps hochladen willst.' },
+  { q: 'Was passiert mit meinem Standort?', a: 'Dein Standort wird nur genutzt, um dir Events in deiner Nähe zu zeigen, solange du die App offen hast. Wir speichern ihn nicht und erstellen kein Bewegungsprofil. Du kannst Spots auch ohne Standortfreigabe nutzen und deine Stadt einfach auswählen.' },
+  { q: 'Was sind Live Snaps?', a: 'Fotos und kurze Videos direkt von einem Event, hochgeladen von Gästen und Veranstaltern. Sie zeigen dir, wie die Stimmung gerade ist, und verschwinden nach 24 Stunden automatisch. Unpassende Inhalte kannst du mit zwei Tipps melden.' },
+  { q: 'In welchen Städten gibt es Spots?', a: 'Wir starten in Karlsruhe – mit Clubs, Bars, Hallen und Studi-Partys. Konzerte findest du in ganz Deutschland. Weitere Städte kommen laufend dazu.' },
+  { q: 'Woher kommen die Events?', a: 'Direkt von den Veranstaltern, die ihre Events selbst eintragen, und aus geprüften Quellen wie Ticketanbietern. Bei jedem Event siehst du, woher es stammt.' },
+  { q: 'Gibt es Spots für iPhone und Android?', a: 'Ja, für beide. Die App gibt es auf Deutsch und Englisch.' },
+];
+
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: site.name, url: Astro.site?.href, description: site.description, inLanguage: 'de' },
+  { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
+];
+const rays = Array.from({ length: 32 }, (_, i) => ((i * 11.25) * Math.PI) / 180);
+---
+<Base title="Spots – Dein Radar für die Nacht | Partys, Clubs & Events in Karlsruhe" jsonLd={jsonLd}>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="wrap hero__in">
+      <div class="hero__copy">
+        <p class="eyebrow eyebrow--live" data-reveal>Live-Radar für die Nacht</p>
+        <h1 class="display" data-reveal style="--i:1"><span>Wo geht</span><span class="accent">heute</span><span>was?</span></h1>
+        <p class="lead" data-reveal style="--i:2">Spots zeigt dir live auf der Karte, was heute Nacht in deiner Nähe läuft – mit echten Eindrücken von vor Ort. App auf, Abend klar.</p>
+        <div class="hero__cta" data-reveal style="--i:3">
+          <StoreButtons />
+          <p class="hero__note">Kostenlos · Ohne Konto startklar · iPhone &amp; Android</p>
+        </div>
+        <a class="link hero__org" href="/veranstalter/" data-reveal style="--i:4">Du veranstaltest selbst? Hier entlang <Icon name="arrow" /></a>
+      </div>
+      <div class="hero__visual" data-reveal style="--i:2">
+        <svg class="hero__rings" viewBox="-300 -300 600 600" aria-hidden="true">
+          {rays.map((a) => <line x1={Math.cos(a) * 70} y1={Math.sin(a) * 70} x2={Math.cos(a) * 300} y2={Math.sin(a) * 300} />)}
+          {[70, 130, 190, 250, 299].map((r) => <circle r={r} />)}
+        </svg>
+        <Phone label="Beispielansicht der App: Live-Radar von Karlsruhe mit laufenden Partys als pinke Punkte und einer Liste der Partys von heute.">
+          <RadarScreen />
+        </Phone>
+      </div>
+    </div>
+  </section>
+
+  <!-- Laufband -->
+  <div class="marq" aria-hidden="true">
+    <div class="marq__track">
+      {[0, 1].map(() => <ul>{genres.map((g) => <li>{g}</li>)}</ul>)}
+    </div>
+  </div>
+
+  <!-- Problem -->
+  <section class="section prob">
+    <div class="wrap prob__in">
+      <div class="prob__copy">
+        <p class="eyebrow" data-reveal>Freitag, 22:47 Uhr</p>
+        <h2 class="h2" data-reveal style="--i:1">Der Gruppenchat weiß es auch nicht.</h2>
+        <p class="lead" data-reveal style="--i:2">Stories durchklicken, drei Club-Seiten checken, Leute anschreiben – und am Ende landet ihr doch wieder da, wo ihr immer landet. Dabei läuft zwei Straßen weiter genau euer Sound.</p>
+        <p class="prob__punch" data-reveal style="--i:3">Spots beendet das Rätselraten.</p>
+      </div>
+      <ul class="chat" aria-label="Beispiel für einen Gruppenchat am Freitagabend">
+        <li data-reveal style="--i:1">Was geht heute?</li>
+        <li data-reveal style="--i:2">kp, auf Insta find ich nix</li>
+        <li class="me" data-reveal style="--i:3">Wieder dahin wie immer?</li>
+        <li data-reveal style="--i:4">Da waren wir letzte Woche 🙄</li>
+        <li class="typing" data-reveal style="--i:5" aria-label="Jemand schreibt …"><i></i><i></i><i></i></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- So funktioniert's -->
+  <section class="section on-paper how">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow" data-reveal>So funktioniert's</p>
+        <h2 class="h2" data-reveal style="--i:1">Drei Schritte<br />zur richtigen Party.</h2>
+      </div>
+      <ol class="how__grid">
+        {steps.map((s, i) => (
+          <li data-reveal style={`--i:${i}`}>
+            <span class="num">0{i + 1}</span>
+            <h3 class="h3">{s.title}</h3>
+            <p>{s.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- Kernfeatures -->
+  <section class="section feats" id="features">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow" data-reveal>Das kann Spots</p>
+        <h2 class="h2" data-reveal style="--i:1">Alles, was du für<br />heute Nacht brauchst.</h2>
+      </div>
+
+      <article class="feat">
+        <div class="feat__copy" data-reveal>
+          <p class="eyebrow">Live-Radar</p>
+          <h3 class="h2 h2--sm">Deine Stadt. Live.</h3>
+          <p class="lead">Jede Party ein Punkt auf der Karte. Pink heißt: läuft gerade. So siehst du auf einen Blick, wo heute Nacht etwas geht – und was gleich noch startet.</p>
+          <ul class="ticks">
+            <li>Laufende Partys in Echtzeit, im Umkreis, den du wählst</li>
+            <li>Ein Tipp auf den Punkt zeigt Musik, Uhrzeit und Entfernung</li>
+            <li>Funktioniert mit deinem Standort oder jeder Stadt, die du aussuchst</li>
+          </ul>
+        </div>
+        <div class="feat__visual" data-reveal style="--i:1">
+          <Phone label="Beispielansicht der App: Radar mit geöffneter Vorschau einer laufenden Techno-Party, 400 Meter entfernt."><RadarScreen preview /></Phone>
+        </div>
+      </article>
+
+      <article class="feat feat--flip">
+        <div class="feat__copy" data-reveal>
+          <p class="eyebrow">Live Snaps</p>
+          <h3 class="h2 h2--sm">Erst gucken. Dann hin.</h3>
+          <p class="lead">Fotos und kurze Videos direkt von der Tanzfläche, hochgeladen von Gästen und Veranstaltern. Du siehst, wie voll es ist, bevor du in der Schlange stehst.</p>
+          <ul class="ticks">
+            <li>Echte Stimmung statt Werbefotos</li>
+            <li>Nach 24 Stunden automatisch wieder weg</li>
+            <li>Melden mit zwei Tipps, jede Meldung wird geprüft</li>
+          </ul>
+        </div>
+        <div class="feat__visual" data-reveal style="--i:1">
+          <Phone label="Beispielansicht der App: Live Snap von einer vollen Tanzfläche, aufgenommen vor drei Minuten." time="01:12"><SnapScreen /></Phone>
+        </div>
+      </article>
+
+      <article class="feat">
+        <div class="feat__copy" data-reveal>
+          <p class="eyebrow">Entdecken</p>
+          <h3 class="h2 h2--sm">Das Wochenende steht in zwei Minuten.</h3>
+          <p class="lead">Such nach Genre, Datum oder Stadt und merk dir, was gut klingt. Am Freitag musst du nur noch entscheiden, wer vorglüht.</p>
+          <ul class="ticks">
+            <li>Filter für Musik, Tag und Entfernung</li>
+            <li>Kalender für die nächsten Wochen</li>
+            <li>Merkliste für alles, was du nicht verpassen willst</li>
+          </ul>
+        </div>
+        <div class="feat__visual" data-reveal style="--i:1">
+          <Phone label="Beispielansicht der App: Entdecken mit Suche, Filtern für Techno und Samstag und kommenden Events in Karlsruhe." time="17:30"><ExploreScreen /></Phone>
+        </div>
+      </article>
+
+      <article class="feat feat--flip">
+        <div class="feat__copy" data-reveal>
+          <p class="eyebrow">Event-Seite</p>
+          <h3 class="h2 h2--sm">Alles Wichtige. Ein Blick.</h3>
+          <p class="lead">Was, wann, wo, welche Musik, was kostet der Eintritt. Mit einem Tipp startest du die Route oder holst dir dein Ticket.</p>
+          <ul class="ticks">
+            <li>Tickets direkt beim Veranstalter</li>
+            <li>Route in Apple Maps oder Google Maps</li>
+            <li>Veranstalter-Profil mit allen kommenden Events</li>
+          </ul>
+        </div>
+        <div class="feat__visual" data-reveal style="--i:1">
+          <Phone label="Beispielansicht der App: Event-Seite einer Techno-Party mit Beginn, Ende, Entfernung, Live Snaps und Buttons für Tickets und Route."><EventScreen /></Phone>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Weitere Highlights -->
+  <section class="section section--line hl">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow" data-reveal>Und sonst so</p>
+        <h2 class="h2 h2--sm" data-reveal style="--i:1">Gebaut für spontane Nächte.</h2>
+      </div>
+      <ul class="hl__grid">
+        {highlights.map((h, i) => (
+          <li class="card" data-reveal style={`--i:${i % 3}`}>
+            <span class="hl__icon"><Icon name={h.icon} /></span>
+            <h3 class="h3">{h.title}</h3>
+            <p>{h.text}</p>
+          </li>
+        ))}
+      </ul>
+      <TodoBlock title="Stimmen von Nutzerinnen und Nutzern">Hier kommen echte Bewertungen aus dem App Store bzw. Zitate hin – erst, wenn es sie gibt.</TodoBlock>
+    </div>
+  </section>
+
+  <!-- Karlsruhe -->
+  <section class="section section--line city" id="staedte">
+    <svg class="city__fan" viewBox="-300 -300 600 600" aria-hidden="true">
+      {rays.map((a) => <line x1={Math.cos(a) * 40} y1={Math.sin(a) * 40} x2={Math.cos(a) * 300} y2={Math.sin(a) * 300} />)}
+      {[40, 110, 180, 250].map((r) => <circle r={r} />)}
+    </svg>
+    <div class="wrap city__in">
+      <p class="eyebrow eyebrow--live" data-reveal>Start in Karlsruhe</p>
+      <h2 class="h2" data-reveal style="--i:1">Die Fächerstadt<br />hat jetzt einen <span class="accent">Radar.</span></h2>
+      <p class="lead" data-reveal style="--i:2">Wir starten da, wo wir selbst feiern gehen. Clubs, Bars, Hallen und Studi-Partys – ganz Karlsruhe auf einer Karte. Konzerte findest du schon in ganz Deutschland, weitere Städte folgen.</p>
+      <ul class="city__tags" data-reveal style="--i:3">
+        <li class="on">Karlsruhe</li>
+        <li>Konzerte deutschlandweit</li>
+        <li>{site.contactEmail ? <a href={`mailto:${site.contactEmail}?subject=Spots%20in%20meiner%20Stadt`}>Deine Stadt fehlt? Schreib uns</a> : <a href="/#download">Deine Stadt fehlt? Schreib uns</a>}</li>
+      </ul>
+      <TodoBlock title="Nächste Städte">Liste der Städte, die als Nächstes dazukommen – erst eintragen, wenn sie feststehen.</TodoBlock>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section on-paper" id="faq">
+    <div class="wrap faqs">
+      <div class="head">
+        <p class="eyebrow" data-reveal>Fragen &amp; Antworten</p>
+        <h2 class="h2 h2--sm" data-reveal style="--i:1">Kurz gefragt.</h2>
+        <p class="muted" data-reveal style="--i:2">Du veranstaltest selbst? Die Antworten für Clubs und Crews findest du <a class="inline" href="/veranstalter/#faq">hier</a>.</p>
+      </div>
+      <Faq items={faq} />
+    </div>
+  </section>
+
+  <!-- Download -->
+  <section class="section on-magenta cta" id="download">
+    <div class="wrap cta__in">
+      <h2 class="display" data-reveal><span>Heute schon</span><span>was vor?</span></h2>
+      <p class="cta__text" data-reveal style="--i:1">Hol dir Spots und finde in Sekunden raus, wo deine Nacht anfängt.</p>
+      <div data-reveal style="--i:2"><StoreButtons tone="ink" /></div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* Hero */
+  .hero { position: relative; overflow: clip; padding-block: clamp(1.5rem, 5vw, 3.5rem) clamp(3.5rem, 8vw, 6rem); }
+  .hero__in { display: grid; gap: clamp(3rem, 8vw, 4rem); align-items: center; }
+  .hero__copy { display: grid; gap: 1.5rem; justify-items: start; position: relative; z-index: 2; }
+  .display span { display: block; white-space: nowrap; }
+  .hero .display { margin-block: 0.25rem 0.4rem; }
+  .hero__cta { display: grid; gap: 0.9rem; margin-top: 0.5rem; }
+  .hero__note { font-size: 0.875rem; color: var(--text-faint); }
+  .hero__org { font-size: 0.9375rem; }
+  .hero__visual { position: relative; display: grid; place-items: center; --pw: clamp(250px, 74vw, 320px); }
+  .hero__rings { position: absolute; z-index: -1; left: 50%; top: 46%; width: 250%; max-width: none; translate: -50% -50%; fill: none; stroke: rgb(243 238 230 / 0.075); stroke-width: 0.8; -webkit-mask: radial-gradient(circle, #000 30%, transparent 68%); mask: radial-gradient(circle, #000 30%, transparent 68%); }
+  .hero__rings circle { stroke: rgb(226 60 196 / 0.3); }
+  @media (min-width: 900px) {
+    .hero { padding-block: clamp(2rem, 4vw, 4rem) clamp(4rem, 7vw, 7rem); }
+    .hero__in { grid-template-columns: minmax(0, 1.22fr) minmax(0, 0.78fr); min-height: min(calc(100svh - var(--header-h) - 8rem), 760px); }
+    .hero__visual { --pw: clamp(280px, 26vw, 340px); justify-self: end; margin-right: clamp(0rem, 3vw, 3rem); }
+    .hero__rings { width: 290%; }
+  }
+
+  /* Laufband */
+  .marq { border-block: 1px solid var(--line); overflow: hidden; padding-block: 1.1rem; }
+  .marq__track { display: flex; width: max-content; animation: marq 46s linear infinite; }
+  .marq ul { display: flex; flex: none; }
+  .marq li { font-stretch: 62%; font-weight: 900; text-transform: uppercase; font-size: clamp(1.75rem, 4.5vw, 2.75rem); line-height: 1; letter-spacing: -0.01em; white-space: nowrap; display: flex; align-items: center; color: var(--text); }
+  .marq li::after { content: ''; width: 0.32em; height: 0.32em; border-radius: 50%; background: var(--magenta); margin-inline: 0.75em; }
+  .marq li:nth-child(even) { color: transparent; -webkit-text-stroke: 1px rgb(243 238 230 / 0.55); }
+  @keyframes marq { to { transform: translateX(-50%); } }
+
+  /* Problem */
+  .prob__in { display: grid; gap: clamp(2.5rem, 7vw, 5rem); align-items: center; }
+  .prob__copy { display: grid; gap: 1.4rem; }
+  .prob__punch { font-size: clamp(1.25rem, 2.4vw, 1.625rem); font-weight: 750; letter-spacing: -0.01em; color: var(--text); padding-left: 1.1rem; border-left: 3px solid var(--magenta); }
+  .chat { display: grid; gap: 0.6rem; justify-items: start; max-width: 25rem; width: 100%; justify-self: center; padding: clamp(1.25rem, 4vw, 2rem); border-radius: 28px; background: var(--ink-2); border: 1px solid var(--line); }
+  .chat li { padding: 0.7rem 1.05rem; border-radius: 20px 20px 20px 6px; background: var(--ink-4); font-size: 1rem; line-height: 1.35; max-width: 85%; }
+  .chat .me { justify-self: end; background: var(--magenta); color: #fff; border-radius: 20px 20px 6px 20px; }
+  .chat .typing { display: flex; gap: 5px; padding: 0.95rem 1.05rem; }
+  .chat .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); animation: typing 1.3s ease-in-out infinite; }
+  .chat .typing i:nth-child(2) { animation-delay: 0.15s; }
+  .chat .typing i:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes typing { 0%, 60%, 100% { opacity: 0.35; translate: 0 0; } 30% { opacity: 1; translate: 0 -3px; } }
+  @media (min-width: 900px) { .prob__in { grid-template-columns: 1.15fr 0.85fr; } .chat { justify-self: end; } }
+
+  /* Schritte */
+  .how__grid { display: grid; gap: 2.5rem; counter-reset: none; }
+  .how__grid li { display: grid; gap: 0.6rem; align-content: start; padding-top: 1.5rem; border-top: 2px solid var(--ink); }
+  .how__grid .num { font-size: clamp(4rem, 9vw, 6.5rem); margin-bottom: 0.4rem; }
+  .how__grid p { color: var(--text-dim); max-width: 24em; }
+  @media (min-width: 800px) { .how__grid { grid-template-columns: repeat(3, 1fr); gap: 2.5rem; } }
+
+  /* Features */
+  .feat { display: grid; gap: 2.75rem; align-items: center; padding-block: clamp(2.5rem, 6vw, 4.5rem); border-top: 1px solid var(--line); }
+  .feat:last-child { padding-bottom: 0; }
+  .feat__copy { display: grid; gap: 1.25rem; justify-items: start; }
+  .feat__copy .ticks { margin-top: 0.5rem; }
+  .feat__visual { position: relative; display: grid; place-items: center; --pw: clamp(240px, 70vw, 300px); isolation: isolate; }
+  .feat__visual::before { content: ''; position: absolute; z-index: -1; width: min(125%, 30rem); aspect-ratio: 1; border-radius: 50%; border: 1px solid rgb(226 60 196 / 0.28); box-shadow: 0 0 0 clamp(2.5rem, 7vw, 4.5rem) rgb(226 60 196 / 0.035), inset 0 0 0 clamp(2.5rem, 7vw, 4.5rem) rgb(226 60 196 / 0.03); }
+  @media (min-width: 900px) {
+    .feat { grid-template-columns: 1fr 1fr; gap: 4rem; }
+    .feat--flip .feat__copy { order: 2; }
+    .feat__copy { max-width: 33rem; }
+    .feat--flip .feat__copy { justify-self: end; }
+  }
+
+  /* Highlights */
+  .hl__grid { display: grid; gap: 1rem; margin-bottom: 1.5rem; }
+  .hl__icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: rgb(201 34 171 / 0.16); color: var(--magenta-hi); margin-bottom: 1.25rem; }
+  .hl__icon :global(svg) { width: 1.3rem; height: 1.3rem; }
+  @media (min-width: 640px) { .hl__grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 980px) { .hl__grid { grid-template-columns: repeat(3, 1fr); gap: 1.25rem; } }
+
+  /* Karlsruhe */
+  .city { overflow: clip; }
+  .city__in { display: grid; gap: 1.5rem; justify-items: start; position: relative; }
+  .city__fan { position: absolute; right: -32%; top: 50%; translate: 0 -50%; width: min(120vw, 62rem); max-width: none; fill: none; stroke: rgb(243 238 230 / 0.07); stroke-width: 0.8; -webkit-mask: radial-gradient(circle, #000 20%, transparent 70%); mask: radial-gradient(circle, #000 20%, transparent 70%); }
+  .city__fan circle { stroke: rgb(226 60 196 / 0.28); }
+  .city__tags { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.5rem; }
+  .city__tags li { min-height: 44px; display: inline-flex; align-items: center; padding: 0.4rem 1.1rem; border-radius: 999px; border: 1px solid var(--line-strong); font-weight: 600; font-size: 0.9375rem; }
+  .city__tags .on { background: var(--magenta); border-color: transparent; color: #fff; }
+  .city__tags a { transition: color 0.2s var(--ease); }
+  .city__tags li:has(a):hover { border-color: var(--text); }
+  @media (min-width: 900px) { .city__fan { right: -12%; } .city .lead { max-width: 31em; } }
+
+  /* FAQ */
+  .faqs { display: grid; gap: 1rem; }
+  .faqs .head { margin-bottom: 1.5rem; }
+  .inline { text-decoration: underline; text-underline-offset: 3px; color: var(--ink); font-weight: 600; }
+  @media (min-width: 900px) { .faqs { grid-template-columns: 0.8fr 1.2fr; gap: 4rem; } .faqs .head { position: sticky; top: calc(var(--header-h) + 2rem); align-self: start; } }
+
+  /* Download */
+  .cta__in { display: grid; gap: 1.75rem; justify-items: start; }
+  .cta .display { font-size: clamp(4rem, 19vw, 11rem); }
+  .cta__text { font-size: clamp(1.125rem, 2.2vw, 1.5rem); font-weight: 600; max-width: 26em; }
+</style>

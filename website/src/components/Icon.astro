@@ -1,0 +1,35 @@
+---
+// Schlanke Strich-Icons (24er Raster), ohne Icon-Bibliothek.
+const paths = {
+  radar: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><path d="M12 12 18.5 5.5"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>',
+  heart: '<path d="M12 20s-7.5-4.4-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.6-7.5 10-7.5 10Z"/>',
+  user: '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c.9-3.6 3.9-5.5 7.5-5.5s6.6 1.9 7.5 5.5"/>',
+  down: '<path d="m6 9 6 6 6-6"/>',
+  sliders: '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+  back: '<path d="M15 5 8 12l7 7"/>',
+  share: '<path d="M12 15V4m0 0L8 8m4-4 4 4M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>',
+  ticket: '<path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8Z"/><path d="M14 6v12" stroke-dasharray="2 2.5"/>',
+  route: '<path d="M9 4 3.5 6.5V20L9 17.5l6 2.5 5.5-2.5V4L15 6.5 9 4Zm0 0v13.5m6-11V20"/>',
+  arrow: '<path d="M5 12h14m0 0-6-6m6 6-6 6"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  download: '<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14"/>',
+  mail: '<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4 7.5 8 6 8-6"/>',
+  pin: '<path d="M12 21s6.5-5.8 6.5-11a6.5 6.5 0 1 0-13 0c0 5.2 6.5 11 6.5 11Z"/><circle cx="12" cy="10" r="2.3"/>',
+  camera: '<path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.3l1.4-2h5.6l1.4 2h1.3A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-8Z"/><circle cx="12" cy="12.5" r="3.3"/>',
+  chart: '<path d="M4 20V10m5.3 10V4m5.4 16v-7M20 20V8"/>',
+  bolt: '<path d="M13 3 5 13.5h6L10 21l8-10.5h-6L13 3Z"/>',
+  users: '<circle cx="9" cy="8.5" r="3.3"/><path d="M2.8 19.5c.7-3 3.2-4.7 6.2-4.7s5.5 1.7 6.2 4.7M16 5.4a3.3 3.3 0 0 1 0 6.2m2.2 3.6c1.5.7 2.6 2.1 3 4.3"/>',
+  megaphone: '<path d="M4 10v4a1 1 0 0 0 1 1h2l8 4V5L7 9H5a1 1 0 0 0-1 1Zm14-1a4 4 0 0 1 0 6M8 15v4"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/>',
+  shield: '<path d="M12 3 5 6v5.5c0 4.300 2.9 7.7 7 9.5 4.100-1.800 7-5.200 7-9.500V6l-7-3Z"/><path d="m9 12 2.2 2.2L15 10.4"/>',
+  music: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
+  store: '<path d="M4 9.5 5.5 4h13L20 9.5M4 9.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9.5M4 9.5h16M9.5 20v-6h5v6"/>',
+  edit: '<path d="m14 5 5 5M4 20l1-4.5L16.5 4a1.800 1.800 0 0 1 2.5 0l1 1a1.800 1.800 0 0 1 0 2.5L8.5 19 4 20Z"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5.3l3.3 2"/>',
+};
+interface Props { name: keyof typeof paths; class?: string }
+const { name, class: cls } = Astro.props;
+---
+<svg class={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={paths[name]} />

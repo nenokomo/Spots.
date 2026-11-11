@@ -1,0 +1,67 @@
+---
+import { site, todo } from '../config/site';
+const year = new Date().getFullYear();
+const dev = import.meta.env.DEV;
+---
+<footer class="ftr">
+  <div class="wrap">
+    <div class="ftr__top">
+      <div class="ftr__brand">
+        <a href="/" class="ftr__logo" aria-label="Spots – zur Startseite">Spots<span aria-hidden="true">.</span></a>
+        <p>{site.tagline}.<br />Gemacht in Karlsruhe.</p>
+      </div>
+      <nav class="ftr__cols" aria-label="Fußzeile">
+        <div>
+          <h2>App</h2>
+          <ul>
+            <li><a href="/#features">Features</a></li>
+            <li><a href="/#staedte">Städte</a></li>
+            <li><a href="/#faq">Fragen &amp; Antworten</a></li>
+            <li><a href="/#download">App laden</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Veranstalter</h2>
+          <ul>
+            <li><a href="/veranstalter/">Vorteile</a></li>
+            <li><a href="/veranstalter/#ablauf">So kommt dein Event rein</a></li>
+            <li><a href="/veranstalter/#kontakt">Partner werden</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Kontakt</h2>
+          <ul>
+            <li>{site.contactEmail ? <a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a> : <span class="ph">{todo('', 'Kontakt-Mail')}</span>}</li>
+            {site.instagramUrl ? <li><a href={site.instagramUrl} rel="noopener">Instagram</a></li> : dev && <li><span class="ph">[TODO: Instagram-Profil]</span></li>}
+            {site.tiktokUrl ? <li><a href={site.tiktokUrl} rel="noopener">TikTok</a></li> : dev && <li><span class="ph">[TODO: TikTok-Profil]</span></li>}
+          </ul>
+        </div>
+      </nav>
+    </div>
+    <div class="ftr__bottom">
+      <span>© {year} {site.name}</span>
+      <span class="ftr__legal"><a href="/impressum/">Impressum</a><a href="/datenschutz/">Datenschutz</a></span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .ftr { border-top: 1px solid var(--line); padding-block: clamp(3rem, 7vw, 5rem) 2rem; background: var(--ink); }
+  .ftr__top { display: grid; gap: 3rem; }
+  .ftr__logo { font-size: clamp(3.5rem, 9vw, 6rem); font-weight: 900; font-stretch: 62%; letter-spacing: -0.02em; line-height: 0.9; display: inline-block; }
+  .ftr__logo span { color: var(--magenta-hi); }
+  .ftr__brand p { color: var(--text-faint); margin-top: 1rem; font-size: 0.9375rem; }
+  .ftr__cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.25rem 1.5rem; }
+  .ftr__cols h2 { font-stretch: 125%; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 1rem; }
+  .ftr__cols ul { display: grid; gap: 0.15rem; }
+  .ftr__cols a, .ftr__cols .ph { display: inline-block; padding: 0.4rem 0; font-size: 0.9375rem; }
+  .ftr__cols a { color: var(--text-dim); transition: color 0.2s var(--ease); }
+  .ftr__cols a:hover { color: var(--text); }
+  .ph { color: var(--magenta-hi); font-weight: 600; }
+  .ftr__bottom { margin-top: clamp(2.5rem, 6vw, 4rem); padding-top: 1.5rem; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem 2rem; font-size: 0.875rem; color: var(--text-faint); }
+  .ftr__legal { display: flex; gap: 1.5rem; }
+  .ftr__legal a { padding: 0.4rem 0; transition: color 0.2s var(--ease); }
+  .ftr__legal a:hover { color: var(--text); }
+  @media (min-width: 720px) { .ftr__cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 980px) { .ftr__top { grid-template-columns: 1fr 1.4fr; align-items: start; } }
+</style>
