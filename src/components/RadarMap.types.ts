@@ -10,6 +10,8 @@ export type RadarMapProps = {
   /** Clubs und Locations als dezente Punkte. Ein Ort ist keine laufende Party. */
   venues?: MapVenue[];
   onSelectVenue?: (id: string) => void;
+  /** Durchmesser der Ortspunkte in Pixeln; wächst beim Hineinzoomen. */
+  venueDotSize?: number;
   onCenterChange: (center: { latitude: number; longitude: number }) => void;
   onVisibleRadiusChange: (radiusKm: number) => void;
   /** Height of the floating header; keeps the scan overlay clear of it. */

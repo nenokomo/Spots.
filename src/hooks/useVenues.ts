@@ -32,7 +32,7 @@ export function useVenuesNear(center: Coordinate | null, radiusKm: number) {
 
   const current = key !== null && result?.key === key ? result : null;
   return { loading: key !== null && !current, error: current?.error ?? null, available: current?.available ?? false,
-    venues: current?.venues ?? [], reload };
+    venues: key === null ? [] : current?.venues ?? result?.venues ?? [], reload };
 }
 
 type VenueResult = { key: string; error: string | null; venue: Venue | null };

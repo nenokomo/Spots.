@@ -71,7 +71,17 @@ export default function RadarScreen() {
   }, [live.events, upcoming.events, category, searchCenter, radius, now]);
   const radar = useRadarIntro(mapEvents);
   const [showClubs, setShowClubs] = useState(true);
-  const nearbyVenues = useVenuesNear(showClubs ? searchCenter : null, radius);
+  // Orte für einen größeren Bereich laden und nur neu holen, wenn die Karte ein Stück weiter wandert:
+  // Die Mitte wird auf ein Raster gerundet (Rasterweite ein Viertel des Ladebereichs).
+  const venueRange = visibleRadius > 30 ? 100 : visibleRadius > 12 ? 50 : 25;
+  const venueStep = venueRange / 4 / 111.32;
+  const venueLatitude = Math.round(searchCenter.latitude / venueStep) * venueStep;
+  const venueLongitudeStep = venueStep / Math.max(0.3, Math.cos(venueLatitude * Math.PI / 180));
+  const venueCenter = useMemo(() => ({ latitude: venueLatitude, longitude: Math.round(searchCenter.longitude / venueLongitudeStep) * venueLongitudeStep }),
+    [venueLatitude, venueLongitudeStep, searchCenter.longitude]);
+  const nearbyVenues = useVenuesNear(showClubs ? venueCenter : null, venueRange);
+  // Klein in der Übersicht, größer beim Hineinzoomen.
+  const venueDotSize = visibleRadius > 25 ? 7 : visibleRadius > 10 ? 9 : visibleRadius > 4 ? 11 : 13;
   // Orte erst nach dem Scan (die Animation gehört den Events) und begrenzt, damit die Karte flüssig bleibt.
   const mapVenues = useMemo(() => showClubs && !radar.scanning
     ? nearbyVenues.venues.slice(0, 250).map(({ id, name, coordinate }) => ({ id, name, coordinate })) : [],
@@ -124,7 +134,7 @@ export default function RadarScreen() {
       {/* The map runs under the panel's rounded corners, so no background shows through there. */}
       <View style={[styles.map, { bottom: panelHeight - corner.xl }]}>
         <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={select}
-          venues={mapVenues} onSelectVenue={(id) => { setPreview(null); setVenuePreview(nearbyVenues.venues.find((venue) => venue.id === id) ?? null); }}
+          venues={mapVenues} venueDotSize={venueDotSize} onSelectVenue={(id) => { setPreview(null); setVenuePreview(nearbyVenues.venues.find((venue) => venue.id === id) ?? null); }}
           onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} topInset={topInset} bottomInset={corner.xl} locked={radar.scanning} />
       </View>
 
