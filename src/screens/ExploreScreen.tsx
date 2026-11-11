@@ -1,7 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CategoryFilters } from '../components/CategoryFilters';
 import { CitySearch } from '../components/CitySearch';
 import { EventCalendar } from '../components/EventCalendar';
@@ -9,6 +9,7 @@ import { EventHero } from '../components/EventCards';
 import { HypeChart } from '../components/HypeChart';
 import { EventDataState } from '../components/EventDataState';
 import { EventStoryViewer } from '../components/EventStoryViewer';
+import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Icon } from '../components/Icon';
 import { Screen } from '../components/Screen';
 import { StoryTile } from '../components/StoryTile';
@@ -36,7 +37,7 @@ const periods = [
   { id: 'nextWeek', label: 'Nächste Woche' },
 ] as const;
 type Period = typeof periods[number]['id'];
-const radii = [10, 25, 50, 100] as const;
+const radii = [10, 30, 50, 100] as const;
 type Area = { label: string; center: Coordinate };
 /** auto = around the user when a location is known; everywhere = no distance filter. */
 type AreaChoice = { kind: 'auto' } | { kind: 'everywhere' } | { kind: 'gps' } | { kind: 'city'; area: Area };
@@ -55,10 +56,11 @@ export default function ExploreScreen() {
   const [category, setCategory] = useState<Category>('Alle');
   const [period, setPeriod] = useState<Period>('all');
   const [datesOpen, setDatesOpen] = useState(false);
+  const eventDays = useMemo(() => remote.events.map((event) => dayKey(new Date(event.startsAt))), [remote.events]);
   const [genresOpen, setGenresOpen] = useState(false);
   const [areaOpen, setAreaOpen] = useState(false);
   const [choice, setChoice] = useState<AreaChoice>({ kind: 'auto' });
-  const [areaRadius, setAreaRadius] = useState<number>(50);
+  const [areaRadius, setAreaRadius] = useState<number>(30);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [story, setStory] = useState<string | null>(null);
   const [seenStories, setSeenStories] = useState<string[]>([]);
@@ -124,9 +126,9 @@ export default function ExploreScreen() {
           {search.length > 0 && <Pressable accessibilityRole="button" accessibilityLabel="Suche löschen" onPress={() => setSearch('')} hitSlop={10} style={styles.clear}><Icon name="close" size={16} color={colors.muted} /></Pressable>}
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled">
-          <Chip icon="pin" label={areaLabel} selected={!!area} onPress={() => setAreaOpen(true)} accessibilityLabel="Ort und Umkreis wählen" />
           <Chip icon="sliders" label={category === 'Alle' ? 'Genre' : category} selected={category !== 'Alle' || genresOpen} onPress={() => setGenresOpen((value) => !value)} accessibilityLabel={`Genre filtern, aktuell ${category}`} />
           <Chip icon="calendar" label={dateLabel ?? 'Datum'} selected={!!activeDate} onPress={() => setDatesOpen(true)} accessibilityLabel="Datum auswählen" />
+          <Chip icon="pin" label={areaLabel} selected={!!area} onPress={() => setAreaOpen(true)} accessibilityLabel="Ort und Umkreis wählen" />
         </ScrollView>
         {genresOpen && <View style={styles.genres}><CategoryFilters value={category} onChange={(item) => { setCategory(item); setGenresOpen(false); }} /></View>}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.periods} keyboardShouldPersistTaps="handled">
@@ -163,12 +165,22 @@ export default function ExploreScreen() {
       ListEmptyComponent={remote.loading || remote.error ? undefined : <EmptyState icon="search" title="Keine passenden Events" text={area ? `Im Umkreis von ${areaRadius} km um ${area.label} ist für diese Auswahl nichts geplant.` : 'Passe deine Suche oder deine Filter an.'} action="Filter zurücksetzen" onAction={resetFilters} />}
     />
 
-    <Sheet visible={datesOpen} title="Wann möchtest du los?" onClose={() => setDatesOpen(false)} tall>
-      <View style={styles.calendar}>
-        <EventCalendar key={activeDate ?? today} today={today} selectedDate={activeDate} eventDays={remote.events.map((event) => dayKey(new Date(event.startsAt)))} onSelect={(date) => { setSelectedDate(date); setDatesOpen(false); }} />
+    <Modal visible={datesOpen} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setDatesOpen(false)}>
+      <View style={styles.dateModal}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Zeitraumauswahl schließen" onPress={() => setDatesOpen(false)} style={StyleSheet.absoluteFill} />
+        <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.dateSheet}>
+          <GlassBackdrop radius={26} variant="panel" />
+          <View style={styles.dateContent}>
+            <View style={styles.dateHeading}>
+              <Text accessibilityRole="header" style={styles.dateTitle}>Wann möchtest du los?</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Zeitraumauswahl schließen" onPress={() => setDatesOpen(false)} style={styles.clear}><Icon name="close" /></Pressable>
+            </View>
+            <EventCalendar key={activeDate ?? today} today={today} selectedDate={activeDate} eventDays={eventDays} onSelect={(date) => { setSelectedDate(date); setDatesOpen(false); }} />
+            <Pressable accessibilityRole="button" onPress={() => { setSelectedDate(null); setPeriod('all'); setDatesOpen(false); }} style={styles.dateReset}><Text style={styles.dateResetText}>Alle Termine anzeigen</Text></Pressable>
+          </View>
+        </SafeAreaView>
       </View>
-      <Button label="Alle Termine anzeigen" variant="secondary" onPress={() => { setSelectedDate(null); setPeriod('all'); setDatesOpen(false); }} />
-    </Sheet>
+    </Modal>
 
     <Sheet visible={areaOpen} title="Wo möchtest du feiern?" onClose={() => setAreaOpen(false)} tall>
       <View style={styles.citySearch}><CitySearch flush label={area?.label ?? 'Deutschland'} locating={location.loading} onLocate={() => void chooseGps()} onSelect={chooseCity} /></View>
@@ -209,7 +221,13 @@ const styles = StyleSheet.create({
   fallback: { ...type.footnote, color: colors.muted, paddingHorizontal: gutter, paddingBottom: space.md },
   gridRow: { gap: space.md, paddingHorizontal: gutter, paddingBottom: space.md },
   cell: { flex: 1, maxWidth: '50%' },
-  calendar: { flex: 1 },
+  dateModal: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#100916b3' },
+  dateSheet: { borderTopLeftRadius: 26, borderTopRightRadius: 26 },
+  dateContent: { padding: 16, gap: 10 },
+  dateHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  dateTitle: { color: colors.text, fontWeight: '700', fontSize: 17, flexShrink: 1 },
+  dateReset: { minHeight: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 15, borderRadius: 12, borderWidth: 1, borderColor: '#c922ab88', backgroundColor: '#c922ab22', marginTop: 4 },
+  dateResetText: { color: '#ffd6f2', fontSize: 12, fontWeight: '700' },
   citySearch: { minHeight: 48, zIndex: 10 },
   group: { gap: space.md },
   label: { ...type.headline, color: colors.text },

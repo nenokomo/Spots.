@@ -8,15 +8,14 @@ import { PressableScale } from './ui/PressableScale';
 
 type Props = { ranked: RankedEvent[]; today: string; hrefFor: (event: SpotEvent) => Href };
 
-/** Popular events as a plain horizontal row: square image with a small rank, title and day. Sales figures stay internal. */
+/** Popular events as a plain horizontal row: square image, title and day (order = popularity, no visible rank). Sales figures stay internal. */
 export function HypeChart({ ranked, today, hrefFor }: Props) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
       {ranked.map((item) => (
-        <PressableScale key={item.event.id} accessibilityRole="link" accessibilityLabel={`Platz ${item.rank}: ${item.event.title}, ${eventDayLabel(item.event.startsAt, today)}, öffnen`} onPress={() => router.push(hrefFor(item.event))} style={styles.item}>
+        <PressableScale key={item.event.id} accessibilityRole="link" accessibilityLabel={`${item.event.title}, ${eventDayLabel(item.event.startsAt, today)}, öffnen`} onPress={() => router.push(hrefFor(item.event))} style={styles.item}>
           <View style={styles.image}>
             <Image source={item.event.image} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityLabel={item.event.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${item.event.title}`} />
-            <View style={styles.rank}><Text style={styles.rankText}>{item.rank}</Text></View>
           </View>
           <Text numberOfLines={1} style={styles.title}>{item.event.title}</Text>
           <Text numberOfLines={1} style={styles.meta}>{eventDayLabel(item.event.startsAt, today)} · {item.event.location}</Text>
@@ -30,8 +29,6 @@ const styles = StyleSheet.create({
   row: { gap: space.md, paddingHorizontal: gutter },
   item: { width: 136, gap: 2 },
   image: { width: 136, height: 136, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.surface, marginBottom: space.xs, ...squircle },
-  rank: { position: 'absolute', top: space.sm, left: space.sm, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#100b15c4' },
-  rankText: { ...type.footnote, fontSize: 12, fontWeight: '800', color: colors.text },
   title: { ...type.label, fontSize: 14, color: colors.text },
   meta: { ...type.footnote, fontSize: 12, color: colors.faint },
 });
