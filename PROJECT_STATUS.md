@@ -59,6 +59,11 @@ Eigener Branch von feature/design-refresh. Nur Oberfläche neu; Datenschicht, ze
 - Eventseite poster-first: Flyer füllt ~64 % des Bildschirms, darüber schwebt eine Glas-Karte mit Kicker, Titel und Wesentlichem (Tag · Uhrzeit · Ort), darunter Veranstalter-Kachel, Zeilenliste (Route, Tickets, Genres), Ticketarten, Beschreibung, Live Snaps; feste Leiste unten.
 - Upload-UI für Beiträge und Bilder weiterhin offen (braucht SQL 17–19 in Spots-Test, `expo-image-picker`, Development Build).
 
+**Neunte Runde (Radar nach Screenshot-Vorlage)**
+- Radar-Layout wie die frühere eigene Version: Kopfzeile mit Logo, Ortsbutton und Profil; Genre-Chips plus Filter-Symbol darunter; Karte als abgerundete Karte mit Badges „RADAR/LIVE“ und „30 km“, Standort-Button und Statuszeile unten; Panel „Heute in deiner Nähe · Alle ansehen“ mit Leerzustand im alten Ton. Keine schwebenden Glas-Buttons über der Karte mehr.
+- Karte im Standard-Stil (Apple/OSM-Farben, leicht abgedunkelt und lila getönt) statt dunkler Graukacheln.
+- Entdecken: Untertitel unter „Als Nächstes“ und „Alle Events“ entfernt.
+
 **Geprüft**: 96/96 Tests (mit PGlite), Expo-Lint, Typecheck (Stand dritte Runde; Veranstalterseite jetzt mit Testdaten visuell geprüft). Zuvor: 94/94 Tests, Expo-Lint, Typecheck. Web-Vorschau 375 × 812: Radar (Karlsruhe mit Testevents, Pins, Listen-Panel), Entdecken, Story-Ansicht, Eventdetail, Gemerkt (leer), Profil.
 
 **Nicht geprüft**: kein iOS-/Android-Gerät. Besonders offen: `mapPadding` der nativen Karte (verschiebt Kartenmitte und Anbieter-Logo über das Karussell), neue Pins als native Marker, Profil als natives Modal, Glas-Effekt, Schrift (im Browser Segoe UI statt San Francisco). Veranstalterseite mit Daten und Gemerkt mit Einträgen im neuen Stil nicht visuell geprüft.

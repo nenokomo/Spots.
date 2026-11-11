@@ -1,7 +1,6 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CategoryFilters } from '../components/CategoryFilters';
 import { CitySearch } from '../components/CitySearch';
@@ -12,11 +11,13 @@ import { Icon } from '../components/Icon';
 import RadarMap from '../components/RadarMap';
 import { RadiusSlider } from '../components/RadiusSlider';
 import { SaveEventButton } from '../components/SaveEventButton';
+import { Screen } from '../components/Screen';
 import { Button, IconButton } from '../components/ui/Button';
+import { Chip } from '../components/ui/Chip';
 import { PressableScale } from '../components/ui/PressableScale';
 import { Sheet } from '../components/ui/Sheet';
 import { tabBarContentInset } from '../constants/navigation';
-import { colors, gutter, radius as corner, space, squircle, type, type Category } from '../constants/theme';
+import { brandDotStyle, categories, colors, gutter, radius as corner, space, squircle, type, type Category } from '../constants/theme';
 import { useLiveEvents, useUpcomingEvents } from '../hooks/useEvents';
 import { useLocation } from '../hooks/useLocation';
 import { useNow } from '../hooks/useNow';
@@ -29,6 +30,7 @@ import { distanceKm, type Coordinate } from '../utils/events';
 
 const ROW = EVENT_ROW_HEIGHT + StyleSheet.hairlineWidth;
 
+/** Radar: header with logo, place and filters; map card; panel "Heute in deiner Nähe". */
 export default function RadarScreen() {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
@@ -64,28 +66,21 @@ export default function RadarScreen() {
     return { mapEvents: [...running, ...tonight], liveCount: running.length };
   }, [live.events, upcoming.events, category, searchCenter, radius, now]);
   const radar = useRadarIntro(mapEvents);
-
-  // Quiet around here: offer the nearest real upcoming events instead of an empty panel. List only, no pins.
-  const nearest = useMemo(() => mapEvents.length > 0 ? [] : upcoming.events
-    .filter((event): event is LocatedEvent => isLocatedEvent(event) && matchesCategory(event, category))
-    .map((event) => ({ event, distance: distanceKm(searchCenter, event.coordinate) }))
-    .sort((a, b) => a.distance - b.distance).slice(0, 4).map((item) => item.event), [mapEvents.length, upcoming.events, category, searchCenter]);
+  const select = useCallback((event: LocatedEvent) => setPreview(event), []);
+  const previewVisible = !!preview && !radar.scanning && mapEvents.some((event) => event.id === preview.id);
 
   const loading = live.loading || upcoming.loading;
   const error = live.error ?? upcoming.error;
-  const quiet = !radar.scanning && !loading && !error && mapEvents.length === 0;
-  const rows = mapEvents.length > 0 ? radar.visibleEvents : quiet ? nearest : [];
   const laterCount = mapEvents.length - liveCount;
-  const filtered = category !== 'Alle' || radius !== 30;
   const radiusLabel = `${new Intl.NumberFormat('de-DE', { maximumFractionDigits: visibleRadius < 10 ? 1 : 0 }).format(visibleRadius)} km`;
-
-  const headline = radar.scanning ? 'Scan läuft' : quiet ? 'Gerade ruhig hier' : liveCount > 0 ? 'Jetzt los' : 'Heute Nacht';
-  const summary = radar.scanning ? `${radiusLabel} um ${location.label}`
-    : quiet ? (nearest.length > 0 ? 'Die nächsten Events in der Nähe' : 'Karte verschieben oder Entdecken öffnen')
-      : [liveCount > 0 ? `${liveCount} live` : null, laterCount > 0 ? `${laterCount} später` : null, location.userCoordinate ? 'um dich' : `um ${location.label}`].filter(Boolean).join(' · ');
-  const noFix = !location.loading && !location.userCoordinate && location.label !== 'Dein Standort';
+  const noFix = !location.loading && !location.userCoordinate;
+  const statusLine = radar.scanning ? 'Umgebung wird gescannt …' : location.message;
+  const summary = loading ? 'Events werden geladen …' : error ? 'Events nicht verfügbar'
+    : mapEvents.length === 0 ? 'Keine laufenden Events im Umkreis'
+      : [liveCount > 0 ? `${liveCount} live` : null, laterCount > 0 ? `${laterCount} später heute` : null].filter(Boolean).join(' · ');
 
   const reset = useCallback(async () => {
+    setPreview(null);
     await locate();
     setRadius(30);
   }, [locate]);
@@ -97,123 +92,124 @@ export default function RadarScreen() {
     void locate({ automatic: true });
   }, [locate]));
 
-  const select = useCallback((event: LocatedEvent) => setPreview(event), []);
-  const previewVisible = !!preview && !radar.scanning && mapEvents.some((event) => event.id === preview.id);
-
-  // The panel shows about three events at once; the map keeps the rest of the screen.
   const tabInset = tabBarContentInset(insets.bottom);
-  const panelHeight = Math.min(Math.max(250, height * 0.36), 340) + tabInset;
-  const topInset = insets.top + 64;
+  const panelHeight = Math.min(290, height * 0.34) + tabInset;
 
   return (
-    <View style={styles.screen}>
-      <View style={[styles.map, { bottom: panelHeight }]}>
-        <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={select}
-          onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} topInset={topInset} locked={radar.scanning} />
-      </View>
-
-      <LinearGradient pointerEvents="none" colors={['#100b15b3', '#100b1500']} style={[styles.topShade, { height: insets.top + 110 }]} />
-
-      <View pointerEvents="box-none" style={[styles.top, { paddingTop: insets.top + 8 }]}>
+    <Screen>
+      <View style={styles.header}>
+        <Text numberOfLines={1} style={styles.logo}>Spots<Text style={brandDotStyle}>.</Text></Text>
         <PressableScale accessibilityRole="button" accessibilityLabel={`Ort ändern, aktuell ${location.label}`} onPress={() => setPlaceOpen(true)} scaleTo={0.96} style={styles.place}>
-          <GlassBackdrop radius={22} />
-          <Icon name="pin" size={15} color={colors.pink} />
+          <Icon name="pin" size={16} color={colors.pink} />
           <Text numberOfLines={1} style={styles.placeLabel}>{location.loading ? 'Standort …' : location.label}</Text>
           <Icon name="down" size={12} color={colors.muted} />
         </PressableScale>
-        <View>
-          <IconButton icon="sliders" accessibilityLabel="Filter" onPress={() => setFilterOpen(true)} />
-          {filtered && <View pointerEvents="none" style={styles.filterDot} />}
-        </View>
+        <IconButton icon="profile" accessibilityLabel="Profil öffnen" onPress={() => router.navigate('/profile')} size={40} plain style={styles.profileButton} />
       </View>
 
-      {previewVisible && (
-        <View style={[styles.previewLayer, { bottom: panelHeight }]} pointerEvents="box-none">
-          <Pressable accessibilityRole="button" accessibilityLabel="Eventvorschau schließen" onPress={() => setPreview(null)} style={StyleSheet.absoluteFill} />
-          <View testID="event-preview" style={styles.preview}>
-            <GlassBackdrop radius={corner.xl} variant="panel" />
-            <EventRow event={preview} href={eventHref(preview, 'radar')} now={now} today={today} distanceKm={distanceKm(searchCenter, preview.coordinate)} trailing={<SaveEventButton id={preview.id} title={preview.title} size={36} />} />
+      <View style={styles.filterRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.chipScroll}>
+          {categories.map((item) => <Chip key={item} label={item} selected={category === item} onPress={() => { setCategory(item); setPreview(null); }} />)}
+        </ScrollView>
+        <Pressable accessibilityRole="button" accessibilityLabel="Filter" onPress={() => setFilterOpen(true)} hitSlop={8} style={styles.filterButton}><Icon name="sliders" size={20} color={colors.text} /></Pressable>
+      </View>
+
+      <View style={[styles.map, { marginBottom: panelHeight - tabInset }]}>
+        <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={select}
+          onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} locked={radar.scanning} />
+        <View pointerEvents="none" style={styles.liveBadge}><View style={styles.liveDot} /><Text style={styles.liveBadgeText}>{liveCount > 0 ? `${liveCount} LIVE` : 'RADAR'}</Text></View>
+        <View pointerEvents="none" style={styles.radiusBadge}><Icon name="locate" size={14} color={colors.text} /><Text style={styles.radiusText}>{radiusLabel}</Text></View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Zu meinem Standort, 30 Kilometer Umkreis" disabled={location.loading} onPress={() => void reset()} style={[styles.locateButton, location.loading && styles.locating]}><Icon name="locate" size={20} color={colors.text} /></Pressable>
+        <View pointerEvents="none" style={styles.status}><Text numberOfLines={1} style={styles.statusText}>{noFix && !radar.scanning ? `${statusLine} · Mitte: ${location.label}` : statusLine}</Text></View>
+        {previewVisible && (
+          <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+            <Pressable accessibilityRole="button" accessibilityLabel="Eventvorschau schließen" onPress={() => setPreview(null)} style={StyleSheet.absoluteFill} />
+            <View testID="event-preview" style={styles.preview}>
+              <GlassBackdrop radius={corner.lg} variant="panel" />
+              <EventRow event={preview} href={eventHref(preview, 'radar')} now={now} today={today} distanceKm={distanceKm(searchCenter, preview.coordinate)} trailing={<SaveEventButton id={preview.id} title={preview.title} size={36} />} />
+            </View>
           </View>
-        </View>
-      )}
-
-      <View pointerEvents="none" style={[styles.radiusPill, { top: topInset }]}>
-        <GlassBackdrop radius={18} />
-        <Icon name="radar" size={14} color={colors.pink} />
-        <Text style={styles.radiusText}>{radiusLabel} Umkreis</Text>
-      </View>
-
-      <View pointerEvents="box-none" style={[styles.locate, { bottom: panelHeight + space.md }]}>
-        <IconButton icon="locate" accessibilityLabel="Zu meinem Standort, 30 Kilometer Umkreis" onPress={() => void reset()} />
+        )}
       </View>
 
       <View style={[styles.panel, { height: panelHeight, paddingBottom: tabInset }]}>
-        <LinearGradient pointerEvents="none" colors={colors.panelGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+        <GlassBackdrop radius={corner.xl} variant="panel" />
+        <View style={styles.handle} />
         <View style={styles.panelHeader}>
           <View style={styles.panelCopy}>
-            <Text accessibilityRole="header" style={styles.headline}>{headline}</Text>
-            <Text numberOfLines={1} style={styles.summary}>{noFix ? `Kein Standort · ${location.label} als Mitte` : summary}</Text>
+            <Text accessibilityRole="header" style={styles.headline}>Heute in deiner Nähe</Text>
+            <Text numberOfLines={1} style={styles.summary}>{summary}</Text>
           </View>
           <PressableScale accessibilityRole="button" accessibilityLabel="Alle Events des Radars ansehen" onPress={() => router.push({ pathname: '/today', params: { category, radius: String(radius), latitude: String(searchCenter.latitude), longitude: String(searchCenter.longitude) } })} hitSlop={8} style={styles.more}>
-            <Text style={styles.moreText}>Alle</Text>
-            <Icon name="chevron" size={12} color={colors.pink} />
+            <Text style={styles.moreText}>Alle ansehen</Text>
+            <Icon name="chevron" size={13} color={colors.text} />
           </PressableScale>
         </View>
         <FlatList
-          data={rows}
+          data={radar.visibleEvents}
           keyExtractor={(event) => event.id}
-          renderItem={({ item }) => (
-            <View style={styles.row}>
-              <EventRow event={item} href={eventHref(item, 'radar')} now={now} today={today} distanceKm={distanceKm(searchCenter, item.coordinate)} trailing={<SaveEventButton id={item.id} title={item.title} size={36} />} />
-            </View>
-          )}
+          renderItem={({ item }) => <View style={styles.row}><EventRow event={item} href={eventHref(item, 'radar')} now={now} today={today} distanceKm={distanceKm(searchCenter, item.coordinate)} trailing={<SaveEventButton id={item.id} title={item.title} size={36} />} /></View>}
           getItemLayout={(_, index) => ({ length: ROW, offset: ROW * index, index })}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           ListEmptyComponent={loading || error ? <EventDataState loading={loading} error={error} onRetry={() => { live.reload(); upcoming.reload(); }} />
-            : radar.scanning ? <Text style={styles.empty}>Die Events erscheinen gleich zusammen mit den Pins.</Text>
-              : <Text style={styles.empty}>In diesem Kartenausschnitt ist heute nichts geplant.</Text>}
+            : <View style={styles.empty}>
+                <Icon name="radar" size={30} color={colors.pink} />
+                <Text style={styles.emptyTitle}>{radar.scanning ? 'Deine Umgebung wird entdeckt …' : 'Hier ist noch Platz für deinen Abend.'}</Text>
+                <Text style={styles.emptyText}>{radar.scanning ? 'Die Events erscheinen gleich zusammen mit den Pins.' : category !== 'Alle' ? 'Keine Events für diesen Filter im Umkreis. Wähle „Alle“ oder vergrößere den Radius.' : 'Keine laufenden Events im Umkreis. Vergrößere den Radius oder schau in Entdecken.'}</Text>
+              </View>}
           showsVerticalScrollIndicator={false}
         />
       </View>
 
       <Sheet visible={placeOpen} title="Wo bist du unterwegs?" onClose={() => setPlaceOpen(false)} tall>
-        <View style={styles.citySearch}><CitySearch flush label={location.label} locating={location.loading} onLocate={() => { setPlaceOpen(false); void reset(); }} onSelect={(city) => { location.selectCity(city); setPlaceOpen(false); }} /></View>
+        <View style={styles.citySearch}><CitySearch flush label={location.label} locating={location.loading} onLocate={() => { setPlaceOpen(false); void reset(); }} onSelect={(city) => { setPreview(null); location.selectCity(city); setPlaceOpen(false); }} /></View>
         <Button label="Meinen Standort verwenden" icon="locate" variant="secondary" onPress={() => { setPlaceOpen(false); void reset(); }} />
         <Text style={styles.hint}>{location.message}. Dein Standort bleibt auf dem Gerät.</Text>
       </Sheet>
 
       <Sheet visible={filterOpen} title="Filter" onClose={() => setFilterOpen(false)}>
-        <View style={styles.group}><Text style={styles.label}>Worauf hast du Lust?</Text><CategoryFilters value={category} onChange={setCategory} /></View>
-        <View style={styles.group}><Text style={styles.label}>Umkreis</Text><RadiusSlider value={radius} onChange={setRadius} /></View>
-        <Button label="Fertig" onPress={() => setFilterOpen(false)} />
+        <View style={styles.group}><Text style={styles.label}>Worauf hast du Lust?</Text><CategoryFilters value={category} onChange={(item) => { setCategory(item); setPreview(null); }} /></View>
+        <View style={styles.group}><Text style={styles.label}>Umkreis</Text><RadiusSlider value={radius} onChange={(value) => { setRadius(value); setPreview(null); }} /></View>
+        <Button label="Radar anzeigen" onPress={() => setFilterOpen(false)} />
       </Sheet>
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  map: { position: 'absolute', top: 0, left: 0, right: 0 },
-  topShade: { position: 'absolute', top: 0, left: 0, right: 0 },
-  top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingHorizontal: space.lg },
-  place: { flexShrink: 1, height: 44, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, borderRadius: 22, overflow: 'hidden' },
-  placeLabel: { ...type.headline, fontSize: 16, color: colors.text, flexShrink: 1 },
-  radiusPill: { position: 'absolute', left: space.lg, height: 36, flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingHorizontal: space.md, borderRadius: 18, overflow: 'hidden' },
-  radiusText: { ...type.label, fontSize: 13, color: colors.text },
-  filterDot: { position: 'absolute', top: 2, right: 2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent, borderWidth: 2, borderColor: colors.background },
-  locate: { position: 'absolute', right: space.lg },
-  panel: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.background, borderTopLeftRadius: corner.xl, borderTopRightRadius: corner.xl, borderTopWidth: 1, borderColor: '#b872ac50', overflow: 'hidden', ...squircle },
-  panelHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingHorizontal: gutter, paddingTop: space.lg, paddingBottom: space.xs },
+  header: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: gutter, paddingTop: space.sm, minHeight: 56 },
+  logo: { ...type.title, fontSize: 30, color: colors.text, width: 92 },
+  place: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs, height: 40 },
+  placeLabel: { ...type.headline, fontSize: 17, color: colors.text, flexShrink: 1 },
+  profileButton: { backgroundColor: colors.accentSoft },
+  filterRow: { flexDirection: 'row', alignItems: 'center', paddingLeft: gutter, paddingTop: space.md, paddingBottom: space.md },
+  chipScroll: { flex: 1 },
+  chips: { gap: space.sm, paddingRight: space.sm },
+  filterButton: { width: 48, height: 40, alignItems: 'center', justifyContent: 'center' },
+  map: { flex: 1, marginHorizontal: space.md, borderRadius: corner.xl, overflow: 'hidden', backgroundColor: '#1f1a2e', ...squircle },
+  liveBadge: { position: 'absolute', top: space.md, left: space.md, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, height: 32, borderRadius: 16, backgroundColor: '#100b15cc' },
+  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.pink },
+  liveBadgeText: { ...type.overline, fontSize: 11, letterSpacing: 1.6, color: colors.text },
+  radiusBadge: { position: 'absolute', top: space.md, right: space.md, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, height: 40, borderRadius: 20, backgroundColor: '#100b15cc' },
+  radiusText: { ...type.headline, fontSize: 16, color: colors.text },
+  locateButton: { position: 'absolute', right: space.md, bottom: space.md, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: '#100b15cc', borderWidth: 1, borderColor: '#b872ac40' },
+  locating: { opacity: 0.5 },
+  status: { position: 'absolute', left: space.md, bottom: space.lg, right: 72 },
+  statusText: { ...type.footnote, fontSize: 12, color: colors.text, alignSelf: 'flex-start', backgroundColor: '#100b15b3', borderRadius: 8, overflow: 'hidden', paddingHorizontal: space.sm, paddingVertical: 4 },
+  preview: { position: 'absolute', left: space.md, right: space.md, top: '50%', marginTop: -46, paddingHorizontal: space.md, borderRadius: corner.lg, overflow: 'hidden', borderWidth: 1, borderColor: '#de5ab970', ...squircle },
+  panel: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: corner.xl, borderTopRightRadius: corner.xl, overflow: 'hidden', ...squircle },
+  handle: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: '#ffffff40', marginTop: space.sm },
+  panelHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: space.md, paddingHorizontal: gutter, paddingTop: space.md, paddingBottom: space.xs },
   panelCopy: { flex: 1, minWidth: 0 },
   headline: { ...type.title2, color: colors.text },
-  summary: { ...type.footnote, color: colors.muted, marginTop: 1 },
-  more: { flexDirection: 'row', alignItems: 'center', gap: 3, minHeight: 32 },
-  moreText: { ...type.callout, color: colors.pink },
+  summary: { ...type.footnote, color: colors.muted, marginTop: 2 },
+  more: { flexDirection: 'row', alignItems: 'center', gap: 3, minHeight: 32, paddingBottom: 2 },
+  moreText: { ...type.callout, color: colors.text },
   row: { paddingHorizontal: gutter },
-  previewLayer: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40 },
-  preview: { position: 'absolute', left: space.lg, right: space.lg, top: '50%', marginTop: -46, paddingHorizontal: space.md, borderRadius: corner.xl, overflow: 'hidden', borderWidth: 1, borderColor: '#de5ab970', ...squircle },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: gutter + 68 + space.md },
-  empty: { ...type.callout, color: colors.faint, paddingHorizontal: gutter, paddingTop: space.lg },
+  empty: { alignItems: 'center', gap: space.sm, paddingHorizontal: space.xxl, paddingTop: space.xl },
+  emptyTitle: { ...type.title3, color: colors.text, textAlign: 'center' },
+  emptyText: { ...type.callout, color: colors.muted, textAlign: 'center' },
   citySearch: { minHeight: 48, zIndex: 10 },
   hint: { ...type.footnote, color: colors.faint },
   group: { gap: space.md },

@@ -133,7 +133,7 @@ export default function ExploreScreen() {
         </ScrollView>
 
         {featured.length > 0 && <>
-          <SectionHeader title="Als Nächstes" note="Die nächsten Termine deiner Auswahl" />
+          <SectionHeader title="Als Nächstes" />
           <FlatList
             horizontal
             data={featured}
@@ -147,7 +147,7 @@ export default function ExploreScreen() {
           />
         </>}
 
-        <SectionHeader title={area ? `Alle Events · ${area.label}` : 'Alle Events'} note={`${events.length} ${events.length === 1 ? 'Event' : 'Events'} · antippen für die Story`} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
+        <SectionHeader title={area ? `Alle Events · ${area.label}` : 'Alle Events'} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
         {fellBack && <Text style={styles.fallback}>In deiner Nähe ist gerade nichts geplant. Das sind alle Events in Deutschland.</Text>}
         <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
       </View>}
