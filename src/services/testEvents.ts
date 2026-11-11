@@ -1,5 +1,6 @@
 import type { PublicOrganizer, PublicOrganizerPost } from '../types/accounts';
 import type { SpotEvent } from '../types/events';
+import type { Venue } from '../types/venues';
 import { mapEventRow } from './eventAdapter';
 
 /**
@@ -74,5 +75,19 @@ export function testOrganizerPosts(): PublicOrganizerPost[] {
     { id: 'f0f0f0f0-0000-4000-8000-0000000000b1', organizerId: TEST_ORGANIZER_ID, body: 'TEST-Beitrag: Rückblick auf Samstag. Danke an alle, die da waren! (Lokale Testdaten mit Symbolbildern)', createdAt: '2026-11-09T12:00:00Z', updatedAt: '2026-11-09T12:00:00Z', images: ['local:1', 'local:2', 'local:3'] },
     { id: 'f0f0f0f0-0000-4000-8000-0000000000b2', organizerId: TEST_ORGANIZER_ID, body: 'TEST-Beitrag: Am Wochenende öffnen wir um 23 Uhr.', createdAt: '2026-11-08T12:00:00Z', updatedAt: '2026-11-08T12:00:00Z', images: ['local:1'] },
     { id: 'f0f0f0f0-0000-4000-8000-0000000000b3', organizerId: TEST_ORGANIZER_ID, body: 'TEST-Beitrag ohne Bild: Neue Öffnungszeiten ab Dezember.', createdAt: '2026-11-07T12:00:00Z', updatedAt: '2026-11-07T12:00:00Z', images: [] },
+  ];
+}
+
+/** Fictitious places in Karlsruhe for the club directory. Same rules as the test events: development only, labelled TEST. */
+export function testVenues(force = false): Venue[] {
+  if (!force && !enabled()) return [];
+  const place = (n: number, name: string, kind: Venue['kind'], latitude: number, longitude: number, openingHours: string | null): Venue => ({
+    id: `f0f0f0f0-0000-4000-8000-0000000000c${n}`, name, kind, street: 'Teststraße', houseNumber: String(n), postcode: '76133',
+    city: 'Karlsruhe', coordinate: { latitude, longitude }, website: null, openingHours, sourceRef: null, source: 'test',
+  });
+  return [
+    place(1, 'TEST · Club Fixture', 'club', 49.0094, 8.3994, 'Fr-Sa 23:00-05:00'),
+    place(2, 'TEST · Live-Halle', 'live', 49.0036, 8.3868, null),
+    place(3, 'TEST · Eventlocation am Rhein', 'eventlocation', 49.0120, 8.4190, null),
   ];
 }

@@ -33,15 +33,23 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
   - Eventseite: „Tickets bei Ticketmaster“ statt „beim Anbieter“; kein doppelter Link, wenn Original- und Ticketlink gleich sind (`src/utils/eventSource.ts`).
   - Tests ergänzt (`navigation.test.cjs`, `design-integration.test.cjs`); gesamt **123/123**, Lint und Typecheck ok. Web-Vorschau 375 × 812: Chips „Hip-Hop“ und „Konzerte“ sichtbar, Filter „Techno“ zeigt das Test-Event.
 
+- **Teil 2 – Club-Verzeichnis**:
+  - `supabase/ops/21_venues.sql`: Tabelle `venues` (öffentlich nur Veröffentlichtes), `venue_reports` (nur Service-Rolle), Einordnung `spots_venues_private.osm_venue` mit festen Filtern (ohne Namen, Erotik inkl. `theme=bdsm/fetish`, geschlossen, ohne Position), Übernahme `spots_venues_apply_osm` (Team-Entscheidungen „hidden/approved“ bleiben, fehlende Orte nur bei vollständiger Antwort ausblenden, Schutz vor verdächtig kleinen Antworten), anonymes `spots_report_venue` (feste Gründe, max. 500 Zeichen, max. 50 offene Meldungen pro Ort).
+  - Tests: `tests/venues-backend.test.cjs` (6 Teiltests, PGlite).
+  - **In Spots-Test eingespielt**, Prüfsummen aller neuen Funktionen identisch mit den Dateien; 59 echte Orte um Karlsruhe (15 km) geladen: 17 Clubs, 6 Live-Musik, 16 Eventlocations sichtbar, 17 zur Prüfung; 2 BDSM-Orte und 1 ohne Namen aussortiert. Events-Prüfwert unverändert.
+  - App: Abschnitt „Clubs & Locations“ in Entdecken (wenn Ort/Umkreis gewählt), Liste `/clubs` (Suche, Filter nach Art, Entfernung), Ortsseite `/venue/[id]` (Route, Website, Adresse, Öffnungszeiten, OSM-Quellenhinweis), „Fehler melden“ als Sheet. Ohne Tabelle (Produktion) bleibt alles ausgeblendet. Test-Orte nur in der Entwicklung. Web-Vorschau 375 × 812 geprüft.
+  - Skripte: `scripts/fetch-osm-venues.cjs` (pro Bundesland, Ausweich-Server), `scripts/analyze-osm-venues.cjs` (lokale Auswertung mit derselben SQL).
+  - **Clubzahl Deutschland: nicht ermittelt.** Alle drei Overpass-Server antworteten am 11.11. bei Bundesländern mit 504; eine 1°-Kachel um Karlsruhe ging (227 Orte, 90 s), mit Begrenzung auf Deutschland Zeitüberschreitung. Gesamtlauf später wiederholen.
+
 ## Läuft gerade
 
-- Teil 2: Club-Verzeichnis aus OpenStreetMap.
+- Teil 3: Admin-Bereich (Freigaben) und Goabase-Prüfung.
 
 ## Als Nächstes
 
-1. SQL 21 (Orte, Meldungen) mit Filtern, Tests in PGlite
-2. OSM-Daten holen (Clubzahl Deutschland), lokal prüfen, in Spots-Test laden
-3. App: Clubliste, Ortsseite, „Fehler melden“
+1. SQL 22: Admin-Rolle, Event-Entwürfe, Freigabe als Event (`source = 'redaktion'`), Prüfung von Orten und Meldungen
+2. App: Admin-Bereich (nur für Admins sichtbar)
+3. Goabase: lesend prüfen, was größere Bilder/Genres bringen würden (kein Eingriff in den Produktionsimport)
 
 ## Offene Punkte (für die Abschlussliste)
 
@@ -54,3 +62,6 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
 - Produktentscheidung: Das Radar zählt nur Events mit Endzeit als „live“ (`isLiveEvent`). Ticketmaster liefert meist keine Endzeit (≈ 90 %), solche Konzerte erscheinen daher vor Beginn als „später heute“, aber nach Beginn nicht als „live“. Ändern? (betrifft auch Goabase)
 - Profil zeigt bei „Eventdaten“ weiterhin nur „Goabase“; anpassen, sobald Ticketmaster in Produktion läuft.
 - Die Filterleiste hat jetzt 7 Chips; Gestaltung/Reihenfolge mit Noyan abstimmen.
+- OSM-Import für ganz Deutschland später wiederholen (`node scripts/fetch-osm-venues.cjs`, dann laden mit Service-Rolle). Für die Produktion braucht es ein kleines Ladeskript mit Service-Key, das Jacint ausführt.
+- Automatischer Erotik-Filter greift nur bei eindeutigen Merkmalen; Stichproben durch das Team bleiben nötig.
+- Doku-Entwürfe liegen in `docs/entwuerfe/` (Mails, Datenschutz, Nutzungsbedingungen, App-Texte DE/EN, 25 Rechtsfragen). Befunde daraus: Konto löschen fehlt (Apple/Google-Pflicht); Melden in SQL 17 nur mit Konto (DSA verlangt Melden für alle); `live_snaps.author_id` wäre laut SQL 17 öffentlich lesbar (vor dem Einspielen korrigieren, Jacint); Ortssuche schickt Suchtext an Open-Meteo (Nutzungsbedingungen prüfen); keine Links zu Datenschutz/Impressum in der App; EXIF-Daten bei Uploads entfernen.

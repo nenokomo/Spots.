@@ -7,6 +7,7 @@ import { CitySearch } from '../components/CitySearch';
 import { EventCalendar } from '../components/EventCalendar';
 import { EventHero } from '../components/EventCards';
 import { HypeChart } from '../components/HypeChart';
+import { NearbyVenues } from '../components/NearbyVenues';
 import { EventDataState } from '../components/EventDataState';
 import { EventStoryViewer } from '../components/EventStoryViewer';
 import { GlassBackdrop } from '../components/GlassBackdrop';
@@ -157,6 +158,8 @@ export default function ExploreScreen() {
           <SectionHeader title={`Gehypt in ${popular.city ?? 'deiner Nähe'}`} />
           <HypeChart ranked={popular.ranked} today={today} hrefFor={destination} />
         </>}
+
+        {area && !search.trim() && <NearbyVenues center={area.center} radiusKm={areaRadius} label={area.label} />}
 
         <SectionHeader title={area ? `Alle Events · ${area.label}` : 'Alle Events'} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
         {fellBack && <Text style={styles.fallback}>In deiner Nähe ist gerade nichts geplant. Das sind alle Events in Deutschland.</Text>}

@@ -26,6 +26,12 @@ export function distanceKm(a: Coordinate, b: Coordinate) {
   return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(Math.max(0, 1 - h)));
 }
 
+/** „850 m“, „2,4 km“, „17 km“. */
+export function formatDistance(km: number) {
+  if (km < 1) return `${Math.max(10, Math.round(km * 100) * 10)} m`;
+  return `${new Intl.NumberFormat('de-DE', { maximumFractionDigits: km < 10 ? 1 : 0 }).format(km)} km`;
+}
+
 export function matchesEventPeriod(event: SpotEvent, period: string, today: string) {
   const date = dayKey(new Date(event.startsAt));
   const calendarDate = new Date(`${date}T12:00:00Z`);
