@@ -118,6 +118,14 @@ test('images: largest wide image, fallback to the largest https image, none over
   assert.equal(row(tmEvent({ images: undefined })).image_url, null);
 });
 
+test('English city names from Ticketmaster are shown in German', () => {
+  const inCity = (name) => row(tmEvent({ _embedded: { venues: [{ name: 'Halle', city: { name } }] } })).city;
+  assert.equal(inCity('Cologne'), 'Köln');
+  assert.equal(inCity('Munich'), 'München');
+  assert.equal(inCity('Frankfurt am Main'), 'Frankfurt am Main');
+  assert.equal(inCity('Düsseldorf'), 'Düsseldorf');
+});
+
 test('coordinates: both or none; venue data optional', () => {
   const broken = row(tmEvent({ _embedded: { venues: [{ name: 'X', location: { latitude: '91', longitude: '13' } }] } }));
   assert.equal(broken.latitude, null);

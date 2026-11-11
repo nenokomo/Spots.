@@ -22,19 +22,26 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
   - `supabase/functions/import-ticketmaster/` (`sync.ts`, `index.ts`, `deno.json`), Eintrag in `supabase/config.toml`: Deutschland, Segment Musik, Wochenfenster von −12 h bis +30 Tage, Abbruch ohne Schreiben bei ≥ 1000 Treffern, 429 oder Fehlern, Einzelprüfung fehlender bekannter Events, Schlüssel nie in Fehlermeldungen.
   - Tests: `tests/ticketmaster-sync.test.cjs` (16), `tests/ticketmaster-backend.test.cjs` (8, PGlite). Gesamt **121/121 bestanden**, Lint und Typecheck ohne Fehler.
 
+- **Teilschritt 1b – Ende-zu-Ende und Spots-Test**:
+  - `scripts/run-ticketmaster-local.cjs`: echter Abruf (5 Anfragen) in PGlite mit echter SQL. Ergebnis 11.11.: 521 gefunden, 506 übernommen, 475 sichtbar, 2 laufen gerade; übersprungen 13 „kein Musik-Segment“, 2 fremde Ticketseite; zweiter Lauf 506 × unverändert.
+  - Englische Städtenamen (Cologne, Munich …) werden fest auf Deutsch übersetzt; `locale=de-de` liefert bei Ticketmaster 0 Treffer (filtert statt übersetzt).
+  - **SQL 20 in Spots-Test eingespielt** (`nfomkdvotqtlyymomksb`): Rechte nur `service_role`, Prüfwert der 35 bestehenden Events vorher/nachher gleich, Probelauf mit leerem Datensatz ok, Sperre frei.
+  - Edge Function **nicht** bereitgestellt: braucht das Secret `TICKETMASTER_API_KEY` (siehe offene Punkte).
+
 ## Läuft gerade
 
-- Teilschritt 1b: lokaler Ende-zu-Ende-Lauf mit echter API und PGlite, danach SQL 20 in Spots-Test.
+- Teilschritt 1c: App – Filter „Konzerte“ und „Hip-Hop“, Ticketmaster-Hinweis auf der Eventseite.
 
 ## Als Nächstes
 
-1. SQL 20 in Spots-Test einspielen und prüfen
-2. App: Filter „Konzerte“ und „Hip-Hop“, Ticketmaster-Hinweis auf der Eventseite
-3. Club-Verzeichnis (Teil 2)
+1. App-Teil für Ticketmaster
+2. Club-Verzeichnis (Teil 2)
 
 ## Offene Punkte (für die Abschlussliste)
 
 - Doku-Entwürfe (Punkt 4) schreibt ein Hilfsagent parallel; Ergebnis noch nicht übernommen.
-- Ticketmaster-Schlüssel muss als Function-Secret `TICKETMASTER_API_KEY` in Spots-Test gesetzt werden (Secrets fasse ich nicht an).
+- Ticketmaster in Spots-Test aktivieren (Secrets fasse ich nicht an), z. B. durch Jacint:
+  `npx supabase secrets set TICKETMASTER_API_KEY=<Consumer Key> --project-ref nfomkdvotqtlyymomksb`, dann
+  `npx supabase functions deploy import-ticketmaster --project-ref nfomkdvotqtlyymomksb --no-verify-jwt` und einmal per POST mit dem Secret Key aufrufen.
 - Zeitplan (Cron) für den Ticketmaster-Import braucht Vault-Einträge → Jacint.
 - Einnahmen-Klausel der Ticketmaster-Bedingungen vor einer Monetarisierung klären.

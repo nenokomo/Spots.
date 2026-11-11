@@ -91,6 +91,11 @@ function genreOf(classifications: unknown): { genre: string | null; music: boole
   return { genre: genre ? GENRES[genre] ?? null : null, music };
 }
 
+// Ticketmaster liefert manche deutsche Städte nur mit englischem Namen (locale=de filtert statt zu übersetzen).
+const CITY_DE: Record<string, string> = {
+  Cologne: "Köln", Munich: "München", Nuremberg: "Nürnberg", Hanover: "Hannover", Brunswick: "Braunschweig",
+};
+
 const STATUS: Record<string, "scheduled" | "cancelled" | "postponed"> = {
   onsale: "scheduled", offsale: "scheduled", rescheduled: "scheduled",
   canceled: "cancelled", cancelled: "cancelled", postponed: "postponed",
@@ -135,9 +140,10 @@ export function mapEvent(value: unknown): MapResult {
   const location = isObject(venue.location) ? venue.location : {};
   const latitude = coordinate(location.latitude, -90, 90);
   const longitude = coordinate(location.longitude, -180, 180);
+  const city = isObject(venue.city) ? text(venue.city.name, 120) : null;
   return { row: {
     source: "ticketmaster", source_event_id: id, source_url: url, ticket_url: url, title,
-    venue_name: text(venue.name, 200), city: isObject(venue.city) ? text(venue.city.name, 120) : null,
+    venue_name: text(venue.name, 200), city: city ? CITY_DE[city] ?? city : null,
     genre, category: "concert",
     starts_at: new Date(startsAt).toISOString(),
     ends_at: endsAt === null ? null : new Date(endsAt).toISOString(),
