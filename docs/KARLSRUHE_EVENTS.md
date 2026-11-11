@@ -40,7 +40,7 @@ Spots soll von Anfang an in ganz Deutschland etwas zeigen, nicht nur in Karlsruh
 **Daten**
 - Neue Tabelle `public.venues`: Name, Art (Club, Live-Musik, Eventlocation), Adresse, Koordinaten, Website, Öffnungszeiten, OSM-ID, `is_published`, später `organizer_id` nach Übernahme.
 - Import-Skript: Overpass-Abfrage für eine Liste von Städten (Start: Karlsruhe 15 km). Neue Orte landen **unveröffentlicht**, das Team prüft und gibt frei. Bei erneutem Lauf werden Änderungen aus OSM als Vorschlag angezeigt, nicht still überschrieben.
-- Lizenz: OSM steht unter ODbL. In der App reicht der Hinweis „© OpenStreetMap-Mitwirkende“ bei Karte bzw. Ortsdaten. Wenn wir die Ortsdatenbank selbst öffentlich weitergeben würden, müsste sie unter derselben Lizenz stehen – das tun wir nicht.
+- Lizenz: OSM steht unter ODbL. Die Namensnennung „© OpenStreetMap-Mitwirkende“ ist Pflicht (auf der Ortsseite umgesetzt). **Offen:** Ob die geprüfte und korrigierte Ortstabelle als abgeleitete Datenbank unter Share-Alike fällt (ODbL 4.6, auch bei reiner Anzeige in der App), muss rechtlich geprüft werden, siehe `docs/entwuerfe/rechtsfragen.md` Nr. 11. Bis dahin: Korrekturen möglichst direkt in OSM eintragen, eigene Daten getrennt halten.
 
 **App**
 - Clubs erscheinen als **Orte**, nicht als Events: eigene, dezente Pins oder eine Liste „Clubs in der Nähe“, mit Hinweis „Kein Event eingetragen“ statt einer erfundenen Party. Gestaltung: Noyan.
