@@ -6,12 +6,13 @@ Stand: 11.11.2026. Diese Datei beschreibt nur den **aktuellen** Stand. Frühere 
 
 | Branch | Inhalt | Zustand |
 |---|---|---|
-| `feature/design-refresh` | **Aktueller Arbeitsstand**: Designsystem, Veranstalterseiten, Inhalts-Backend vorbereitet und das Redesign als Grunddesign | lokal, vor `origin/main`, nicht gepusht |
-| `experiment/redesign` | Redesign; per Fast-Forward vollständig in `feature/design-refresh` übernommen | kann gelöscht werden |
-| `feature/organizer-auth` | Accounts und Veranstalter-Backend | gepusht, in `design-refresh` gemergt |
-| `main` | Letzter gemeinsamer Stand (PR #1) | unverändert |
+| `main` | **Gemeinsamer Stand des Teams** seit 11.11.2026: Designsystem, Veranstalterseiten, Inhalts-Backend vorbereitet, Redesign als Grunddesign | gepusht |
+| `feature/design-refresh` | Zweig, über den dieser Stand nach `main` kam (gleicher Commit) | gepusht |
+| `feature/organizer-auth` | Accounts und Veranstalter-Backend | gepusht, in `main` enthalten |
 
-**Entscheidung 11.11.2026:** Der Stand von `experiment/redesign` ist das neue Grunddesign von Spots (mit Noyan abgestimmt). Noyan arbeitet das Design weiter aus; Feinschliff am Design ist sein Bereich. Das Redesign ist in `feature/design-refresh` übernommen, aber noch nicht in `main`.
+`experiment/redesign` wurde nach der Übernahme gelöscht. Neue Arbeit startet als eigener Branch von `main`.
+
+**Entscheidung 11.11.2026:** Der Stand von `experiment/redesign` ist das neue Grunddesign von Spots (mit Noyan abgestimmt). Noyan arbeitet das Design weiter aus; Feinschliff am Design ist sein Bereich. Das Redesign ist in `main` übernommen.
 
 Das Redesign ändert nur die Oberfläche; Datenschicht, Navigation, Statuslogik, Accounts und SQL blieben unverändert. Stand vor dem Redesign: Commit `489ac06`.
 
@@ -58,7 +59,7 @@ Das Redesign ändert nur die Oberfläche; Datenschicht, Navigation, Statuslogik,
 
 ## Nächste empfohlene Schritte
 
-1. `feature/design-refresh` pushen, damit Noyan und Jacint darauf aufbauen können; danach PR gegen `main` mit dem Team.
+1. Noyan und Jacint informieren, dass `main` jetzt den neuen Stand enthält (ihre eigenen Branches ggf. auf `main` aktualisieren).
 2. Notieren, auf welcher Plattform (iOS/Android) der Handy-Test lief; die andere ggf. nachtesten.
 3. SQL 17–19 in Spots-Test einspielen (mit Jacint) und Upload-UI für Live Snaps bauen.
 4. Release-Grundlagen (`eas.json`, Bundle-ID, Icons, Maps-Key).
