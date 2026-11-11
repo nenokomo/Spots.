@@ -6,12 +6,14 @@ Stand: 11.11.2026. Diese Datei beschreibt nur den **aktuellen** Stand. Frühere 
 
 | Branch | Inhalt | Zustand |
 |---|---|---|
-| `experiment/redesign` | Komplettes Redesign der Oberfläche (aktuelle Arbeit) | lokal, nicht gepusht |
-| `feature/design-refresh` | Basis davon: Designsystem, Veranstalterseiten, Inhalts-Backend vorbereitet | lokal, 7 Commits vor `origin/main`, nicht gepusht |
+| `feature/design-refresh` | **Aktueller Arbeitsstand**: Designsystem, Veranstalterseiten, Inhalts-Backend vorbereitet und das Redesign als Grunddesign | lokal, vor `origin/main`, nicht gepusht |
+| `experiment/redesign` | Redesign; per Fast-Forward vollständig in `feature/design-refresh` übernommen | kann gelöscht werden |
 | `feature/organizer-auth` | Accounts und Veranstalter-Backend | gepusht, in `design-refresh` gemergt |
 | `main` | Letzter gemeinsamer Stand (PR #1) | unverändert |
 
-Das Redesign ändert nur die Oberfläche; Datenschicht, Navigation, Statuslogik, Accounts und SQL sind wie auf `feature/design-refresh`. Zurück zum alten Stand: `git checkout feature/design-refresh`.
+**Entscheidung 11.11.2026:** Der Stand von `experiment/redesign` ist das neue Grunddesign von Spots (mit Noyan abgestimmt). Noyan arbeitet das Design weiter aus; Feinschliff am Design ist sein Bereich. Das Redesign ist in `feature/design-refresh` übernommen, aber noch nicht in `main`.
+
+Das Redesign ändert nur die Oberfläche; Datenschicht, Navigation, Statuslogik, Accounts und SQL blieben unverändert. Stand vor dem Redesign: Commit `489ac06`.
 
 ## Was die App jetzt kann
 
@@ -34,13 +36,12 @@ Das Redesign ändert nur die Oberfläche; Datenschicht, Navigation, Statuslogik,
 
 ## Geprüft
 
-- Letzter vollständiger Lauf: 96/96 Tests (`node --test tests/*.test.cjs` mit PGlite), Expo-Lint, Typecheck (Stand dritte Redesign-Runde). Spätere Runden einzeln im Web geprüft.
+- 11.11.2026 auf dem Redesign-Stand: **97/97 Tests bestanden, 0 übersprungen** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`, PGlite 0.5.15), Expo-Lint und Typecheck ohne Fehler.
 - Web-Vorschau 375 × 812: Radar, Entdecken, Eventdetail, Profil, Kalender.
+- **Handy-Test durch den Nutzer (11.11.2026)**: Redesign auf dem Handy getestet, laut Nutzer funktioniert alles einwandfrei. Nicht dokumentiert, ob iOS, Android oder beides.
 
 ## Nicht geprüft / bekannte Probleme
 
-- **Kein Test auf echtem iOS-/Android-Gerät** für das Redesign: native Pins, Glas-Effekt, Gesten, Kalender-Wischen, Schrift.
-- Tests/Lint/Typecheck seit der dritten Runde nicht erneut vollständig gelaufen.
 - Filter Techno/House finden in echten Daten fast nichts (fehlende Genres).
 - Produktion: pro App-Start 2–3 erwartete 400-Antworten (organizer_id-Abfrage), bis SQL 15 dort eingespielt ist.
 - Goabase-Flyer nur in kleiner Auflösung.
@@ -57,8 +58,7 @@ Das Redesign ändert nur die Oberfläche; Datenschicht, Navigation, Statuslogik,
 
 ## Nächste empfohlene Schritte
 
-1. Tests, Lint und Typecheck auf `experiment/redesign` laufen lassen.
-2. Redesign auf einem echten Handy testen (Expo Go oder Development Build).
-3. Entscheiden: Redesign in `feature/design-refresh` übernehmen oder verwerfen; dann mit dem Team abstimmen und PR gegen `main`.
-4. SQL 17–19 in Spots-Test einspielen und Upload-UI für Live Snaps bauen.
-5. Release-Grundlagen (`eas.json`, Bundle-ID, Icons, Maps-Key).
+1. `feature/design-refresh` pushen, damit Noyan und Jacint darauf aufbauen können; danach PR gegen `main` mit dem Team.
+2. Notieren, auf welcher Plattform (iOS/Android) der Handy-Test lief; die andere ggf. nachtesten.
+3. SQL 17–19 in Spots-Test einspielen (mit Jacint) und Upload-UI für Live Snaps bauen.
+4. Release-Grundlagen (`eas.json`, Bundle-ID, Icons, Maps-Key).
