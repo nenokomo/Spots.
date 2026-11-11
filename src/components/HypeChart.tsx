@@ -1,57 +1,37 @@
 import { router, type Href } from 'expo-router';
-import { Fragment } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, gutter, radius, space, squircle, type } from '../constants/theme';
 import type { RankedEvent } from '../services/popularity';
 import type { SpotEvent } from '../types/events';
-import { eventDayLabel, eventTimeLabel } from '../utils/events';
-import { GlassBackdrop } from './GlassBackdrop';
+import { eventDayLabel } from '../utils/events';
 import { PressableScale } from './ui/PressableScale';
 
 type Props = { ranked: RankedEvent[]; today: string; hrefFor: (event: SpotEvent) => Href };
 
-/**
- * Chart list for the most popular events of a city: rank, artwork, title and
- * date, tickets sold, plus a thin bar relative to the number one.
- */
+/** Popular events as a plain horizontal row: square image with a small rank, title, day and tickets. */
 export function HypeChart({ ranked, today, hrefFor }: Props) {
-  const top = Math.max(1, ...ranked.map((item) => item.ticketsSold));
   return (
-    <View style={styles.card}>
-      <GlassBackdrop radius={radius.xl} variant="card" />
-      {ranked.map((item, index) => (
-        <Fragment key={item.event.id}>
-          {index > 0 && <View style={styles.separator} />}
-          <PressableScale accessibilityRole="link" accessibilityLabel={`Platz ${item.rank}: ${item.event.title}, ${eventDayLabel(item.event.startsAt, today)} ${eventTimeLabel(item.event.startsAt)} Uhr, ${item.ticketsSold} Tickets, öffnen`} onPress={() => router.push(hrefFor(item.event))} scaleTo={0.98} style={styles.row}>
-            <Text style={[styles.rank, item.rank <= 3 && styles.rankTop]}>{item.rank}</Text>
-            <Image source={item.event.image} resizeMode="cover" style={styles.image} accessibilityLabel={item.event.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${item.event.title}`} />
-            <View style={styles.copy}>
-              <Text numberOfLines={1} style={styles.title}>{item.event.title}</Text>
-              <Text numberOfLines={1} style={styles.when}>{eventDayLabel(item.event.startsAt, today)} · {eventTimeLabel(item.event.startsAt)} Uhr</Text>
-              <View style={styles.track}><View style={[styles.bar, { width: `${Math.round((item.ticketsSold / top) * 100)}%` }, item.rank === 1 && styles.barTop]} /></View>
-            </View>
-            <View style={styles.count}><Text style={styles.countValue}>{item.ticketsSold}</Text><Text style={styles.countLabel}>Tickets</Text></View>
-          </PressableScale>
-        </Fragment>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+      {ranked.map((item) => (
+        <PressableScale key={item.event.id} accessibilityRole="link" accessibilityLabel={`Platz ${item.rank}: ${item.event.title}, ${eventDayLabel(item.event.startsAt, today)}, ${item.ticketsSold} Tickets, öffnen`} onPress={() => router.push(hrefFor(item.event))} style={styles.item}>
+          <View style={styles.image}>
+            <Image source={item.event.image} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityLabel={item.event.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${item.event.title}`} />
+            <View style={styles.rank}><Text style={styles.rankText}>{item.rank}</Text></View>
+          </View>
+          <Text numberOfLines={1} style={styles.title}>{item.event.title}</Text>
+          <Text numberOfLines={1} style={styles.meta}>{eventDayLabel(item.event.startsAt, today)} · {item.ticketsSold} Tickets</Text>
+        </PressableScale>
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { marginHorizontal: gutter, borderRadius: radius.xl, overflow: 'hidden', paddingVertical: space.xs, ...squircle },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: space.lg + 28 + space.md },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md },
-  rank: { width: 28, textAlign: 'center', ...type.title3, color: colors.faint },
-  rankTop: { color: colors.pink },
-  image: { width: 52, height: 52, borderRadius: radius.sm, backgroundColor: colors.surface, ...squircle },
-  copy: { flex: 1, minWidth: 0, gap: 3 },
-  title: { ...type.label, color: colors.text },
-  when: { ...type.footnote, fontSize: 12, color: colors.muted },
-  track: { height: 3, borderRadius: 2, backgroundColor: '#ffffff14', marginTop: 3, overflow: 'hidden' },
-  bar: { height: 3, borderRadius: 2, backgroundColor: colors.accentLine },
-  barTop: { backgroundColor: colors.pink },
-  count: { alignItems: 'flex-end', minWidth: 52 },
-  countValue: { ...type.headline, color: colors.text },
-  countLabel: { ...type.footnote, fontSize: 10, color: colors.faint },
+  row: { gap: space.md, paddingHorizontal: gutter },
+  item: { width: 136, gap: 2 },
+  image: { width: 136, height: 136, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.surface, marginBottom: space.xs, ...squircle },
+  rank: { position: 'absolute', top: space.sm, left: space.sm, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#100b15c4' },
+  rankText: { ...type.footnote, fontSize: 12, fontWeight: '800', color: colors.text },
+  title: { ...type.label, fontSize: 14, color: colors.text },
+  meta: { ...type.footnote, fontSize: 12, color: colors.faint },
 });
