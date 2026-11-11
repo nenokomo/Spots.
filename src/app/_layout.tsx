@@ -30,6 +30,7 @@ function StartupContent() {
   return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
     <Stack.Screen name="(tabs)" />
     <Stack.Screen name="event/[id]" />
+    <Stack.Screen name="today" />
     <Stack.Screen name="organizer/[id]" />
     <Stack.Screen name="account" options={{ presentation: 'modal' }} />
   </Stack>;

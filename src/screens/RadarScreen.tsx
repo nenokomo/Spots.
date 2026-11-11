@@ -109,8 +109,10 @@ export default function RadarScreen() {
 
   return (
     <View style={styles.screen}>
-      <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={select}
-        onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} topInset={topInset} bottomInset={panelHeight} />
+      <View style={[styles.map, { bottom: panelHeight }]}>
+        <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={select}
+          onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} topInset={topInset} locked={radar.scanning} />
+      </View>
 
       <LinearGradient pointerEvents="none" colors={['#100b15b3', '#100b1500']} style={[styles.topShade, { height: insets.top + 110 }]} />
 
@@ -138,7 +140,7 @@ export default function RadarScreen() {
             <Text accessibilityRole="header" style={styles.headline}>{headline}</Text>
             <Text numberOfLines={1} style={styles.summary}>{summary}</Text>
           </View>
-          <PressableScale accessibilityRole="button" accessibilityLabel="Alle kommenden Events in Entdecken ansehen" onPress={() => router.navigate('/explore')} hitSlop={8} style={styles.more}>
+          <PressableScale accessibilityRole="button" accessibilityLabel="Alle Events des Radars ansehen" onPress={() => router.push({ pathname: '/today', params: { category, radius: String(radius), latitude: String(searchCenter.latitude), longitude: String(searchCenter.longitude) } })} hitSlop={8} style={styles.more}>
             <Text style={styles.moreText}>Alle</Text>
             <Icon name="chevron" size={12} color={colors.pink} />
           </PressableScale>
@@ -178,6 +180,7 @@ export default function RadarScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
+  map: { position: 'absolute', top: 0, left: 0, right: 0 },
   topShade: { position: 'absolute', top: 0, left: 0, right: 0 },
   top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingHorizontal: space.lg },
   place: { flexShrink: 1, height: 44, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, borderRadius: 22, overflow: 'hidden' },
