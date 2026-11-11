@@ -28,6 +28,13 @@ function load(file, resource = {}) {
     if (id.endsWith('/useOrganizer')) return { useOrganizerSummary: () => null };
     if (id.endsWith('/useEventContent')) return { useEventContent: () => ({ snaps: [], tickets: [] }) };
     if (id.endsWith('/utils/eventStatus')) return { eventPhase: () => 'upcoming' };
+    if (id.endsWith('/utils/eventSource')) {
+      // Echte Anzeigenamen der Quellen statt Platzhalter.
+      const real = { exports: {} };
+      vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/utils/eventSource.ts'), 'utf8'),
+        { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { module: real, exports: real.exports });
+      return real.exports;
+    }
     if (id.endsWith('/navigation/eventRoutes')) return { organizerHref: id => ({ pathname: '/organizer/[id]', params: { id } }), eventDetailHref: id => ({ pathname: '/event/[id]', params: { id } }), eventHref: event => ({ pathname: '/event/[id]', params: { id: event.id } }) };
     return stub;
   }

@@ -19,7 +19,12 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 // Exact synonyms only; genres are never guessed from titles or venues.
 const categoryAliases: Record<string, Exclude<Category, 'Alle'>> = {
   club: 'Clubs', clubs: 'Clubs', event: 'Events', events: 'Events', techno: 'Techno', house: 'House',
+  'hip-hop': 'Hip-Hop', hiphop: 'Hip-Hop', 'hip hop': 'Hip-Hop',
+  concert: 'Konzerte', concerts: 'Konzerte', konzert: 'Konzerte', konzerte: 'Konzerte',
 };
+
+// Feste Genre-Schlüssel der Importe (z. B. Ticketmaster) auf Deutsch anzeigen; alles andere bleibt, wie es ist.
+const genreLabels: Record<string, string> = { Classical: 'Klassik', World: 'Weltmusik' };
 
 function number(value: unknown, limit: number) {
   if (typeof value !== 'number' && (typeof value !== 'string' || !value.trim())) return null;
@@ -50,7 +55,7 @@ export function mapEventRow(value: unknown): SpotEvent | null {
   const longitude = number(row.longitude, 180);
   const imageUrl = safeExternalUrl(row.imageUrl);
   const rawGenres = Array.isArray(row.genres) ? row.genres : typeof row.genres === 'string' ? row.genres.split(/[,;|]/) : [];
-  const genres = rawGenres.map(text).filter((genre): genre is string => !!genre);
+  const genres = rawGenres.map(text).filter((genre): genre is string => !!genre).map((genre) => genreLabels[genre] ?? genre);
   const rawCategories = [text(row.category), ...genres].filter((item): item is string => !!item);
   const matched = categories.filter((category): category is Exclude<Category, 'Alle'> => category !== 'Alle'
     && rawCategories.some((item) => categoryAliases[item.toLowerCase()] === category));

@@ -66,6 +66,11 @@ test('source category spellings map to filters; organizer IDs must be UUIDs', ()
   assert.deepEqual(mapEventRow({ ...base, category: 'club' }).categories, ['Clubs']);
   assert.deepEqual(mapEventRow({ ...base, category: 'CLUBS' }).categories, ['Clubs']);
   assert.deepEqual(mapEventRow({ ...base, category: 'festival' }).categories, [], 'no guessing beyond exact synonyms');
+  // Ticketmaster: Kategorie „concert“ → Konzerte, Genre „Hip-Hop“ → Hip-Hop-Filter, feste Genres auf Deutsch.
+  assert.deepEqual(mapEventRow({ ...base, category: 'concert', genres: 'Hip-Hop' }).categories, ['Hip-Hop', 'Konzerte']);
+  assert.deepEqual(mapEventRow({ ...base, category: 'concert', genres: 'Rock' }).categories, ['Konzerte']);
+  assert.deepEqual(mapEventRow({ ...base, category: 'concert', genres: 'Classical' }).genres, ['Klassik']);
+  assert.deepEqual(mapEventRow({ ...base, category: 'concert', genres: 'Electronic' }).categories, ['Konzerte'], 'Electronic is no Techno/House guess');
   assert.equal(mapEventRow({ ...base, organizerId: ORGANIZER }).organizerId, ORGANIZER);
   assert.equal(mapEventRow({ ...base, organizerId: 'not-a-uuid' }).organizerId, null);
   assert.equal(mapEventRow(base).organizerId, null);
@@ -95,4 +100,16 @@ test('events load without organizer_id where SQL 15 is missing, and remember tha
     assert.deepEqual(await fetchOrganizerEvents(ORGANIZER, signal), []);
     assert.equal(selects.length, 5, 'organizer events are skipped without the relation');
   } finally { global.fetch = originalFetch; }
+});
+
+test('source labels: fixed names for known sources; only Ticketmaster sells tickets itself', () => {
+  const { sourceLabel, ticketSeller } = require('../src/utils/eventSource.ts');
+  assert.equal(sourceLabel('goabase'), 'Goabase');
+  assert.equal(sourceLabel('ticketmaster'), 'Ticketmaster');
+  assert.equal(sourceLabel('redaktion'), 'Spots-Redaktion');
+  assert.equal(sourceLabel('Spots-Testdaten'), 'Spots-Testdaten');
+  assert.equal(sourceLabel(null), 'der Originalseite');
+  assert.equal(ticketSeller('ticketmaster'), 'Ticketmaster');
+  assert.equal(ticketSeller('goabase'), null);
+  assert.equal(ticketSeller(undefined), null);
 });

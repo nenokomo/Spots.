@@ -20,6 +20,7 @@ import { useNow } from '../hooks/useNow';
 import { useOrganizerSummary } from '../hooks/useOrganizer';
 import { organizerHref } from '../navigation/eventRoutes';
 import { formatPrice } from '../services/content';
+import { sourceLabel, ticketSeller } from '../utils/eventSource';
 import { eventPhase, phaseLabel } from '../utils/eventStatus';
 
 const dayFormat = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'long', day: 'numeric', month: 'long' });
@@ -68,7 +69,8 @@ export default function EventDetailScreen() {
   const end = event.endsAt ? new Date(event.endsAt) : null;
   const ticketUrl = event.ticketUrl?.startsWith('https://') ? event.ticketUrl : undefined;
   const sourceUrl = event.sourceUrl?.startsWith('https://') ? event.sourceUrl : undefined;
-  const sourceLabel = event.sourceName ? event.sourceName.charAt(0).toLocaleUpperCase('de') + event.sourceName.slice(1) : 'der Originalseite';
+  const source = sourceLabel(event.sourceName);
+  const seller = ticketSeller(event.sourceName);
   const point = event.coordinate;
   const tags = [...new Set([...(event.genres ?? []), ...event.categories])];
   const snaps = content.snaps.filter((snap) => snap.mediaType === 'image');
@@ -133,7 +135,7 @@ export default function EventDetailScreen() {
         <View style={styles.rows}>
           {point && !ended && <Row icon="map" title="Route anzeigen" detail={place} onPress={route} accessibilityLabel="Route zum Veranstaltungsort anzeigen" />}
           {!point && <Row icon="pin" title={place} />}
-          <Row icon="ticket" title={ended ? 'Event beendet' : ticketUrl ? 'Tickets beim Anbieter' : sourceUrl ? `Infos & Tickets bei ${sourceLabel}` : 'Noch keine Ticketinformationen'} detail={ended ? undefined : primary ? 'Öffnet den Anbieter' : undefined} onPress={primary ? () => void open(primary) : undefined} />
+          <Row icon="ticket" title={ended ? 'Event beendet' : ticketUrl ? (seller ? `Tickets bei ${seller}` : 'Tickets beim Anbieter') : sourceUrl ? `Infos & Tickets bei ${source}` : 'Noch keine Ticketinformationen'} detail={ended ? undefined : primary ? 'Öffnet den Anbieter' : undefined} onPress={primary ? () => void open(primary) : undefined} />
           {tags.length > 2 && <Row icon="headphones" title={tags.join(' · ')} />}
         </View>
         {linkError && <Text accessibilityRole="alert" style={styles.error}>Der Link konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
@@ -160,9 +162,9 @@ export default function EventDetailScreen() {
         </View>
 
         <View style={styles.footer}>
-          {sourceUrl && <Link href={sourceUrl} style={styles.link}>Original auf {sourceLabel} öffnen ↗</Link>}
+          {sourceUrl && sourceUrl !== ticketUrl && <Link href={sourceUrl} style={styles.link}>Original auf {source} öffnen ↗</Link>}
           {event.sourceName?.toLowerCase() === 'goabase' && <Link href="https://www.goabase.net/" style={styles.link}>Veranstaltungen von Goabase ↗</Link>}
-          <Text style={styles.footnote}>Zeiten in Europe/Berlin · Angaben der Veranstaltungsquelle{event.sourceName ? ` (${sourceLabel})` : ''}</Text>
+          <Text style={styles.footnote}>Zeiten in Europe/Berlin · Angaben der Veranstaltungsquelle{event.sourceName ? ` (${source})` : ''}</Text>
         </View>
       </View>
     </ScrollView>
@@ -171,7 +173,7 @@ export default function EventDetailScreen() {
       <GlassBackdrop radius={0} variant="panel" />
       <View style={styles.barRow}>
         {primary
-          ? <Button label={ticketUrl ? 'Tickets kaufen' : 'Infos & Tickets'} accessibilityLabel={ticketUrl ? 'Tickets beim Anbieter kaufen' : `Infos und Tickets auf der Originalseite bei ${sourceLabel}`} icon="ticket" onPress={() => void open(primary)} style={styles.flex} />
+          ? <Button label={ticketUrl ? 'Tickets kaufen' : 'Infos & Tickets'} accessibilityLabel={ticketUrl ? (seller ? `Tickets bei ${seller} kaufen` : 'Tickets beim Anbieter kaufen') : `Infos und Tickets auf der Originalseite bei ${source}`} icon="ticket" onPress={() => void open(primary)} style={styles.flex} />
           : <View style={styles.flex}><Text numberOfLines={1} style={styles.barTitle}>{ended ? 'Event beendet' : `${timeFormat.format(start)} Uhr · ${place}`}</Text></View>}
         {point && !ended && <IconButton icon="map" accessibilityLabel="Route zum Veranstaltungsort anzeigen" onPress={route} size={52} plain style={styles.barButton} />}
       </View>

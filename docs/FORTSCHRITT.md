@@ -28,14 +28,20 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
   - **SQL 20 in Spots-Test eingespielt** (`nfomkdvotqtlyymomksb`): Rechte nur `service_role`, Prüfwert der 35 bestehenden Events vorher/nachher gleich, Probelauf mit leerem Datensatz ok, Sperre frei.
   - Edge Function **nicht** bereitgestellt: braucht das Secret `TICKETMASTER_API_KEY` (siehe offene Punkte).
 
+- **Teilschritt 1c – App für Ticketmaster**:
+  - Neue Filter **„Hip-Hop“** und **„Konzerte“** (`src/constants/theme.ts`, Zuordnung in `src/services/eventAdapter.ts`: `concert` → Konzerte, Genre `Hip-Hop` → Hip-Hop; „Electronic“ wird nicht als Techno/House geraten). Genres „Classical“/„World“ werden als „Klassik“/„Weltmusik“ angezeigt.
+  - Eventseite: „Tickets bei Ticketmaster“ statt „beim Anbieter“; kein doppelter Link, wenn Original- und Ticketlink gleich sind (`src/utils/eventSource.ts`).
+  - Tests ergänzt (`navigation.test.cjs`, `design-integration.test.cjs`); gesamt **123/123**, Lint und Typecheck ok. Web-Vorschau 375 × 812: Chips „Hip-Hop“ und „Konzerte“ sichtbar, Filter „Techno“ zeigt das Test-Event.
+
 ## Läuft gerade
 
-- Teilschritt 1c: App – Filter „Konzerte“ und „Hip-Hop“, Ticketmaster-Hinweis auf der Eventseite.
+- Teil 2: Club-Verzeichnis aus OpenStreetMap.
 
 ## Als Nächstes
 
-1. App-Teil für Ticketmaster
-2. Club-Verzeichnis (Teil 2)
+1. SQL 21 (Orte, Meldungen) mit Filtern, Tests in PGlite
+2. OSM-Daten holen (Clubzahl Deutschland), lokal prüfen, in Spots-Test laden
+3. App: Clubliste, Ortsseite, „Fehler melden“
 
 ## Offene Punkte (für die Abschlussliste)
 
@@ -45,3 +51,6 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
   `npx supabase functions deploy import-ticketmaster --project-ref nfomkdvotqtlyymomksb --no-verify-jwt` und einmal per POST mit dem Secret Key aufrufen.
 - Zeitplan (Cron) für den Ticketmaster-Import braucht Vault-Einträge → Jacint.
 - Einnahmen-Klausel der Ticketmaster-Bedingungen vor einer Monetarisierung klären.
+- Produktentscheidung: Das Radar zählt nur Events mit Endzeit als „live“ (`isLiveEvent`). Ticketmaster liefert meist keine Endzeit (≈ 90 %), solche Konzerte erscheinen daher vor Beginn als „später heute“, aber nach Beginn nicht als „live“. Ändern? (betrifft auch Goabase)
+- Profil zeigt bei „Eventdaten“ weiterhin nur „Goabase“; anpassen, sobald Ticketmaster in Produktion läuft.
+- Die Filterleiste hat jetzt 7 Chips; Gestaltung/Reihenfolge mit Noyan abstimmen.

@@ -69,7 +69,7 @@ export const type = {
   overline: { fontSize: 12, lineHeight: 16, fontWeight: '600', letterSpacing: 0.4, textTransform: 'uppercase' },
 } as const;
 
-export const categories = ['Alle', 'Techno', 'House', 'Events', 'Clubs'] as const;
+export const categories = ['Alle', 'Techno', 'House', 'Hip-Hop', 'Konzerte', 'Events', 'Clubs'] as const;
 export type Category = (typeof categories)[number];
 
 export const brandHeadingStyle = { ...type.overline, color: colors.faint } as const;
