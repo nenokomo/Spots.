@@ -20,7 +20,7 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
   const [layout, setLayout] = useState({ width: 390, height: 390 });
   const [tileError, setTileError] = useState(false);
   const centerY = layout.height / 2;
-  const size = Math.min(layout.width * 0.96, layout.height * 0.96);
+  const size = Math.min(layout.width * 0.8, layout.height * 0.8);
   const metersPerPixel = radius * zoomFactor * 2000 / layout.height;
   useEffect(() => { onVisibleRadiusChange(radius * zoomFactor); }, [radius, zoomFactor, onVisibleRadiusChange]);
   const zoom = Math.max(1, Math.min(18, Math.floor(Math.log2(156543.034 * Math.cos(mapCenter.latitude * Math.PI / 180) / metersPerPixel))));

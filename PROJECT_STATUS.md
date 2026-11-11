@@ -35,6 +35,10 @@ Eigener Branch von feature/design-refresh. Nur Oberfläche neu; Datenschicht, ze
 - Während der Scan läuft, ist die Karte gesperrt (kein Verschieben, kein Zoom; Web ohne Zoom-Buttons). Nach dem Scan ist sie wieder frei.
 - „Alle“ im Radar-Panel öffnet wieder die Unterseite `/today` („Heute Nacht“) mit genau den Radar-Events (gleiche Mitte, gleicher Umkreis, gleiches Genre; Filter-Sheet dort änderbar), nicht mehr Entdecken.
 
+**Fünfte Runde**
+- Radar-Ringe auf 80 % der Kartenfläche verkleinert.
+- Unterseite „Heute Nacht“ neu gestaltet: Kopf mit unscharfem Artwork des nächstgelegenen Events, Kennzahlen (live / später / nächstes), laufende Events als große Karten nach Entfernung, später startende als Liste nach Startzeit; Filter-Sheet bleibt.
+
 **Geprüft**: 96/96 Tests (mit PGlite), Expo-Lint, Typecheck (Stand dritte Runde; Veranstalterseite jetzt mit Testdaten visuell geprüft). Zuvor: 94/94 Tests, Expo-Lint, Typecheck. Web-Vorschau 375 × 812: Radar (Karlsruhe mit Testevents, Pins, Listen-Panel), Entdecken, Story-Ansicht, Eventdetail, Gemerkt (leer), Profil.
 
 **Nicht geprüft**: kein iOS-/Android-Gerät. Besonders offen: `mapPadding` der nativen Karte (verschiebt Kartenmitte und Anbieter-Logo über das Karussell), neue Pins als native Marker, Profil als natives Modal, Glas-Effekt, Schrift (im Browser Segoe UI statt San Francisco). Veranstalterseite mit Daten und Gemerkt mit Einträgen im neuen Stil nicht visuell geprüft.

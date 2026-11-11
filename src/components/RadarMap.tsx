@@ -26,7 +26,7 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
   const pendingRadius = useRef<number | null>(radius);
   const initialized = useRef(false);
   const [layout, setLayout] = useState({ width: 360, height: 360 });
-  const size = Math.min(layout.width * 0.96, layout.height * 0.96);
+  const size = Math.min(layout.width * 0.8, layout.height * 0.8);
   const latitudeDelta = radius * 2 / 111.32;
   const longitudeDelta = latitudeDelta * layout.width / layout.height / Math.max(0.01, Math.cos(center.latitude * Math.PI / 180));
   useEffect(() => {
