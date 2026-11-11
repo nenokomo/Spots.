@@ -53,7 +53,8 @@ Das Redesign ändert nur die Oberfläche; Datenschicht, Navigation, Statuslogik,
 - Upload-UI für Live Snaps und Beiträge (braucht `expo-image-picker`/`expo-video`, Development Build, SQL 17–19 in Spots-Test).
 - Merkliste mit Konto synchronisieren (`saved_events`).
 - Passwortreset, Accountlöschung, Moderationsoberfläche.
-- Weitere Eventquellen; Hip-Hop/Festival-Kategorien.
+- Weitere Eventquellen; Hip-Hop/Festival-Kategorien. **In Planung:** Ticketmaster als zweite Quelle, Entwurf in [docs/TICKETMASTER_IMPORT.md](docs/TICKETMASTER_IMPORT.md) (Branch `feature/ticketmaster-import`, noch kein Code; Machbarkeitsprüfung: 516 Musik-Events DE, aber nur 1 um Karlsruhe). Für Karlsruhe: Club-Verzeichnis aus OpenStreetMap plus geprüfte Event-Entwürfe, Plan in [docs/KARLSRUHE_EVENTS.md](docs/KARLSRUHE_EVENTS.md).
+- Veranstalter-Bereich mit Dashboard (Events verwalten, Aufrufe, Merkungen, Ticket- und Routen-Klicks) laut `docs/VISION.md`; Zählung möglichst früh starten, nur als Summen pro Event.
 - Englisch als zweite App-Sprache: noch kein Übersetzungssystem, alle Texte sind fest auf Deutsch im Code. Ansatz (z. B. `expo-localization` + Textdateien) vor dem Umbau abstimmen.
 - Release-Vorbereitung: kein `eas.json`, slug/scheme noch „meine-app“, keine Bundle-ID/Package, kein Google-Maps-Key für Android.
 

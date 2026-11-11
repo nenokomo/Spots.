@@ -189,6 +189,8 @@ After completing meaningful changes, update the project status file so future co
 
 Keep `PROJECT_STATUS.md` short (about 60–80 lines): it describes only the **current** state. Replace outdated statements instead of adding contradicting ones. Move finished rounds and long reports to `docs/history/`.
 
+During longer multi-step work, keep `docs/FORTSCHRITT.md` up to date after every completed sub-step (done, in progress, next, open points) and commit after each sub-step. When the user writes "mach weiter", first read `docs/FORTSCHRITT.md` and check `git status` / `git log` to verify what is really finished before continuing.
+
 Do not claim a feature is complete unless it has actually been implemented and appropriately verified.
 
 ## Overall Product Goal
