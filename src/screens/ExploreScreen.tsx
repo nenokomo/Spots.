@@ -152,7 +152,7 @@ export default function ExploreScreen() {
         </>}
 
         {!filtersActive && popular.ranked.length > 0 && <>
-          <SectionHeader title={`Gehypt in ${popular.city ?? 'deiner Nähe'}`} note={popular.preview ? 'Vorschau mit Testdaten · später nach verkauften Tickets' : undefined} />
+          <SectionHeader title={`Gehypt in ${popular.city ?? 'deiner Nähe'}`} />
           <HypeChart ranked={popular.ranked} today={today} hrefFor={destination} />
         </>}
 

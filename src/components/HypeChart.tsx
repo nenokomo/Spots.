@@ -8,18 +8,18 @@ import { PressableScale } from './ui/PressableScale';
 
 type Props = { ranked: RankedEvent[]; today: string; hrefFor: (event: SpotEvent) => Href };
 
-/** Popular events as a plain horizontal row: square image with a small rank, title, day and tickets. */
+/** Popular events as a plain horizontal row: square image with a small rank, title and day. Sales figures stay internal. */
 export function HypeChart({ ranked, today, hrefFor }: Props) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
       {ranked.map((item) => (
-        <PressableScale key={item.event.id} accessibilityRole="link" accessibilityLabel={`Platz ${item.rank}: ${item.event.title}, ${eventDayLabel(item.event.startsAt, today)}, ${item.ticketsSold} Tickets, öffnen`} onPress={() => router.push(hrefFor(item.event))} style={styles.item}>
+        <PressableScale key={item.event.id} accessibilityRole="link" accessibilityLabel={`Platz ${item.rank}: ${item.event.title}, ${eventDayLabel(item.event.startsAt, today)}, öffnen`} onPress={() => router.push(hrefFor(item.event))} style={styles.item}>
           <View style={styles.image}>
             <Image source={item.event.image} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityLabel={item.event.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${item.event.title}`} />
             <View style={styles.rank}><Text style={styles.rankText}>{item.rank}</Text></View>
           </View>
           <Text numberOfLines={1} style={styles.title}>{item.event.title}</Text>
-          <Text numberOfLines={1} style={styles.meta}>{eventDayLabel(item.event.startsAt, today)} · {item.ticketsSold} Tickets</Text>
+          <Text numberOfLines={1} style={styles.meta}>{eventDayLabel(item.event.startsAt, today)} · {item.event.location}</Text>
         </PressableScale>
       ))}
     </ScrollView>
