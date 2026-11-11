@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CategoryFilters } from '../components/CategoryFilters';
 import { CitySearch } from '../components/CitySearch';
@@ -39,8 +39,7 @@ export default function RadarScreen() {
   const [visibleRadius, setVisibleRadius] = useState(30);
   const [filterOpen, setFilterOpen] = useState(false);
   const [placeOpen, setPlaceOpen] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
-  const list = useRef<FlatList<LocatedEvent>>(null);
+  const [preview, setPreview] = useState<LocatedEvent | null>(null);
   const location = useLocation();
   const { locate } = location;
   const live = useLiveEvents();
@@ -52,6 +51,7 @@ export default function RadarScreen() {
   const [viewport, setViewport] = useState({ source: location.center, center: location.center });
   const searchCenter = viewport.source === location.center ? viewport.center : location.center;
   const onCenterChange = useCallback((center: Coordinate) => {
+    setPreview(null);
     setViewport((previous) => previous.source === location.center && distanceKm(previous.center, center) < 0.01 ? previous : { source: location.center, center });
   }, [location.center]);
 
@@ -90,17 +90,14 @@ export default function RadarScreen() {
   }, [locate]);
 
   useFocusEffect(useCallback(() => {
+    setPreview(null);
     setRadius(30);
     setVisibleRadius(30);
     void locate({ automatic: true });
   }, [locate]));
 
-  function select(event: LocatedEvent) {
-    const index = rows.findIndex((item) => item.id === event.id);
-    if (index < 0) return;
-    setSelected(event.id);
-    list.current?.scrollToIndex({ index, animated: true });
-  }
+  const select = useCallback((event: LocatedEvent) => setPreview(event), []);
+  const previewVisible = !!preview && !radar.scanning && mapEvents.some((event) => event.id === preview.id);
 
   // The panel shows about three events at once; the map keeps the rest of the screen.
   const tabInset = tabBarContentInset(insets.bottom);
@@ -129,6 +126,16 @@ export default function RadarScreen() {
         </View>
       </View>
 
+      {previewVisible && (
+        <View style={[styles.previewLayer, { bottom: panelHeight }]} pointerEvents="box-none">
+          <Pressable accessibilityRole="button" accessibilityLabel="Eventvorschau schließen" onPress={() => setPreview(null)} style={StyleSheet.absoluteFill} />
+          <View testID="event-preview" style={styles.preview}>
+            <GlassBackdrop radius={corner.xl} variant="panel" />
+            <EventRow event={preview} href={eventHref(preview, 'radar')} now={now} today={today} distanceKm={distanceKm(searchCenter, preview.coordinate)} trailing={<SaveEventButton id={preview.id} title={preview.title} size={36} />} />
+          </View>
+        </View>
+      )}
+
       <View pointerEvents="box-none" style={[styles.locate, { bottom: panelHeight + space.md }]}>
         <IconButton icon="locate" accessibilityLabel="Zu meinem Standort, 30 Kilometer Umkreis" onPress={() => void reset()} />
       </View>
@@ -146,11 +153,10 @@ export default function RadarScreen() {
           </PressableScale>
         </View>
         <FlatList
-          ref={list}
           data={rows}
           keyExtractor={(event) => event.id}
           renderItem={({ item }) => (
-            <View style={[styles.row, selected === item.id && styles.rowSelected]}>
+            <View style={styles.row}>
               <EventRow event={item} href={eventHref(item, 'radar')} now={now} today={today} distanceKm={distanceKm(searchCenter, item.coordinate)} trailing={<SaveEventButton id={item.id} title={item.title} size={36} />} />
             </View>
           )}
@@ -195,7 +201,8 @@ const styles = StyleSheet.create({
   more: { flexDirection: 'row', alignItems: 'center', gap: 3, minHeight: 32 },
   moreText: { ...type.callout, color: colors.pink },
   row: { paddingHorizontal: gutter },
-  rowSelected: { backgroundColor: '#ffffff12' },
+  previewLayer: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40 },
+  preview: { position: 'absolute', left: space.lg, right: space.lg, bottom: space.md, paddingHorizontal: space.md, borderRadius: corner.xl, overflow: 'hidden', borderWidth: 1, borderColor: '#de5ab970', ...squircle },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: gutter + 68 + space.md },
   empty: { ...type.callout, color: colors.faint, paddingHorizontal: gutter, paddingTop: space.lg },
   citySearch: { minHeight: 48, zIndex: 10 },
