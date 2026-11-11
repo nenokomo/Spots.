@@ -75,9 +75,9 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
 }
 
 const styles = StyleSheet.create({
-  frame: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: '#1f1a2e' },
-  tiles: { filter: 'brightness(0.62) saturate(0.75) hue-rotate(-10deg)' },
-  tint: { backgroundColor: '#3d1a5245' },
+  frame: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: '#202023' },
+  tiles: { filter: 'grayscale(1) invert(1) brightness(0.55) contrast(1.15)' },
+  tint: { backgroundColor: '#00000010' },
   locationDot: { position: 'absolute', width: 16, height: 16, borderRadius: 8, borderWidth: 3, borderColor: '#ffffff', backgroundColor: '#348cff', zIndex: 2 },
   zoomControls: { position: 'absolute', right: 16, borderRadius: 22, overflow: 'hidden', backgroundColor: '#1c1c1ed9' },
   zoomButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
