@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CategoryFilters } from '../components/CategoryFilters';
 import { CitySearch } from '../components/CitySearch';
 import { EventCalendar } from '../components/EventCalendar';
-import { EventHero } from '../components/EventCards';
+import { EventHero, RankCard } from '../components/EventCards';
 import { EventDataState } from '../components/EventDataState';
 import { EventStoryViewer } from '../components/EventStoryViewer';
 import { Icon } from '../components/Icon';
@@ -23,6 +23,7 @@ import { useNow } from '../hooks/useNow';
 import { useToday } from '../hooks/useToday';
 import { eventHref } from '../navigation/eventRoutes';
 import type { City } from '../services/cities';
+import { popularEvents } from '../services/popularity';
 import { isLocatedEvent, matchesCategory, type SpotEvent } from '../types/events';
 import { dayKey, distanceKm, matchesEventPeriod, type Coordinate } from '../utils/events';
 
@@ -85,6 +86,8 @@ export default function ExploreScreen() {
 
   const distances = useMemo(() => new Map(area ? events.flatMap((event) => isLocatedEvent(event) ? [[event.id, distanceKm(area.center, event.coordinate)] as const] : []) : []), [events, area]);
   const featured = events.slice(0, 5);
+  // Popular in the user's city: chosen city, else the city of the nearest ranked events. Preview data only for now.
+  const popular = useMemo(() => popularEvents(remote.events, choice.kind === 'city' ? choice.area.label : null), [remote.events, choice]);
   const heroWidth = Math.min(width - gutter * 2 - 24, 420);
   const filtersActive = category !== 'Alle' || period !== 'all' || !!activeDate || choice.kind !== 'auto' || search.trim().length > 0;
   const areaLabel = area ? `${area.label} · ${areaRadius} km` : choice.kind === 'gps' && location.loading ? 'Standort …' : 'Überall';
@@ -147,6 +150,13 @@ export default function ExploreScreen() {
           />
         </>}
 
+        {!filtersActive && popular.ranked.length > 0 && <>
+          <SectionHeader title={`Gehypt in ${popular.city ?? 'deiner Nähe'}`} note={popular.preview ? 'Vorschau mit Testdaten · später nach verkauften Tickets' : undefined} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.ranks}>
+            {popular.ranked.map((item) => <RankCard key={item.event.id} event={item.event} href={destination(item.event)} rank={item.rank} ticketsSold={item.ticketsSold} today={today} />)}
+          </ScrollView>
+        </>}
+
         <SectionHeader title={area ? `Alle Events · ${area.label}` : 'Alle Events'} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
         {fellBack && <Text style={styles.fallback}>In deiner Nähe ist gerade nichts geplant. Das sind alle Events in Deutschland.</Text>}
         <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
@@ -197,6 +207,7 @@ const styles = StyleSheet.create({
   periodActiveText: { color: colors.text },
   shelf: { paddingHorizontal: gutter },
   heroGap: { width: HERO_GAP },
+  ranks: { gap: space.xs, paddingHorizontal: gutter },
   fallback: { ...type.footnote, color: colors.muted, paddingHorizontal: gutter, paddingBottom: space.md },
   gridRow: { gap: space.md, paddingHorizontal: gutter, paddingBottom: space.md },
   cell: { flex: 1, maxWidth: '50%' },

@@ -59,3 +59,15 @@ test('test organizer: future events open the organizer page from Explore, tonigh
   assert.deepEqual(routes, ['/event/[id]', '/organizer/[id]', '/organizer/[id]']);
   assert.deepEqual(eventHref(owned[1], 'discover', NOW).params, { id: TEST_ORGANIZER_ID, event: owned[1].id });
 });
+
+test('popularity: nothing outside development; preview ranks test events of one city by tickets', () => {
+  const { popularEvents } = require('../src/services/popularity.ts');
+  const events = testEvents(NOW, true);
+  assert.deepEqual(popularEvents(events, null), { ranked: [], city: null, preview: false }, 'no invented popularity in release builds');
+  const preview = popularEvents(events, null, 5, true);
+  assert.equal(preview.preview, true);
+  assert.equal(preview.city, 'Karlsruhe');
+  assert.deepEqual(preview.ranked.map((item) => item.rank), [1, 2, 3, 4, 5]);
+  assert.ok(preview.ranked.every((item, index, list) => index === 0 || list[index - 1].ticketsSold >= item.ticketsSold));
+  assert.equal(popularEvents(events, 'Berlin', 5, true).ranked.length, 0, 'other cities get nothing');
+});

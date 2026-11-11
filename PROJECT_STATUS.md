@@ -59,6 +59,8 @@ Eigener Branch von feature/design-refresh. Nur Oberfläche neu; Datenschicht, ze
 - Eventseite poster-first: Flyer füllt ~64 % des Bildschirms, darüber schwebt eine Glas-Karte mit Kicker, Titel und Wesentlichem (Tag · Uhrzeit · Ort), darunter Veranstalter-Kachel, Zeilenliste (Route, Tickets, Genres), Ticketarten, Beschreibung, Live Snaps; feste Leiste unten.
 - Upload-UI für Beiträge und Bilder weiterhin offen (braucht SQL 17–19 in Spots-Test, `expo-image-picker`, Development Build).
 
+**Dreizehnte Runde (Vorschau, rückgängig machbar)**: Entdecken hat den Bereich „Gehypt in <Stadt>“ zwischen „Als Nächstes“ und „Alle Events“: Top-Liste mit großen Platzierungszahlen (`RankCard`) und „x Tickets“. Quelle `services/popularity.ts`: liefert in Release-Builds nichts (keine Ticketdaten vorhanden, keine erfundene Beliebtheit), in der Entwicklung die TEST-Events mit festen, erkennbar fiktiven Zahlen und dem Hinweis „Vorschau mit Testdaten“. Stadt = gewählte Stadt, sonst die Stadt der gerankten Events. Später durch echte Verkaufszahlen aus dem Ticketing ersetzen. Test in `tests/test-events.test.cjs`. Rücknahme: diesen Commit reverten.
+
 **Zwölfte Runde**: Kalender in Entdecken im Stil des Apple-Kalenders (genau ein Monat pro Seite, vertikal einrastendes Blättern, heute pink umrandet, Auswahl gefüllt, Punkt für Tage mit Events, vergangene Tage ausgegraut). Radar: Umkreis steht jetzt im Filter-Button oben rechts („⚙ 30 km“), die separate Umkreis-Pille entfällt.
 
 **Elfte Runde**: Umkreis-Pille sitzt unten links über dem Panel, auf einer Höhe mit dem Standort-Button (Web-Kartenhinweis dafür mittig). Überschrift bei laufenden Events „Partys heute“ statt „Jetzt los“.
