@@ -104,7 +104,7 @@ export default function TodayEventsScreen() {
         ListHeaderComponent={<View>
           <View style={[styles.hero, { height: heroHeight }]}>
             {hero && <Image source={hero.image} resizeMode="cover" blurRadius={hero.imageIsPlaceholder ? 6 : 28} style={StyleSheet.absoluteFill} />}
-            <LinearGradient pointerEvents="none" colors={['#100b1566', '#100b15a6', colors.background]} locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill} />
+            <LinearGradient pointerEvents="none" colors={['#0a090c66', '#0a090ca6', colors.background]} locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill} />
             <View style={styles.heroCopy}>
               <Text style={styles.eyebrow}>RADAR · {radius} KM{category !== 'Alle' ? ` · ${category.toLocaleUpperCase('de')}` : ''}</Text>
               <Text accessibilityRole="header" style={styles.title}>Heute Nacht</Text>

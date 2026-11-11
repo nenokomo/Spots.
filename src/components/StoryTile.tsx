@@ -26,7 +26,7 @@ export function StoryTile({ event, today, now, seen, onOpen, distanceKm }: Props
         style={[styles.tile, seen ? styles.seen : styles.unseen]}
       >
         <Image source={event.image} resizeMode="cover" style={styles.cover} accessibilityLabel={event.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${event.title}`} />
-        <LinearGradient pointerEvents="none" colors={['#100b1500', '#100b1500', '#100b15e0', '#100b15fc']} locations={[0, 0.34, 0.68, 1]} style={styles.cover} />
+        <LinearGradient pointerEvents="none" colors={['#0a090c00', '#0a090c00', '#0a090ce0', '#0a090cfc']} locations={[0, 0.34, 0.68, 1]} style={styles.cover} />
         {live && <View style={styles.badge}><StatusBadge phase={phase} /></View>}
         <View style={styles.content}>
           <Text numberOfLines={1} style={styles.when}>{eventDayLabel(event.startsAt, today)} · {eventTimeLabel(event.startsAt)}</Text>
@@ -41,9 +41,9 @@ export function StoryTile({ event, today, now, seen, onOpen, distanceKm }: Props
 
 const styles = StyleSheet.create({
   wrapper: { flex: 1 },
-  tile: { aspectRatio: 0.72, overflow: 'hidden', borderRadius: radius.lg, borderWidth: 1.5, backgroundColor: colors.surface, justifyContent: 'flex-end', ...squircle },
-  unseen: { borderColor: '#c922abcc' },
-  seen: { borderColor: '#ffffff1f' },
+  tile: { aspectRatio: 0.72, overflow: 'hidden', borderRadius: radius.lg, borderWidth: 1, backgroundColor: colors.surface, justifyContent: 'flex-end', ...squircle },
+  unseen: { borderColor: '#c922ab8c' },
+  seen: { borderColor: '#ffffff14' },
   cover: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
   badge: { position: 'absolute', left: space.sm, top: space.sm },
   content: { padding: space.md, gap: 3 },

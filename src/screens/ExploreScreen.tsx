@@ -206,7 +206,7 @@ export default function ExploreScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  search: { minHeight: 50, marginHorizontal: gutter, borderRadius: radius.md, borderWidth: 1, borderColor: '#ffffff1c', backgroundColor: '#1b1521', flexDirection: 'row', alignItems: 'center', paddingLeft: space.md, gap: space.sm, ...squircle },
+  search: { minHeight: 50, marginHorizontal: gutter, borderRadius: radius.md, borderWidth: 1, borderColor: '#ffffff1c', backgroundColor: '#1c1b1f', flexDirection: 'row', alignItems: 'center', paddingLeft: space.md, gap: space.sm, ...squircle },
   input: { ...type.body, lineHeight: undefined, color: colors.text, flex: 1, minWidth: 0, minHeight: 48, paddingVertical: 0 },
   clear: { width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   chips: { gap: space.sm, paddingHorizontal: gutter, paddingTop: space.md },
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   fallback: { ...type.footnote, color: colors.muted, paddingHorizontal: gutter, paddingBottom: space.md },
   gridRow: { gap: space.md, paddingHorizontal: gutter, paddingBottom: space.md },
   cell: { flex: 1, maxWidth: '50%' },
-  dateModal: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#100916b3' },
+  dateModal: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#000000b3' },
   dateSheet: { borderTopLeftRadius: 26, borderTopRightRadius: 26 },
   dateContent: { padding: 16, gap: 10 },
   dateHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },

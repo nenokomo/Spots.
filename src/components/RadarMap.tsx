@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { EventMapMarker } from './EventMapMarker';
-import { RadarOverlay } from './RadarOverlay';
+import { RadarOverlay, radarCoverSize } from './RadarOverlay';
 import type { RadarMapProps } from './RadarMap.types';
 
 const mapStyle = [
@@ -17,7 +17,7 @@ const mapStyle = [
   { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#242426' }] },
 ];
 
-export default function RadarMap({ center, radius, userCoordinate, events, onSelect, onCenterChange, onVisibleRadiusChange, scan, topInset = 0, locked = false }: RadarMapProps) {
+export default function RadarMap({ center, radius, userCoordinate, events, onSelect, onCenterChange, onVisibleRadiusChange, scan, topInset = 0, bottomInset = 0, locked = false }: RadarMapProps) {
   const map = useRef<MapView>(null);
   const viewport = useRef(center);
   const focus = useRef(center);
@@ -26,7 +26,7 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
   const pendingRadius = useRef<number | null>(radius);
   const initialized = useRef(false);
   const [layout, setLayout] = useState({ width: 360, height: 360 });
-  const size = Math.min(layout.width * 0.8, layout.height * 0.8);
+  const size = radarCoverSize(layout.width, layout.height);
   const latitudeDelta = radius * 2 / 111.32;
   const longitudeDelta = latitudeDelta * layout.width / layout.height / Math.max(0.01, Math.cos(center.latitude * Math.PI / 180));
   useEffect(() => {
@@ -53,6 +53,7 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
       <MapView
         ref={map}
         style={StyleSheet.absoluteFill}
+        mapPadding={{ top: 0, right: 0, bottom: bottomInset, left: 0 }}
         initialRegion={{ ...center, latitudeDelta, longitudeDelta }}
         onMapReady={() => setMapReady(true)}
         onTouchStart={() => { pendingRadius.current = null; }}

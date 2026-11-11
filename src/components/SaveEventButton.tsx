@@ -36,7 +36,7 @@ export function SaveEventButton({ id, title, label = false, overlay = false, siz
 
 const styles = StyleSheet.create({
   button: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: colors.surfaceHigh },
-  overlay: { backgroundColor: '#100b15a6' },
+  overlay: { backgroundColor: '#0a090ca6' },
   labeled: { paddingHorizontal: 16, borderRadius: radius.pill },
   text: { ...type.label, color: colors.text },
   error: { ...type.footnote, fontSize: 10, color: colors.danger, marginTop: 3, textAlign: 'center' },

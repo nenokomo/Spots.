@@ -80,5 +80,5 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background }, content: { padding: space.xl, gap: space.lg, maxWidth: 560, width: '100%', alignSelf: 'center' },
   back: { width: 44, height: 44, marginLeft: -space.sm, alignItems: 'center', justifyContent: 'center' },
   title: { ...type.display, color: colors.text }, note: { ...type.body, color: colors.muted },
-  form: { gap: space.md }, input: { minHeight: 50, borderWidth: 1, borderColor: '#ffffff1c', borderRadius: radius.md, paddingHorizontal: space.lg, color: colors.text, backgroundColor: '#1b1521', fontSize: 15 },
+  form: { gap: space.md }, input: { minHeight: 50, borderWidth: 1, borderColor: '#ffffff1c', borderRadius: radius.md, paddingHorizontal: space.lg, color: colors.text, backgroundColor: '#1c1b1f', fontSize: 15 },
 });

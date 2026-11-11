@@ -97,7 +97,7 @@ export default function EventDetailScreen() {
       <View style={[styles.poster, { height: posterHeight }]}>
         <Image source={event.image} resizeMode="cover" blurRadius={event.imageIsPlaceholder ? 0 : 40} style={StyleSheet.absoluteFill} />
         {!event.imageIsPlaceholder && <Pressable accessibilityRole="button" accessibilityLabel="Eventbild groß anzeigen" onPress={() => setViewer(0)} style={[StyleSheet.absoluteFill, { top: insets.top + 56, bottom: 96 }]}><Image source={event.image} resizeMode="contain" style={StyleSheet.absoluteFill} accessibilityLabel={`Eventbild: ${event.title}`} /></Pressable>}
-        <LinearGradient pointerEvents="none" colors={['#100b15b3', '#100b1500', '#100b1500', colors.background]} locations={[0, 0.22, 0.6, 1]} style={StyleSheet.absoluteFill} />
+        <LinearGradient pointerEvents="none" colors={['#0a090cb3', '#0a090c00', '#0a090c00', colors.background]} locations={[0, 0.22, 0.6, 1]} style={StyleSheet.absoluteFill} />
         <View style={[styles.toolbar, { paddingTop: insets.top + space.sm }]}>
           <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} />
           <View style={styles.toolbarActions}><IconButton icon="share" accessibilityLabel="Event teilen" onPress={() => void share()} /><SaveEventButton id={event.id} title={event.title} overlay size={44} /></View>

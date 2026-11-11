@@ -102,28 +102,30 @@ export default function RadarScreen() {
 
   // The panel shows about three events at once; the map keeps the rest of the screen.
   const tabInset = tabBarContentInset(insets.bottom);
-  const panelHeight = Math.min(Math.max(250, height * 0.36), 340) + tabInset;
+  // The map ends where the panel starts, so a lower panel means a longer map.
+  const panelHeight = Math.min(Math.max(235, height * 0.33), 315) + tabInset;
   const topInset = insets.top + 64;
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.map, { bottom: panelHeight }]}>
+      {/* The map runs under the panel's rounded corners, so no background shows through there. */}
+      <View style={[styles.map, { bottom: panelHeight - corner.xl }]}>
         <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={select}
-          onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} topInset={topInset} locked={radar.scanning} />
+          onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} topInset={topInset} bottomInset={corner.xl} locked={radar.scanning} />
       </View>
 
-      <LinearGradient pointerEvents="none" colors={['#100b15b3', '#100b1500']} style={[styles.topShade, { height: insets.top + 110 }]} />
+      <LinearGradient pointerEvents="none" colors={['#0a090cb3', '#0a090c00']} style={[styles.topShade, { height: insets.top + 110 }]} />
 
       <View pointerEvents="box-none" style={[styles.top, { paddingTop: insets.top + 8 }]}>
-        <PressableScale accessibilityRole="button" accessibilityLabel={`Ort ändern, aktuell ${location.label}`} onPress={() => setPlaceOpen(true)} scaleTo={0.96} style={styles.place}>
-          <GlassBackdrop radius={22} />
-          <Icon name="pin" size={15} color={colors.pink} />
+        <PressableScale accessibilityRole="button" accessibilityLabel={`Ort ändern, aktuell ${location.label}`} onPress={() => setPlaceOpen(true)} scaleTo={0.96} hitSlop={4} style={styles.place}>
+          <GlassBackdrop radius={19} />
+          <Icon name="pin" size={13} color={colors.pink} />
           <Text numberOfLines={1} style={styles.placeLabel}>{location.loading ? 'Standort …' : location.label}</Text>
-          <Icon name="down" size={12} color={colors.muted} />
+          <Icon name="down" size={11} color={colors.muted} />
         </PressableScale>
-        <PressableScale accessibilityRole="button" accessibilityLabel={`Filter, Umkreis ${radiusLabel}${category !== 'Alle' ? `, ${category}` : ''}`} onPress={() => setFilterOpen(true)} scaleTo={0.96} style={styles.filterPill}>
-          <GlassBackdrop radius={22} />
-          <Icon name="sliders" size={16} color={colors.text} />
+        <PressableScale accessibilityRole="button" accessibilityLabel={`Filter, Umkreis ${radiusLabel}${category !== 'Alle' ? `, ${category}` : ''}`} onPress={() => setFilterOpen(true)} scaleTo={0.96} hitSlop={4} style={styles.filterPill}>
+          <GlassBackdrop radius={19} />
+          <Icon name="sliders" size={13} color={colors.text} />
           <Text style={styles.filterPillText}>{radiusLabel}</Text>
           {filtered && <View pointerEvents="none" style={styles.filterDot} />}
         </PressableScale>
@@ -192,13 +194,14 @@ const styles = StyleSheet.create({
   map: { position: 'absolute', top: 0, left: 0, right: 0 },
   topShade: { position: 'absolute', top: 0, left: 0, right: 0 },
   top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingHorizontal: space.lg },
-  place: { flexShrink: 1, height: 44, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, borderRadius: 22, overflow: 'hidden' },
-  placeLabel: { ...type.headline, fontSize: 16, color: colors.text, flexShrink: 1 },
-  filterPill: { height: 44, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, borderRadius: 22, overflow: 'hidden' },
-  filterPillText: { ...type.headline, fontSize: 16, color: colors.text },
+  place: { flexShrink: 1, height: 38, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, borderRadius: 19, overflow: 'hidden' },
+  placeLabel: { ...type.headline, fontSize: 14, color: colors.text, flexShrink: 1 },
+  // Same size as the place button on the left.
+  filterPill: { height: 38, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, borderRadius: 19, overflow: 'hidden' },
+  filterPillText: { ...type.headline, fontSize: 14, color: colors.text },
   filterDot: { position: 'absolute', top: 4, right: 4, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent, borderWidth: 2, borderColor: colors.background },
   locate: { position: 'absolute', right: space.lg },
-  panel: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.background, borderTopLeftRadius: corner.xl, borderTopRightRadius: corner.xl, borderTopWidth: 1, borderColor: '#b872ac50', overflow: 'hidden', ...squircle },
+  panel: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.background, borderTopLeftRadius: corner.xl, borderTopRightRadius: corner.xl, borderTopWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff26', overflow: 'hidden', ...squircle },
   panelHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingHorizontal: gutter, paddingTop: space.lg, paddingBottom: space.xs },
   panelCopy: { flex: 1, minWidth: 0 },
   headline: { ...type.title2, color: colors.text },

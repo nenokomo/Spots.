@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   headerCopy: { flex: 1, minWidth: 0 },
   author: { ...type.label, fontSize: 14, color: colors.text },
   date: { ...type.footnote, fontSize: 11, color: colors.faint },
-  counter: { position: 'absolute', top: space.md, right: space.md, paddingHorizontal: space.sm, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: '#100b15b3' },
+  counter: { position: 'absolute', top: space.md, right: space.md, paddingHorizontal: space.sm, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: '#0a090cb3' },
   counterText: { ...type.footnote, fontSize: 11, fontWeight: '700', color: colors.text },
   dots: { position: 'absolute', bottom: space.md, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 5 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#ffffff66' },

@@ -59,7 +59,7 @@ export function EmptyState({ icon, title, text, action, onAction }: { icon: Icon
 
 const styles = StyleSheet.create({
   page: { paddingHorizontal: gutter, paddingTop: space.lg, paddingBottom: space.lg },
-  eyebrow: { ...type.overline, fontSize: 11, color: '#b58ca9', letterSpacing: 2.4, marginBottom: space.sm },
+  eyebrow: { ...type.overline, fontSize: 11, color: colors.faint, letterSpacing: 1.2, marginBottom: space.sm },
   pageSubtitle: { ...type.callout, color: colors.muted, marginTop: space.xxs },
   header: { flexDirection: 'row', alignItems: 'flex-end', gap: space.md, paddingHorizontal: gutter, paddingTop: space.md, paddingBottom: space.md },
   headerCopy: { flex: 1, minWidth: 0 },

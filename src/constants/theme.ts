@@ -3,8 +3,9 @@
  *
  * Principles: one accent, large confident type, generous space, hairlines
  * instead of boxes, content (event imagery) first.
- * The canvas is the original Spots night gradient (deep violet to plum);
- * surfaces are tinted to sit on it. #c922ab stays the only accent.
+ * Calm and neutral in the manner of Apple's dark appearance: a near-black canvas with only
+ * a trace of plum, grey surface steps, white type with grey secondary levels, hairlines.
+ * Type and event imagery carry the screen. #c922ab stays the only accent.
  */
 export const colors = {
   /** Brand. Fills, primary buttons, live state. */
@@ -14,30 +15,30 @@ export const colors = {
   accentSoft: '#c922ab29',
   accentLine: '#c922ab73',
 
-  background: '#100b15',
+  background: '#0a090c',
   /** Grouped lists, cards, sheets. */
-  surface: '#221629',
-  surfaceRaised: '#1c1522',
+  surface: '#1c1b1f',
+  surfaceRaised: '#151417',
   /** Controls on top of a surface. */
-  surfaceHigh: '#33233b',
+  surfaceHigh: '#2c2b30',
   /** Translucent fill for search fields and quiet buttons. */
   fill: '#ffffff12',
   /** Translucent material for floating controls over the map or images. */
-  material: '#261b30eb',
+  material: '#1c1b1feb',
 
-  text: '#fff6ff',
+  text: '#ffffff',
   /** Secondary label. */
-  muted: '#d4bcd8',
+  muted: '#d6d4dc',
   /** Tertiary label. */
-  faint: '#a993ae',
-  border: '#ffffff18',
-  separator: '#ffffff1f',
+  faint: '#a5a3ad',
+  border: '#ffffff17',
+  separator: '#ffffff1a',
   danger: '#ff453a',
 
   /** Screen canvas, left to right. */
-  gradient: ['#120d1c', '#281326', '#3d1a32'] as const,
+  gradient: ['#100e13', '#18111a', '#2a1222'] as const,
   /** Raised panels such as the radar list. */
-  panelGradient: ['#211329', '#3a1b32'] as const,
+  panelGradient: ['#18161c', '#251520'] as const,
 };
 
 /** 4-pt spacing scale. */
@@ -54,18 +55,18 @@ export const gutter = 20;
 
 /** Type scale modelled on the iOS text styles. */
 export const type = {
-  largeTitle: { fontSize: 34, lineHeight: 40, fontWeight: '800', letterSpacing: -0.9 },
-  display: { fontSize: 34, lineHeight: 40, fontWeight: '800', letterSpacing: -0.9 },
-  title: { fontSize: 28, lineHeight: 33, fontWeight: '800', letterSpacing: -0.7 },
-  title2: { fontSize: 22, lineHeight: 27, fontWeight: '700', letterSpacing: -0.5 },
-  title3: { fontSize: 20, lineHeight: 25, fontWeight: '700', letterSpacing: -0.4 },
-  headline: { fontSize: 17, lineHeight: 22, fontWeight: '600', letterSpacing: -0.3 },
+  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: '700', letterSpacing: -0.4 },
+  display: { fontSize: 34, lineHeight: 41, fontWeight: '700', letterSpacing: -0.4 },
+  title: { fontSize: 28, lineHeight: 34, fontWeight: '700', letterSpacing: -0.3 },
+  title2: { fontSize: 22, lineHeight: 28, fontWeight: '700', letterSpacing: -0.3 },
+  title3: { fontSize: 20, lineHeight: 25, fontWeight: '600', letterSpacing: -0.3 },
+  headline: { fontSize: 17, lineHeight: 22, fontWeight: '600', letterSpacing: -0.2 },
   body: { fontSize: 16, lineHeight: 23, fontWeight: '400', letterSpacing: -0.2 },
   callout: { fontSize: 15, lineHeight: 20, fontWeight: '400', letterSpacing: -0.2 },
   label: { fontSize: 15, lineHeight: 20, fontWeight: '600', letterSpacing: -0.2 },
   footnote: { fontSize: 13, lineHeight: 18, fontWeight: '400', letterSpacing: -0.1 },
   caption: { fontSize: 13, lineHeight: 18, fontWeight: '400', letterSpacing: -0.1 },
-  overline: { fontSize: 12, lineHeight: 16, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
+  overline: { fontSize: 12, lineHeight: 16, fontWeight: '600', letterSpacing: 0.4, textTransform: 'uppercase' },
 } as const;
 
 export const categories = ['Alle', 'Techno', 'House', 'Events', 'Clubs'] as const;

@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, AppState, Easing, Platform, Vibration } from 'react-native';
 import type { SpotEvent } from '../types/events';
 
-export const RADAR_TURN_MS = 1800;
-export const RADAR_TURNS = 3;
-export const PIN_STAGGER_MS = 320;
+export const RADAR_TURN_MS = 1500; // 2 turns = 3.0 s scan;
+export const RADAR_TURNS = 2;
+export const PIN_STAGGER_MS = 160;
 
 // App session only. Navigation/backgrounding must not replay the intro.
 const session = { complete: false, revealed: new Set<string>(), settled: new Set<string>() };
@@ -47,7 +47,7 @@ export function useRadarIntro<T extends SpotEvent>(events: T[]) {
           if (disposed || !finished || session.complete) return;
           if (Platform.OS !== 'web') Vibration.vibrate(45);
           if (turn < RADAR_TURNS) { runTurn(turn + 1); return; }
-          animation = Animated.timing(opacity, { toValue: 0, duration: 280, useNativeDriver: Platform.OS !== 'web', isInteraction: false });
+          animation = Animated.timing(opacity, { toValue: 0, duration: 240, useNativeDriver: Platform.OS !== 'web', isInteraction: false });
           animation.start(({ finished: faded }) => { if (!disposed && faded) finish(); });
         });
       }

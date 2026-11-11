@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
-import { RadarOverlay } from './RadarOverlay';
+import { RadarOverlay, radarCoverSize } from './RadarOverlay';
 import type { RadarMapProps } from './RadarMap.types';
 import { EventPin } from './EventPin';
 
@@ -11,7 +11,7 @@ function project(latitude: number, longitude: number, zoom: number) {
 }
 
 // react-native-maps is native-only. Render real map tiles for browser previews.
-export default function RadarMap({ center, radius, userCoordinate, events, onSelect, onCenterChange, onVisibleRadiusChange, scan, topInset = 0, locked = false }: RadarMapProps) {
+export default function RadarMap({ center, radius, userCoordinate, events, onSelect, onCenterChange, onVisibleRadiusChange, scan, topInset = 0, bottomInset = 0, locked = false }: RadarMapProps) {
   const [viewport, setViewport] = useState({ source: center, center });
   const [zoomState, setZoomState] = useState({ center, radius, factor: 1 });
   const zoomFactor = zoomState.center === center && zoomState.radius === radius ? zoomState.factor : 1;
@@ -20,7 +20,7 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
   const [layout, setLayout] = useState({ width: 390, height: 390 });
   const [tileError, setTileError] = useState(false);
   const centerY = layout.height / 2;
-  const size = Math.min(layout.width * 0.8, layout.height * 0.8);
+  const size = radarCoverSize(layout.width, layout.height);
   const metersPerPixel = radius * zoomFactor * 2000 / layout.height;
   useEffect(() => { onVisibleRadiusChange(radius * zoomFactor); }, [radius, zoomFactor, onVisibleRadiusChange]);
   const zoom = Math.max(1, Math.min(18, Math.floor(Math.log2(156543.034 * Math.cos(mapCenter.latitude * Math.PI / 180) / metersPerPixel))));
@@ -67,9 +67,9 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
         const top = centerY + (point.y - origin.y) * scale;
         return <Pressable key={event.id} onPress={() => onSelect(event)} accessibilityRole="button" accessibilityLabel={`${event.title}, Vorschau öffnen`} style={[styles.markerTouch, { left: left - 27, top: top - 56 }]}><EventPin event={event} reduceMotion={scan.reduceMotion || scan.settledIds.includes(event.id)} onReady={() => scan.onPinSettled(event.id)} /></Pressable>;
       })}
-      {tileError && <Text style={styles.error}>Karte nicht verfügbar · Internetverbindung prüfen</Text>}
+      {tileError && <Text style={[styles.error, { bottom: 40 + bottomInset }]}>Karte nicht verfügbar · Internetverbindung prüfen</Text>}
       {!locked && <View style={[styles.zoomControls, { top: topInset + 8 }]}>{[{ label: '+', factor: 0.5, hint: 'Karte vergrößern' }, { label: '−', factor: 2, hint: 'Karte verkleinern' }].map((item) => <Pressable key={item.label} accessibilityRole="button" accessibilityLabel={item.hint} onPress={() => changeZoom(item.factor)} style={styles.zoomButton}><Text style={styles.zoomText}>{item.label}</Text></Pressable>)}</View>}
-      <Pressable accessibilityRole="link" accessibilityLabel="Kartendaten: OpenStreetMap" onPress={() => void Linking.openURL('https://www.openstreetmap.org/copyright')} style={styles.attribution}><Text style={styles.attributionText}>© OpenStreetMap</Text></Pressable>
+      <Pressable accessibilityRole="link" accessibilityLabel="Kartendaten: OpenStreetMap" onPress={() => void Linking.openURL('https://www.openstreetmap.org/copyright')} style={[styles.attribution, { bottom: 6 + bottomInset }]}><Text style={styles.attributionText}>© OpenStreetMap</Text></Pressable>
     </View>
   );
 }

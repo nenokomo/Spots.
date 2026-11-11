@@ -7,10 +7,10 @@ export type GlassBackdropProps = { radius?: number; variant?: 'panel' | 'control
 // No blur, filters, animation or native glass imports here.
 export function GlassFallback({ radius = 16, variant = 'control' }: GlassBackdropProps) {
   return (
-    <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFill, styles.frame, { borderRadius: radius, backgroundColor: variant === 'panel' ? '#24162cef' : variant === 'card' ? '#24172bd9' : '#261b30eb' }]}>
-      <LinearGradient colors={['#ffffff18', '#c922ab0c', '#100b1533']} start={{ x: 0, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
+    <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFill, styles.frame, { borderRadius: radius, backgroundColor: variant === 'panel' ? '#1c1b1fef' : variant === 'card' ? '#1c1b1fd9' : '#232227eb' }]}>
+      <LinearGradient colors={['#ffffff10', '#ffffff04', '#00000033']} start={{ x: 0, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({ frame: { overflow: 'hidden', borderWidth: 1, borderColor: '#f6d6ff24', borderTopColor: '#ffe8ff42' } });
+const styles = StyleSheet.create({ frame: { overflow: 'hidden', borderWidth: 1, borderColor: '#ffffff1c', borderTopColor: '#ffffff2e' } });

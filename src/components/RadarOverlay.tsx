@@ -1,6 +1,14 @@
 import { Animated, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
 
+/**
+ * Radar diameter that covers the whole map while scanning: centred, the outer ring (r 150 of 160 in the
+ * drawing) reaches the corners of the map area. Edges beyond the map are clipped by the map frame.
+ */
+export function radarCoverSize(width: number, height: number) {
+  return Math.ceil(Math.hypot(width, height) * 160 / 150);
+}
+
 export function RadarOverlay({ size, rotation, opacity }: { size: number; rotation: Animated.Value; opacity: Animated.Value }) {
   return (
     <Animated.View testID="radar-scan" pointerEvents="none" style={[styles.radar, { width: size, height: size, opacity, transform: [{ scale: rotation.interpolate({ inputRange: [0, 0.5, 1, 1.5, 2, 2.5, 3], outputRange: [1, 1.025, 1, 1.025, 1, 1.025, 1] }) }] }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">

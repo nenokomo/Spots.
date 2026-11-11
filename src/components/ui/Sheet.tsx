@@ -26,7 +26,7 @@ export function Sheet({ visible, title, onClose, children, tall = false }: Props
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#100916b3' },
+  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#000000b3' },
   sheet: { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, maxHeight: '92%', ...squircle },
   tall: { height: '86%' },
   fill: { flex: 1 },
