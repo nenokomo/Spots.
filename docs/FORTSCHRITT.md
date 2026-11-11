@@ -17,15 +17,20 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
 
 - **Teilschritt 0 – Pläne**: [TICKETMASTER_IMPORT.md](TICKETMASTER_IMPORT.md) mit Machbarkeitsprüfung (516 Musik-Events DE / 30 Tage), [KARLSRUHE_EVENTS.md](KARLSRUHE_EVENTS.md) (ganz Deutschland, Start Karlsruhe), lesendes Prüfskript `scripts/probe-ticketmaster-readonly.cjs`, Regel zu dieser Datei in `AGENTS.md`.
 
+- **Teilschritt 1a – Ticketmaster-Backend und Import**:
+  - `supabase/ops/20_ticketmaster_sync_backend.sql`: Sperre (Lease), atomare Übernahme `spots_ticketmaster_apply`, Sichtbarkeit in SQL (ohne Endzeit 8 Stunden wie in der App), entfernte/unbestätigte Events werden ausgeblendet statt gelöscht, Sperrliste für Löschwünsche (`spots_ticketmaster_block`), nur `service_role` darf aufrufen.
+  - `supabase/functions/import-ticketmaster/` (`sync.ts`, `index.ts`, `deno.json`), Eintrag in `supabase/config.toml`: Deutschland, Segment Musik, Wochenfenster von −12 h bis +30 Tage, Abbruch ohne Schreiben bei ≥ 1000 Treffern, 429 oder Fehlern, Einzelprüfung fehlender bekannter Events, Schlüssel nie in Fehlermeldungen.
+  - Tests: `tests/ticketmaster-sync.test.cjs` (16), `tests/ticketmaster-backend.test.cjs` (8, PGlite). Gesamt **121/121 bestanden**, Lint und Typecheck ohne Fehler.
+
 ## Läuft gerade
 
-- Teilschritt 1a: Ticketmaster-Backend (`supabase/ops/20_ticketmaster_sync_backend.sql`), Edge Function `supabase/functions/import-ticketmaster/` und Tests. Code geschrieben, Tests noch nicht gelaufen.
+- Teilschritt 1b: lokaler Ende-zu-Ende-Lauf mit echter API und PGlite, danach SQL 20 in Spots-Test.
 
 ## Als Nächstes
 
-1. Tests für Ticketmaster schreiben und laufen lassen, Lint, Typecheck → Commit
-2. Lokaler Ende-zu-Ende-Lauf (echte API, PGlite) → SQL 20 in Spots-Test einspielen
-3. App: Filter „Konzerte“ und „Hip-Hop“, Ticketmaster-Hinweis auf der Eventseite
+1. SQL 20 in Spots-Test einspielen und prüfen
+2. App: Filter „Konzerte“ und „Hip-Hop“, Ticketmaster-Hinweis auf der Eventseite
+3. Club-Verzeichnis (Teil 2)
 
 ## Offene Punkte (für die Abschlussliste)
 
