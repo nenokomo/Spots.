@@ -51,6 +51,14 @@ Eigener Branch von feature/design-refresh. Nur Oberfläche neu; Datenschicht, ze
 - Eventseite neu: Artwork-Karte mit Zurück/Teilen/Merken darauf, Genre-Kicker, Titel, Veranstalter-Link, Fakten-Leiste (Datum · Uhrzeit · Ort/Route) auf Glas, Tickets, Beschreibung, Live Snaps; feste Leiste unten mit „Infos & Tickets“ und „Route“.
 - Veranstalterseite neu: Banner mit überlappendem Logo, Name und Ort daneben, Beschreibung und Website, Stories, hervorgehobenes Event, dann Chips „Weitere · Vergangen · Beiträge“ mit Glas-Karten.
 
+**Achte Runde**
+- Radar: Umkreis-Anzeige als eigene Glas-Pille unter dem Ortsbutton („30 km Umkreis“). Panel-Zeile zeigt „um dich“ bei GPS-Fix bzw. „Kein Standort · <Stadt> als Mitte“, wenn keine Freigabe vorliegt. Die Kartenmitte folgt bereits dem Standort-Fix; ohne Freigabe bleibt die gewählte Stadt die Mitte (im Browser nicht mit echtem GPS prüfbar).
+- Heute Nacht: laufende und spätere Events als Glas-Karten (`GlassBackdrop variant="card"`), spätere mit `EventRow large`.
+- Beiträge wie Instagram: `PublicOrganizerPost.images` (Galerie, in Reihenfolge), `components/GalleryPost.tsx` mit wischbarer quadratischer Galerie, Zähler „1/3“ und Punkten, Beschreibung darunter. Backend vorbereitet in `supabase/ops/19_post_galleries.sql` (Tabelle `organizer_post_media`, bis 10 Bilder pro Beitrag, RLS, Storage-Policy). Nicht ausgeführt; der Leseservice liefert bis dahin `images: []`. Lokale Testbeiträge (3, einer mit 3 Symbolbildern) nur in der Entwicklung.
+- Veranstalterseite als Feed: feste Kopfzeile mit Slug, Avatar + Kennzahlen (Beiträge/Kommend/Vergangen), Name, Ort, Beschreibung, Website, „Dein Event“, Stories, Segment „Beiträge | Events“.
+- Eventseite poster-first: Flyer füllt ~64 % des Bildschirms, darüber schwebt eine Glas-Karte mit Kicker, Titel und Wesentlichem (Tag · Uhrzeit · Ort), darunter Veranstalter-Kachel, Zeilenliste (Route, Tickets, Genres), Ticketarten, Beschreibung, Live Snaps; feste Leiste unten.
+- Upload-UI für Beiträge und Bilder weiterhin offen (braucht SQL 17–19 in Spots-Test, `expo-image-picker`, Development Build).
+
 **Geprüft**: 96/96 Tests (mit PGlite), Expo-Lint, Typecheck (Stand dritte Runde; Veranstalterseite jetzt mit Testdaten visuell geprüft). Zuvor: 94/94 Tests, Expo-Lint, Typecheck. Web-Vorschau 375 × 812: Radar (Karlsruhe mit Testevents, Pins, Listen-Panel), Entdecken, Story-Ansicht, Eventdetail, Gemerkt (leer), Profil.
 
 **Nicht geprüft**: kein iOS-/Android-Gerät. Besonders offen: `mapPadding` der nativen Karte (verschiebt Kartenmitte und Anbieter-Logo über das Karussell), neue Pins als native Marker, Profil als natives Modal, Glas-Effekt, Schrift (im Browser Segoe UI statt San Francisco). Veranstalterseite mit Daten und Gemerkt mit Einträgen im neuen Stil nicht visuell geprüft.

@@ -6,7 +6,7 @@ export type PublicOrganizer = {
 };
 export type PrivateUserProfile = { id: string; displayName: string; createdAt: string };
 export type OrganizerMembership = { organizerId: string; userId: string; role: 'owner' | 'editor'; createdAt: string };
-export type PublicOrganizerPost = { id: string; organizerId: string; body: string; createdAt: string; updatedAt: string };
+export type PublicOrganizerPost = { id: string; organizerId: string; body: string; createdAt: string; updatedAt: string; /** Gallery of the post, in order. Empty for text-only posts. */ images: string[] };
 export type OrganizerEventSummary = {
   id: string; organizerId: string; title: string; startsAt: string; endsAt: string | null;
   city: string | null; imageUrl: string | null; status: 'scheduled' | 'cancelled' | 'postponed';

@@ -1,62 +1,44 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventHero, StoryRail } from '../components/EventCards';
 import { EventDataState } from '../components/EventDataState';
 import { EventRow } from '../components/EventRow';
 import { EventStoryViewer } from '../components/EventStoryViewer';
+import { GalleryPost, OrganizerAvatar } from '../components/GalleryPost';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Icon } from '../components/Icon';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Backdrop } from '../components/Screen';
 import { Button, IconButton } from '../components/ui/Button';
-import { Chip } from '../components/ui/Chip';
 import { EmptyState } from '../components/ui/Section';
 import { colors, gutter, radius, space, squircle, type } from '../constants/theme';
 import { useNow } from '../hooks/useNow';
 import { useOrganizerPage } from '../hooks/useOrganizer';
 import { useToday } from '../hooks/useToday';
 import { eventDetailHref } from '../navigation/eventRoutes';
-import type { PublicOrganizer, PublicOrganizerPost } from '../types/accounts';
 import type { SpotEvent } from '../types/events';
 import { eventPhase } from '../utils/eventStatus';
 
-type Tab = 'upcoming' | 'past' | 'posts';
-const postDate = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: 'numeric', month: 'long' });
+type Tab = 'feed' | 'events';
 
-function initials(name: string) {
-  return name.split(/\s+/).filter((part) => /^\p{L}/u.test(part)).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase('de')).join('') || 'S';
+function Stat({ value, label }: { value: number; label: string }) {
+  return <View style={styles.stat}><Text style={styles.statValue}>{value}</Text><Text style={styles.statLabel}>{label}</Text></View>;
 }
 
-function Avatar({ organizer, size }: { organizer: PublicOrganizer; size: number }) {
-  return (
-    <View style={[styles.avatar, { width: size, height: size, borderRadius: size * 0.3 }]}>
-      {organizer.avatarUrl
-        ? <Image source={{ uri: organizer.avatarUrl }} style={StyleSheet.absoluteFill} accessibilityLabel={`Logo von ${organizer.displayName}`} />
-        : <Text style={[styles.initials, { fontSize: size * 0.36 }]}>{initials(organizer.displayName)}</Text>}
-    </View>
-  );
+function EventList({ events, now, today, title }: { events: SpotEvent[]; now: number; today: string; title: string }) {
+  if (events.length === 0) return null;
+  return <View style={styles.block}>
+    <Text style={styles.blockTitle}>{title}</Text>
+    <View style={styles.list}>{events.map((event) => (
+      <View key={event.id} style={styles.card}><GlassBackdrop radius={radius.lg} variant="card" /><EventRow event={event} href={eventDetailHref(event.id)} now={now} today={today} large trailing={eventPhase(event, now) === 'ended' ? undefined : <SaveEventButton id={event.id} title={event.title} size={38} />} /></View>
+    ))}</View>
+  </View>;
 }
 
-function Post({ post, organizer }: { post: PublicOrganizerPost; organizer: PublicOrganizer }) {
-  return (
-    <View style={styles.post}>
-      <GlassBackdrop radius={radius.lg} variant="card" />
-      <View style={styles.postHeader}><Avatar organizer={organizer} size={32} /><Text style={styles.postAuthor}>{organizer.displayName}</Text><Text style={styles.postDate}>{postDate.format(new Date(post.createdAt))}</Text></View>
-      <Text style={styles.postBody}>{post.body}</Text>
-    </View>
-  );
-}
-
-function EventList({ events, now, today }: { events: SpotEvent[]; now: number; today: string }) {
-  return <View style={styles.list}>{events.map((event) => (
-    <View key={event.id} style={styles.card}><GlassBackdrop radius={radius.lg} variant="card" /><EventRow event={event} href={eventDetailHref(event.id)} now={now} today={today} large trailing={eventPhase(event, now) === 'ended' ? undefined : <SaveEventButton id={event.id} title={event.title} size={38} />} /></View>
-  ))}</View>;
-}
-
+/** Organizer profile as a feed: identity, stats, stories, then posts or events. */
 export default function OrganizerProfileScreen() {
   const { id, event: highlightId } = useLocalSearchParams<{ id: string; event?: string }>();
   const { state, reload } = useOrganizerPage(id);
@@ -66,7 +48,7 @@ export default function OrganizerProfileScreen() {
   const { width } = useWindowDimensions();
   const [story, setStory] = useState<string | null>(null);
   const [seen, setSeen] = useState<string[]>([]);
-  const [tab, setTab] = useState<Tab>('upcoming');
+  const [tab, setTab] = useState<Tab>('feed');
   const [bioOpen, setBioOpen] = useState(false);
   const back = () => router.canGoBack() ? router.back() : router.replace('/');
 
@@ -96,50 +78,62 @@ export default function OrganizerProfileScreen() {
 
   const organizer = data.organizer;
   const website = organizer.websiteUrl;
-  const bannerHeight = Math.min(220, Math.max(150, width * 0.42));
-  const counts: Record<Tab, number> = { upcoming: groups.others.length, past: groups.past.length, posts: data.posts.length };
-  const tabs: { id: Tab; label: string }[] = [{ id: 'upcoming', label: groups.highlight ? 'Weitere' : 'Kommend' }, { id: 'past', label: 'Vergangen' }, { id: 'posts', label: 'Beiträge' }];
+  const postWidth = width - gutter * 2;
 
   return (
     <View style={styles.screen}>
       <Backdrop />
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + space.sm, paddingBottom: insets.bottom + space.xxxl }} showsVerticalScrollIndicator={false}>
-        {/* Banner with the logo overlapping its lower edge, name and city beside it. */}
-        <View style={[styles.banner, { height: bannerHeight }]}>
-          {organizer.avatarUrl
-            ? <Image source={{ uri: organizer.avatarUrl }} blurRadius={40} resizeMode="cover" style={StyleSheet.absoluteFill} />
-            : <LinearGradient colors={['#c922ab', '#6d1560', '#2a1230']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />}
-          <LinearGradient pointerEvents="none" colors={['#100b1566', '#100b1500', '#100b1599']} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
-          <View style={styles.bannerTop}><IconButton icon="back" accessibilityLabel="Zurück" onPress={back} /></View>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + space.xxxl }} showsVerticalScrollIndicator={false} stickyHeaderIndices={[0]}>
+        <View style={styles.topBar}>
+          <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} />
+          <Text numberOfLines={1} style={styles.topTitle}>{organizer.slug}</Text>
+          <View style={styles.topSpacer} />
         </View>
+
+        {/* Identity row like a profile header: avatar left, three stats right. */}
         <View style={styles.identity}>
-          <Avatar organizer={organizer} size={88} />
-          <View style={styles.identityCopy}>
-            <Text accessibilityRole="header" numberOfLines={2} style={styles.name}>{organizer.displayName}</Text>
-            <Text numberOfLines={1} style={styles.meta}>{[organizer.city, `${groups.upcoming.length} ${groups.upcoming.length === 1 ? 'kommendes Event' : 'kommende Events'}`].filter(Boolean).join(' · ')}</Text>
+          <OrganizerAvatar organizer={organizer} size={84} />
+          <View style={styles.stats}>
+            <Stat value={data.posts.length} label="Beiträge" />
+            <Stat value={groups.upcoming.length} label="Kommend" />
+            <Stat value={groups.past.length} label="Vergangen" />
           </View>
         </View>
-        {(organizer.biography || website) && <View style={styles.about}>
+        <View style={styles.about}>
+          <Text accessibilityRole="header" style={styles.name}>{organizer.displayName}</Text>
+          {organizer.city && <Text style={styles.city}>Veranstalter · {organizer.city}</Text>}
           {organizer.biography && <Pressable accessibilityRole="button" accessibilityLabel={bioOpen ? 'Beschreibung einklappen' : 'Ganze Beschreibung anzeigen'} onPress={() => setBioOpen((value) => !value)}><Text numberOfLines={bioOpen ? undefined : 2} style={styles.bio}>{organizer.biography}</Text></Pressable>}
-          {website && <Pressable accessibilityRole="link" accessibilityLabel="Website des Veranstalters öffnen" onPress={() => void Linking.openURL(website).catch(() => {})} style={styles.website}><Icon name="share" size={14} color={colors.pink} /><Text style={styles.websiteText}>{website.replace(/^https:\/\/(www\.)?/, '').replace(/\/$/, '')}</Text></Pressable>}
+          {website && <Pressable accessibilityRole="link" accessibilityLabel="Website des Veranstalters öffnen" onPress={() => void Linking.openURL(website).catch(() => {})} style={styles.website}><Icon name="share" size={13} color={colors.pink} /><Text style={styles.websiteText}>{website.replace(/^https:\/\/(www\.)?/, '').replace(/\/$/, '')}</Text></Pressable>}
+        </View>
+
+        {groups.highlight && <View style={styles.highlight}>
+          <Text style={styles.highlightLabel}>DEIN EVENT</Text>
+          <EventHero event={groups.highlight} href={eventDetailHref(groups.highlight.id)} today={today} now={now} width={postWidth} />
+          <Button label="Event ansehen" trailingIcon="chevron" onPress={() => router.push(eventDetailHref(groups.highlight!.id))} />
         </View>}
 
         {groups.stories.length > 0 && <View style={styles.rail}><StoryRail events={groups.stories} today={today} seen={seen} onOpen={setStory} /></View>}
 
-        {groups.highlight && <View style={styles.highlight}>
-          <Text style={styles.highlightLabel}>DEIN EVENT</Text>
-          <EventHero event={groups.highlight} href={eventDetailHref(groups.highlight.id)} today={today} now={now} width={width - gutter * 2} />
-          <Button label="Event ansehen" trailingIcon="chevron" onPress={() => router.push(eventDetailHref(groups.highlight!.id))} />
-        </View>}
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-          {tabs.map((item) => <Chip key={item.id} label={counts[item.id] > 0 ? `${item.label} · ${counts[item.id]}` : item.label} selected={tab === item.id} onPress={() => setTab(item.id)} />)}
-        </ScrollView>
-        <View style={styles.inset}>
-          {tab === 'upcoming' && (groups.others.length > 0 ? <EventList events={groups.others} now={now} today={today} /> : <Text style={styles.emptyLine}>Gerade keine weiteren Termine angekündigt.</Text>)}
-          {tab === 'past' && (groups.past.length > 0 ? <EventList events={groups.past} now={now} today={today} /> : <Text style={styles.emptyLine}>Noch keine vergangenen Events.</Text>)}
-          {tab === 'posts' && (data.posts.length > 0 ? <View style={styles.list}>{data.posts.map((post) => <Post key={post.id} post={post} organizer={organizer} />)}</View> : <Text style={styles.emptyLine}>Noch keine Beiträge veröffentlicht.</Text>)}
+        {/* Segmented switch: the feed is the default, events one tap away. */}
+        <View style={styles.segments}>
+          {([['feed', 'grid', 'Beiträge'], ['events', 'calendar', 'Events']] as const).map(([key, icon, label]) => (
+            <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: tab === key }} accessibilityLabel={label} onPress={() => setTab(key)} style={[styles.segment, tab === key && styles.segmentActive]}>
+              <Icon name={icon} size={18} color={tab === key ? colors.text : colors.faint} />
+              <Text style={[styles.segmentLabel, tab === key && styles.segmentLabelActive]}>{label}</Text>
+            </Pressable>
+          ))}
         </View>
+
+        {tab === 'feed' && <View style={styles.feed}>
+          {data.posts.length > 0
+            ? data.posts.map((post) => <GalleryPost key={post.id} post={post} organizer={organizer} width={postWidth} />)
+            : <Text style={styles.emptyLine}>Noch keine Beiträge veröffentlicht.</Text>}
+        </View>}
+        {tab === 'events' && <View style={styles.feed}>
+          <EventList title={groups.highlight ? 'Weitere Events' : 'Kommende Events'} events={groups.others} now={now} today={today} />
+          <EventList title="Vergangene Events" events={groups.past} now={now} today={today} />
+          {groups.others.length === 0 && groups.past.length === 0 && <Text style={styles.emptyLine}>Gerade keine Termine angekündigt.</Text>}
+        </View>}
       </ScrollView>
 
       <Modal visible={story !== null} animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setStory(null)}>
@@ -152,29 +146,32 @@ export default function OrganizerProfileScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   stateBack: { backgroundColor: colors.surface, marginLeft: space.lg, marginBottom: space.lg },
-  banner: { marginHorizontal: gutter, borderRadius: radius.xl, overflow: 'hidden', backgroundColor: colors.surface, ...squircle },
-  bannerTop: { padding: space.md },
-  identity: { flexDirection: 'row', alignItems: 'flex-end', gap: space.lg, paddingHorizontal: gutter + space.xs, marginTop: -36 },
-  avatar: { overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceHigh, borderWidth: 3, borderColor: '#1d1123', ...squircle },
-  initials: { fontWeight: '800', color: colors.text, letterSpacing: -0.5 },
-  identityCopy: { flex: 1, minWidth: 0, paddingBottom: space.xs, gap: 2 },
-  name: { ...type.title2, color: colors.text },
-  meta: { ...type.footnote, color: colors.muted },
-  about: { paddingHorizontal: gutter, marginTop: space.lg, gap: space.sm },
-  bio: { ...type.callout, color: colors.muted },
-  website: { flexDirection: 'row', alignItems: 'center', gap: space.xs, minHeight: 32, alignSelf: 'flex-start' },
+  topBar: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.sm, backgroundColor: '#120d1cf2' },
+  topTitle: { ...type.headline, color: colors.text, flex: 1, textAlign: 'center' },
+  topSpacer: { width: 44 },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: space.lg, paddingHorizontal: gutter, paddingTop: space.md },
+  stats: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
+  stat: { alignItems: 'center', gap: 1 },
+  statValue: { ...type.title3, color: colors.text },
+  statLabel: { ...type.footnote, fontSize: 12, color: colors.muted },
+  about: { paddingHorizontal: gutter, paddingTop: space.md, gap: 3 },
+  name: { ...type.headline, color: colors.text },
+  city: { ...type.footnote, color: colors.faint },
+  bio: { ...type.callout, color: colors.text, marginTop: 3 },
+  website: { flexDirection: 'row', alignItems: 'center', gap: space.xs, minHeight: 28, alignSelf: 'flex-start' },
   websiteText: { ...type.label, fontSize: 14, color: colors.pink },
-  rail: { paddingTop: space.xl },
-  highlight: { paddingHorizontal: gutter, marginTop: space.xxl, gap: space.md },
+  highlight: { paddingHorizontal: gutter, marginTop: space.xl, gap: space.md },
   highlightLabel: { ...type.overline, fontSize: 11, color: colors.pink },
-  tabs: { gap: space.sm, paddingHorizontal: gutter, paddingTop: space.xxl, paddingBottom: space.lg },
-  inset: { paddingHorizontal: gutter },
+  rail: { paddingTop: space.xl },
+  segments: { flexDirection: 'row', marginTop: space.xl, marginHorizontal: gutter, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.separator },
+  segment: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs, paddingVertical: space.md, borderBottomWidth: 2, borderBottomColor: 'transparent', marginBottom: -StyleSheet.hairlineWidth },
+  segmentActive: { borderBottomColor: colors.text },
+  segmentLabel: { ...type.label, fontSize: 14, color: colors.faint },
+  segmentLabelActive: { color: colors.text },
+  feed: { paddingHorizontal: gutter, paddingTop: space.lg, gap: space.lg },
+  block: { gap: space.md },
+  blockTitle: { ...type.headline, color: colors.text },
   list: { gap: space.md },
   card: { borderRadius: radius.lg, overflow: 'hidden', ...squircle },
-  emptyLine: { ...type.callout, color: colors.faint },
-  post: { padding: space.lg, borderRadius: radius.lg, overflow: 'hidden', gap: space.md, ...squircle },
-  postHeader: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  postAuthor: { ...type.label, fontSize: 14, color: colors.text, flex: 1 },
-  postDate: { ...type.footnote, color: colors.faint },
-  postBody: { ...type.body, color: colors.text },
+  emptyLine: { ...type.callout, color: colors.faint, textAlign: 'center', paddingVertical: space.xl },
 });

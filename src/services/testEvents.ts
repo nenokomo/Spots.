@@ -62,10 +62,17 @@ export function testOrganizer(identifier: string, force = false): PublicOrganize
   };
 }
 
+/** Local symbol photos for gallery posts, resolved from `local:<n>` paths. Never a real flyer. */
+export const TEST_POST_IMAGES: Record<string, number> = {
+  'local:1': require('../../assets/events/nightlife.jpg'),
+  'local:2': require('../../assets/events/club.jpg'),
+  'local:3': require('../../assets/events/today-hero-party.png'),
+};
+
 export function testOrganizerPosts(): PublicOrganizerPost[] {
-  return [{
-    id: 'f0f0f0f0-0000-4000-8000-0000000000b1', organizerId: TEST_ORGANIZER_ID,
-    body: 'TEST-Beitrag: Am Wochenende öffnen wir um 23 Uhr. Das ist ein lokaler Beispieltext.',
-    createdAt: '2026-11-08T12:00:00Z', updatedAt: '2026-11-08T12:00:00Z',
-  }];
+  return [
+    { id: 'f0f0f0f0-0000-4000-8000-0000000000b1', organizerId: TEST_ORGANIZER_ID, body: 'TEST-Beitrag: Rückblick auf Samstag. Danke an alle, die da waren! (Lokale Testdaten mit Symbolbildern)', createdAt: '2026-11-09T12:00:00Z', updatedAt: '2026-11-09T12:00:00Z', images: ['local:1', 'local:2', 'local:3'] },
+    { id: 'f0f0f0f0-0000-4000-8000-0000000000b2', organizerId: TEST_ORGANIZER_ID, body: 'TEST-Beitrag: Am Wochenende öffnen wir um 23 Uhr.', createdAt: '2026-11-08T12:00:00Z', updatedAt: '2026-11-08T12:00:00Z', images: ['local:1'] },
+    { id: 'f0f0f0f0-0000-4000-8000-0000000000b3', organizerId: TEST_ORGANIZER_ID, body: 'TEST-Beitrag ohne Bild: Neue Öffnungszeiten ab Dezember.', createdAt: '2026-11-07T12:00:00Z', updatedAt: '2026-11-07T12:00:00Z', images: [] },
+  ];
 }

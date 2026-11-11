@@ -4,16 +4,15 @@ import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { EventArtwork } from '../components/EventCards';
 import { EventDataState } from '../components/EventDataState';
 import { EventPhotoViewer } from '../components/EventPhotoViewer';
+import { OrganizerAvatar } from '../components/GalleryPost';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Icon, type IconName } from '../components/Icon';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Backdrop } from '../components/Screen';
 import { Button, IconButton } from '../components/ui/Button';
 import { PressableScale } from '../components/ui/PressableScale';
-import { StatusBadge } from '../components/ui/StatusBadge';
 import { colors, gutter, radius, space, squircle, type } from '../constants/theme';
 import { useEvent } from '../hooks/useEvents';
 import { useEventContent } from '../hooks/useEventContent';
@@ -21,30 +20,29 @@ import { useNow } from '../hooks/useNow';
 import { useOrganizerSummary } from '../hooks/useOrganizer';
 import { organizerHref } from '../navigation/eventRoutes';
 import { formatPrice } from '../services/content';
-import { eventPhase } from '../utils/eventStatus';
+import { eventPhase, phaseLabel } from '../utils/eventStatus';
 
 const dayFormat = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'long', day: 'numeric', month: 'long' });
-const shortDay = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit' });
 const timeFormat = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
 
-/** One fact in the strip under the title: icon, value, small label. */
-function Fact({ icon, value, label, onPress, accessibilityLabel }: { icon: IconName; value: string; label: string; onPress?: () => void; accessibilityLabel?: string }) {
+/** One row of the info list: icon, headline, detail, optional chevron. */
+function Row({ icon, title, detail, onPress, accessibilityLabel }: { icon: IconName; title: string; detail?: string; onPress?: () => void; accessibilityLabel?: string }) {
   const body = <>
-    <Icon name={icon} size={18} color={colors.pink} />
-    <Text numberOfLines={1} style={styles.factValue}>{value}</Text>
-    <Text numberOfLines={1} style={styles.factLabel}>{label}</Text>
+    <View style={styles.rowIcon}><Icon name={icon} size={18} color={colors.pink} /></View>
+    <View style={styles.rowCopy}><Text numberOfLines={2} style={styles.rowTitle}>{title}</Text>{detail && <Text numberOfLines={1} style={styles.rowDetail}>{detail}</Text>}</View>
+    {onPress && <Icon name="chevron" size={14} color={colors.faint} />}
   </>;
   return onPress
-    ? <PressableScale accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? value} onPress={onPress} style={styles.fact}>{body}</PressableScale>
-    : <View style={styles.fact}>{body}</View>;
+    ? <PressableScale accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? title} onPress={onPress} scaleTo={0.98} style={styles.row}>{body}</PressableScale>
+    : <View style={styles.row}>{body}</View>;
 }
 
-function Section({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
-  return <View style={styles.section}><View style={styles.sectionHead}><Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>{note && <Text style={styles.sectionNote}>{note}</Text>}</View>{children}</View>;
-}
-
+/**
+ * Poster-first event page: the flyer fills most of the screen, a glass card
+ * with the essentials floats over its lower edge, details follow underneath.
+ */
 export default function EventDetailScreen() {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const now = useNow();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -75,8 +73,9 @@ export default function EventDetailScreen() {
   const tags = [...new Set([...(event.genres ?? []), ...event.categories])];
   const snaps = content.snaps.filter((snap) => snap.mediaType === 'image');
   const gallery = [...(event.imageIsPlaceholder ? [] : [event.image]), ...snaps.map((snap) => ({ uri: snap.url }))];
-  const heroHeight = Math.min(420, Math.max(260, (width - gutter * 2) * 0.92));
+  const posterHeight = Math.min(height * 0.64, width * 1.35);
   const primary = !ended ? ticketUrl ?? sourceUrl : undefined;
+  const place = event.venue ? `${event.venue}, ${event.location}` : event.location;
 
   async function open(url: string) {
     setLinkError(false);
@@ -88,67 +87,79 @@ export default function EventDetailScreen() {
     void open(Platform.OS === 'ios' ? `https://maps.apple.com/?daddr=${destination}` : `https://www.google.com/maps/dir/?api=1&destination=${destination}`);
   }
   async function share() {
-    try { await Share.share({ title: `${event!.title} · Spots`, message: `${event!.title}\n${dayFormat.format(start)}, ${timeFormat.format(start)} Uhr\n${event!.venue ? `${event!.venue}, ` : ''}${event!.location}${sourceUrl ? `\n${sourceUrl}` : ''}` }); } catch { /* dismissed */ }
+    try { await Share.share({ title: `${event!.title} · Spots`, message: `${event!.title}\n${dayFormat.format(start)}, ${timeFormat.format(start)} Uhr\n${place}${sourceUrl ? `\n${sourceUrl}` : ''}` }); } catch { /* dismissed */ }
   }
 
   return <View style={styles.screen}>
     <Backdrop />
-    <ScrollView contentContainerStyle={{ paddingTop: insets.top + space.sm, paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
-      {/* Artwork card: full flyer on its own colour field, status and heart on top. */}
-      <View style={[styles.hero, { height: heroHeight }]}>
-        <EventArtwork event={event} inset={14} />
-        {!event.imageIsPlaceholder && <Pressable accessibilityRole="button" accessibilityLabel="Eventbild groß anzeigen" onPress={() => setViewer(0)} style={StyleSheet.absoluteFill} />}
-        <LinearGradient pointerEvents="none" colors={['#100b1599', '#100b1500', '#100b1500', '#100b1599']} locations={[0, 0.25, 0.75, 1]} style={StyleSheet.absoluteFill} />
-        <View style={styles.heroTop}>
+    <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
+      {/* Poster: blurred fill behind, the complete flyer in front, darkening towards the card. */}
+      <View style={[styles.poster, { height: posterHeight }]}>
+        <Image source={event.image} resizeMode="cover" blurRadius={event.imageIsPlaceholder ? 0 : 40} style={StyleSheet.absoluteFill} />
+        {!event.imageIsPlaceholder && <Pressable accessibilityRole="button" accessibilityLabel="Eventbild groß anzeigen" onPress={() => setViewer(0)} style={[StyleSheet.absoluteFill, { top: insets.top + 56, bottom: 96 }]}><Image source={event.image} resizeMode="contain" style={StyleSheet.absoluteFill} accessibilityLabel={`Eventbild: ${event.title}`} /></Pressable>}
+        <LinearGradient pointerEvents="none" colors={['#100b15b3', '#100b1500', '#100b1500', colors.background]} locations={[0, 0.22, 0.6, 1]} style={StyleSheet.absoluteFill} />
+        <View style={[styles.toolbar, { paddingTop: insets.top + space.sm }]}>
           <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} />
-          <View style={styles.heroActions}><IconButton icon="share" accessibilityLabel="Event teilen" onPress={() => void share()} /><SaveEventButton id={event.id} title={event.title} overlay size={44} /></View>
+          <View style={styles.toolbarActions}><IconButton icon="share" accessibilityLabel="Event teilen" onPress={() => void share()} /><SaveEventButton id={event.id} title={event.title} overlay size={44} /></View>
         </View>
-        <View style={styles.heroBottom}>{phase !== 'upcoming' ? <StatusBadge phase={phase} overlay /> : <View />}{event.imageIsPlaceholder && <Text style={styles.placeholderNote}>Symbolbild</Text>}</View>
+      </View>
+
+      {/* Floating essentials card. */}
+      <View style={styles.cardWrap}>
+        <View style={styles.card}>
+          <GlassBackdrop radius={radius.xl} variant="panel" />
+          <View style={styles.cardTop}>
+            <Text numberOfLines={1} style={[styles.kicker, live && styles.kickerLive]}>{live ? '●  LIVE' : phase === 'upcoming' ? tags.slice(0, 2).join(' · ').toLocaleUpperCase('de') || 'EVENT' : phaseLabel[phase].toLocaleUpperCase('de')}</Text>
+            {event.imageIsPlaceholder && <Text style={styles.placeholderNote}>Symbolbild</Text>}
+          </View>
+          <Text style={styles.title}>{event.title}</Text>
+          <View style={styles.essentials}>
+            <View style={styles.essential}><Text style={styles.essentialValue}>{dayFormat.format(start).split(',')[0]}</Text><Text style={styles.essentialLabel}>{new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: 'numeric', month: 'short' }).format(start)}</Text></View>
+            <View style={styles.essentialDivider} />
+            <View style={styles.essential}><Text style={styles.essentialValue}>{timeFormat.format(start)}</Text><Text style={styles.essentialLabel}>{end ? `bis ${timeFormat.format(end)}` : 'Beginn'}</Text></View>
+            <View style={styles.essentialDivider} />
+            <View style={[styles.essential, styles.essentialWide]}><Text numberOfLines={1} style={styles.essentialValue}>{event.venue ?? event.location}</Text><Text numberOfLines={1} style={styles.essentialLabel}>{event.venue ? event.location : 'Ort'}</Text></View>
+          </View>
+        </View>
       </View>
 
       <View style={styles.body}>
-        {tags.length > 0 && <Text numberOfLines={1} style={styles.kicker}>{tags.slice(0, 3).join('  ·  ').toLocaleUpperCase('de')}</Text>}
-        <Text style={styles.title}>{event.title}</Text>
-        {organizer
-          ? <Link href={organizerHref(organizer.id)} asChild><Pressable accessibilityRole="link" accessibilityLabel={`Veranstalter ${organizer.displayName} öffnen`} style={styles.organizer}>
-              <View style={styles.organizerAvatar}>{organizer.avatarUrl ? <Image source={{ uri: organizer.avatarUrl }} style={StyleSheet.absoluteFill} /> : <Icon name="profile" size={13} color={colors.text} />}</View>
-              <Text numberOfLines={1} style={styles.organizerName}>{organizer.displayName}</Text>
-              <Icon name="chevron" size={12} color={colors.faint} />
-            </Pressable></Link>
-          : <Text style={styles.subtitle}>{event.venue ? `${event.venue}, ${event.location}` : event.location}</Text>}
+        {organizer && <Link href={organizerHref(organizer.id)} asChild><PressableScale accessibilityRole="link" accessibilityLabel={`Veranstalter ${organizer.displayName} öffnen`} scaleTo={0.98} style={styles.organizer}>
+          <OrganizerAvatar organizer={organizer} size={40} />
+          <View style={styles.rowCopy}><Text style={styles.organizerLabel}>Veranstalter</Text><Text numberOfLines={1} style={styles.organizerName}>{organizer.displayName}</Text></View>
+          <Icon name="chevron" size={14} color={colors.faint} />
+        </PressableScale></Link>}
 
-        {/* Fact strip: the three questions, each a tap away where it makes sense. */}
-        <View style={styles.facts}>
-          <GlassBackdrop radius={radius.lg} variant="card" />
-          <Fact icon="calendar" value={shortDay.format(start)} label={dayFormat.format(start).split(',')[0]} />
-          <View style={styles.factDivider} />
-          <Fact icon="clock" value={`${timeFormat.format(start)}${end ? `–${timeFormat.format(end)}` : ''}`} label={live ? 'läuft' : end ? 'Uhr' : 'Beginn'} />
-          <View style={styles.factDivider} />
-          <Fact icon="pin" value={event.venue ?? event.location} label={event.venue ? event.location : point && !ended ? 'Route' : 'Ort'} onPress={point && !ended ? route : undefined} accessibilityLabel="Route zum Veranstaltungsort anzeigen" />
+        <View style={styles.rows}>
+          {point && !ended && <Row icon="map" title="Route anzeigen" detail={place} onPress={route} accessibilityLabel="Route zum Veranstaltungsort anzeigen" />}
+          {!point && <Row icon="pin" title={place} />}
+          <Row icon="ticket" title={ended ? 'Event beendet' : ticketUrl ? 'Tickets beim Anbieter' : sourceUrl ? `Infos & Tickets bei ${sourceLabel}` : 'Noch keine Ticketinformationen'} detail={ended ? undefined : primary ? 'Öffnet den Anbieter' : undefined} onPress={primary ? () => void open(primary) : undefined} />
+          {tags.length > 2 && <Row icon="headphones" title={tags.join(' · ')} />}
         </View>
         {linkError && <Text accessibilityRole="alert" style={styles.error}>Der Link konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
 
-        {content.tickets.length > 0 && !ended && <Section title="Tickets" note="Verkauf über den Anbieter">
-          <View style={styles.tickets}>{content.tickets.map((ticket) => (
+        {content.tickets.length > 0 && !ended && <View style={styles.block}>
+          <Text style={styles.blockTitle}>Ticketarten</Text>
+          {content.tickets.map((ticket) => (
             <PressableScale key={ticket.id} accessibilityRole="button" disabled={!ticket.externalUrl || ticket.soldOut} onPress={() => ticket.externalUrl && void open(ticket.externalUrl)} style={styles.ticket}>
-              <View style={styles.ticketCopy}><Text style={styles.ticketName}>{ticket.name}</Text>{ticket.description && <Text numberOfLines={1} style={styles.ticketNote}>{ticket.description}</Text>}</View>
-              <Text style={[styles.ticketPrice, ticket.soldOut && styles.soldOut]}>{ticket.soldOut ? 'Ausverkauft' : formatPrice(ticket.priceCents, ticket.currency)}</Text>
+              <View style={styles.rowCopy}><Text style={styles.rowTitle}>{ticket.name}</Text>{ticket.description && <Text numberOfLines={1} style={styles.rowDetail}>{ticket.description}</Text>}</View>
+              <Text style={[styles.price, ticket.soldOut && styles.soldOut]}>{ticket.soldOut ? 'Ausverkauft' : formatPrice(ticket.priceCents, ticket.currency)}</Text>
             </PressableScale>
-          ))}</View>
-        </Section>}
+          ))}
+        </View>}
 
-        {event.description && <Section title="Über das Event"><Text style={styles.description}>{event.description}</Text></Section>}
+        {event.description && <View style={styles.block}><Text style={styles.blockTitle}>Über das Event</Text><Text style={styles.description}>{event.description}</Text></View>}
 
-        <Section title="Live Snaps" note="24 Stunden sichtbar">
+        <View style={styles.block}>
+          <View style={styles.blockHead}><Text style={styles.blockTitle}>Live Snaps</Text><Text style={styles.blockNote}>24 h</Text></View>
           {snaps.length > 0
             ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.snaps}>
-                {snaps.map((snap, index) => <Pressable key={snap.id} accessibilityRole="button" accessibilityLabel={`Live Snap ${index + 1} öffnen`} onPress={() => setViewer(gallery.length - snaps.length + index)} style={styles.snap}><Image source={{ uri: snap.url }} style={StyleSheet.absoluteFill} resizeMode="cover" />{snap.byOrganizer && <Text style={styles.snapBadge}>Veranstalter</Text>}</Pressable>)}
+                {snaps.map((snap, index) => <Pressable key={snap.id} accessibilityRole="button" accessibilityLabel={`Live Snap ${index + 1} öffnen`} onPress={() => setViewer(gallery.length - snaps.length + index)} style={styles.snap}><Image source={{ uri: snap.url }} style={StyleSheet.absoluteFill} resizeMode="cover" /></Pressable>)}
               </ScrollView>
-            : <View style={styles.snapEmpty}><Icon name="camera" size={18} color={colors.faint} /><Text style={styles.snapEmptyText}>{live ? 'Noch keine Eindrücke von heute Nacht.' : 'Eindrücke von Besuchern erscheinen, sobald das Event läuft.'}</Text></View>}
-        </Section>
+            : <Text style={styles.description}>{live ? 'Noch keine Eindrücke von heute Nacht.' : 'Eindrücke von Besuchern erscheinen, sobald das Event läuft.'}</Text>}
+        </View>
 
         <View style={styles.footer}>
-          {ended && <Text style={styles.footnote}>Dieses Event ist vorbei.</Text>}
           {sourceUrl && <Link href={sourceUrl} style={styles.link}>Original auf {sourceLabel} öffnen ↗</Link>}
           {event.sourceName?.toLowerCase() === 'goabase' && <Link href="https://www.goabase.net/" style={styles.link}>Veranstaltungen von Goabase ↗</Link>}
           <Text style={styles.footnote}>Zeiten in Europe/Berlin · Angaben der Veranstaltungsquelle{event.sourceName ? ` (${sourceLabel})` : ''}</Text>
@@ -156,14 +167,13 @@ export default function EventDetailScreen() {
       </View>
     </ScrollView>
 
-    {/* Sticky action bar: one primary action, route as a quiet second. */}
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       <GlassBackdrop radius={0} variant="panel" />
       <View style={styles.barRow}>
         {primary
           ? <Button label={ticketUrl ? 'Tickets kaufen' : 'Infos & Tickets'} accessibilityLabel={ticketUrl ? 'Tickets beim Anbieter kaufen' : `Infos und Tickets auf der Originalseite bei ${sourceLabel}`} icon="ticket" onPress={() => void open(primary)} style={styles.flex} />
-          : <View style={styles.barCopy}><Text numberOfLines={1} style={styles.barTitle}>{ended ? 'Event beendet' : `${shortDay.format(start)} · ${timeFormat.format(start)} Uhr`}</Text><Text numberOfLines={1} style={styles.barText}>{event.venue ? `${event.venue}, ${event.location}` : event.location}</Text></View>}
-        {point && !ended && <Button label="Route" icon="map" variant="secondary" onPress={route} accessibilityLabel="Route zum Veranstaltungsort anzeigen" />}
+          : <View style={styles.flex}><Text numberOfLines={1} style={styles.barTitle}>{ended ? 'Event beendet' : `${timeFormat.format(start)} Uhr · ${place}`}</Text></View>}
+        {point && !ended && <IconButton icon="map" accessibilityLabel="Route zum Veranstaltungsort anzeigen" onPress={route} size={52} plain style={styles.barButton} />}
       </View>
     </View>
 
@@ -176,47 +186,48 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   state: { flex: 1, paddingHorizontal: gutter, gap: space.md },
   stateBack: { backgroundColor: colors.surface, marginBottom: space.lg },
-  hero: { marginHorizontal: gutter, borderRadius: radius.xl, overflow: 'hidden', backgroundColor: colors.surface, justifyContent: 'space-between', ...squircle },
-  heroTop: { flexDirection: 'row', justifyContent: 'space-between', padding: space.md },
-  heroActions: { flexDirection: 'row', gap: space.sm },
-  heroBottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', padding: space.md },
-  placeholderNote: { ...type.footnote, fontSize: 11, color: colors.text, backgroundColor: '#100b15b3', borderRadius: radius.sm, overflow: 'hidden', paddingHorizontal: space.sm, paddingVertical: 3 },
-  body: { paddingHorizontal: gutter, paddingTop: space.xl },
-  kicker: { ...type.overline, fontSize: 11, color: colors.pink, marginBottom: space.xs },
+  poster: { overflow: 'hidden', backgroundColor: colors.surface },
+  toolbar: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: space.lg },
+  toolbarActions: { flexDirection: 'row', gap: space.sm },
+  cardWrap: { paddingHorizontal: gutter, marginTop: -84 },
+  card: { padding: space.xl, borderRadius: radius.xl, overflow: 'hidden', gap: space.sm, ...squircle },
+  cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  kicker: { ...type.overline, fontSize: 11, color: colors.pink, flexShrink: 1 },
+  kickerLive: { color: colors.pink },
+  placeholderNote: { ...type.footnote, fontSize: 10, color: colors.faint },
   title: { ...type.title, color: colors.text },
-  subtitle: { ...type.callout, color: colors.muted, marginTop: space.xs },
-  organizer: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 32, marginTop: space.xs, alignSelf: 'flex-start' },
-  organizerAvatar: { width: 22, height: 22, borderRadius: 11, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent },
-  organizerName: { ...type.label, fontSize: 14, color: colors.text, flexShrink: 1 },
-  facts: { flexDirection: 'row', alignItems: 'stretch', marginTop: space.xl, borderRadius: radius.lg, overflow: 'hidden', ...squircle },
-  fact: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: space.lg, paddingHorizontal: space.xs },
-  factValue: { ...type.label, fontSize: 14, color: colors.text, textAlign: 'center' },
-  factLabel: { ...type.footnote, fontSize: 11, color: colors.faint, textAlign: 'center' },
-  factDivider: { width: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginVertical: space.md },
+  essentials: { flexDirection: 'row', alignItems: 'stretch', marginTop: space.sm, paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator },
+  essential: { alignItems: 'flex-start', gap: 1, paddingRight: space.md },
+  essentialWide: { flex: 1, minWidth: 0, paddingRight: 0 },
+  essentialValue: { ...type.label, color: colors.text },
+  essentialLabel: { ...type.footnote, fontSize: 11, color: colors.faint },
+  essentialDivider: { width: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginRight: space.md },
+  body: { paddingHorizontal: gutter, paddingTop: space.xl },
+  organizer: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.lg, backgroundColor: '#ffffff0a', marginBottom: space.md, ...squircle },
+  organizerLabel: { ...type.footnote, fontSize: 11, color: colors.faint },
+  organizerName: { ...type.label, color: colors.text },
+  rows: { borderRadius: radius.lg, overflow: 'hidden', backgroundColor: '#ffffff0a', ...squircle },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 60, paddingHorizontal: space.md, paddingVertical: space.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.separator },
+  rowIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentSoft },
+  rowCopy: { flex: 1, minWidth: 0 },
+  rowTitle: { ...type.label, fontSize: 15, color: colors.text },
+  rowDetail: { ...type.footnote, color: colors.muted, marginTop: 1 },
   error: { ...type.footnote, color: colors.danger, marginTop: space.sm },
-  section: { marginTop: space.xxl },
-  sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: space.md, marginBottom: space.md },
-  sectionTitle: { ...type.title3, color: colors.text },
-  sectionNote: { ...type.footnote, color: colors.faint },
-  tickets: { gap: space.sm },
-  ticket: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.md, backgroundColor: '#ffffff0a', borderWidth: 1, borderColor: '#ffffff12', ...squircle },
-  ticketCopy: { flex: 1, minWidth: 0 },
-  ticketName: { ...type.label, color: colors.text },
-  ticketNote: { ...type.footnote, color: colors.muted, marginTop: 2 },
-  ticketPrice: { ...type.headline, color: colors.text },
+  block: { marginTop: space.xxl, gap: space.md },
+  blockHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
+  blockTitle: { ...type.title3, color: colors.text },
+  blockNote: { ...type.footnote, color: colors.faint },
+  ticket: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.md, backgroundColor: '#ffffff0a', ...squircle },
+  price: { ...type.headline, color: colors.text },
   soldOut: { color: colors.faint },
   description: { ...type.body, color: colors.muted },
   snaps: { gap: space.sm },
   snap: { width: 104, height: 156, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surface, ...squircle },
-  snapBadge: { position: 'absolute', left: 6, bottom: 6, ...type.footnote, fontSize: 10, fontWeight: '700', color: colors.text, backgroundColor: colors.accent, borderRadius: 6, overflow: 'hidden', paddingHorizontal: 6, paddingVertical: 2 },
-  snapEmpty: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.md, backgroundColor: '#ffffff08' },
-  snapEmptyText: { ...type.footnote, color: colors.muted, flex: 1 },
   footer: { marginTop: space.xxl, gap: space.xs },
   link: { ...type.callout, color: colors.pink, paddingVertical: space.sm },
   footnote: { ...type.footnote, color: colors.faint },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: space.md, paddingHorizontal: space.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  barCopy: { flex: 1, minWidth: 0 },
   barTitle: { ...type.headline, color: colors.text },
-  barText: { ...type.footnote, color: colors.faint },
+  barButton: { backgroundColor: colors.surfaceHigh },
 });

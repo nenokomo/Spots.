@@ -9,6 +9,7 @@ import { EventRow } from '../components/EventRow';
 import { RadiusSlider } from '../components/RadiusSlider';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Backdrop } from '../components/Screen';
+import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Button, IconButton } from '../components/ui/Button';
 import { PressableScale } from '../components/ui/PressableScale';
 import { EmptyState } from '../components/ui/Section';
@@ -34,8 +35,7 @@ const km = (value: number) => `${new Intl.NumberFormat('de-DE', { maximumFractio
 function LiveCard({ event, distance, today, now }: { event: LocatedEvent; distance: number; today: string; now: number }) {
   return (
     <PressableScale accessibilityRole="link" accessibilityLabel={`${event.title}, läuft jetzt, ${event.location}, öffnen`} onPress={() => router.push(eventHref(event, 'radar', now))} style={styles.liveCard}>
-      <Image source={event.image} resizeMode="cover" blurRadius={30} style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, styles.liveDim]} />
+      <GlassBackdrop radius={corner.xl} variant="card" />
       <Image source={event.image} resizeMode="cover" style={styles.liveArt} accessibilityLabel={event.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${event.title}`} />
       <View style={styles.liveBody}>
         <View style={styles.liveState}><View style={styles.liveDot} /><Text style={styles.liveLabel}>LIVE{event.endsAt ? ` · BIS ${eventTimeLabel(event.endsAt)}` : ''}</Text></View>
@@ -95,7 +95,7 @@ export default function TodayEventsScreen() {
           ? <View style={styles.heading}><Text accessibilityRole="header" style={styles.headingTitle}>{item.title}</Text>{item.note && <Text style={styles.headingNote}>{item.note}</Text>}</View>
           : item.kind === 'live'
             ? <View style={styles.inset}><LiveCard event={item.event} distance={distances.get(item.event.id) ?? 0} today={today} now={now} /></View>
-            : <View style={styles.inset}><EventRow event={item.event} href={eventHref(item.event, 'radar', now)} now={now} today={today} showDay={false} distanceKm={distances.get(item.event.id)} trailing={<SaveEventButton id={item.event.id} title={item.event.title} size={36} />} /></View>}
+            : <View style={styles.inset}><View style={styles.laterCard}><GlassBackdrop radius={corner.lg} variant="card" /><EventRow event={item.event} href={eventHref(item.event, 'radar', now)} now={now} today={today} showDay={false} distanceKm={distances.get(item.event.id)} large trailing={<SaveEventButton id={item.event.id} title={item.event.title} size={38} />} /></View></View>}
         ItemSeparatorComponent={({ leadingItem }) => <View style={(leadingItem as Row).kind === 'live' ? styles.cardGap : styles.rowGap} />}
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + space.xl }}
         showsVerticalScrollIndicator={false}
@@ -151,9 +151,9 @@ const styles = StyleSheet.create({
   headingNote: { ...type.footnote, color: colors.faint, marginTop: 2 },
   inset: { paddingHorizontal: gutter },
   cardGap: { height: space.md },
-  rowGap: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: gutter + 68 + space.md },
-  liveCard: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, paddingRight: space.lg, borderRadius: corner.xl, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: '#c922ab59', ...squircle },
-  liveDim: { backgroundColor: '#100b15b3' },
+  rowGap: { height: space.md },
+  laterCard: { borderRadius: corner.lg, overflow: 'hidden', ...squircle },
+  liveCard: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, paddingRight: space.lg, borderRadius: corner.xl, overflow: 'hidden', ...squircle },
   liveArt: { width: 96, height: 120, borderRadius: corner.md, backgroundColor: colors.surfaceHigh, ...squircle },
   liveBody: { flex: 1, minWidth: 0, gap: 3 },
   liveState: { flexDirection: 'row', alignItems: 'center', gap: 6 },

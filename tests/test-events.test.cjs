@@ -16,6 +16,7 @@ require.extensions['.ts'] = (module, filename) => {
   module._compile(result.outputText, filename);
 };
 require.extensions['.jpg'] = (module) => { module.exports = 1; };
+require.extensions['.png'] = (module) => { module.exports = 2; };
 
 const { testEvents, testOrganizer, testOrganizerPosts, TEST_EVENT_IDS, TEST_ORGANIZER_ID } = require('../src/services/testEvents.ts');
 const { eventHref } = require('../src/navigation/eventRoutes.ts');

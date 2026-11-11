@@ -38,12 +38,13 @@ export function createPublicOrganizerReader(client: SupabaseClient) {
         startsAt: row.starts_at, endsAt: row.ends_at, city: row.city, imageUrl: safeUrl(row.image_url), status: 'scheduled' }));
     },
     async posts(organizerId: string): Promise<PublicOrganizerPost[]> {
+      // image_paths is added by SQL 17/19; where it is missing the request falls back to text-only posts.
       const { data, error } = await client.from('organizer_posts').select('id,organizer_id,body,created_at,updated_at,organizers!inner(is_published)')
         .eq('organizer_id', organizerId).eq('is_published', true).eq('organizers.is_published', true)
         .order('created_at', { ascending: false }).order('id').limit(100);
       if (error && missingSchema(error)) throw new OrganizerUnavailableError();
       if (error) throw new Error('Veranstalterbeiträge konnten nicht geladen werden.');
-      return (data ?? []).map(row => ({ id: row.id, organizerId: row.organizer_id, body: row.body, createdAt: row.created_at, updatedAt: row.updated_at }));
+      return (data ?? []).map(row => ({ id: row.id, organizerId: row.organizer_id, body: row.body, createdAt: row.created_at, updatedAt: row.updated_at, images: [] }));
     },
   };
 }

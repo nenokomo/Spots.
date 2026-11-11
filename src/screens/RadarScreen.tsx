@@ -82,7 +82,8 @@ export default function RadarScreen() {
   const headline = radar.scanning ? 'Scan läuft' : quiet ? 'Gerade ruhig hier' : liveCount > 0 ? 'Jetzt los' : 'Heute Nacht';
   const summary = radar.scanning ? `${radiusLabel} um ${location.label}`
     : quiet ? (nearest.length > 0 ? 'Die nächsten Events in der Nähe' : 'Karte verschieben oder Entdecken öffnen')
-      : [liveCount > 0 ? `${liveCount} live` : null, laterCount > 0 ? `${laterCount} später` : null, radiusLabel].filter(Boolean).join(' · ');
+      : [liveCount > 0 ? `${liveCount} live` : null, laterCount > 0 ? `${laterCount} später` : null, location.userCoordinate ? 'um dich' : `um ${location.label}`].filter(Boolean).join(' · ');
+  const noFix = !location.loading && !location.userCoordinate && location.label !== 'Dein Standort';
 
   const reset = useCallback(async () => {
     await locate();
@@ -136,6 +137,12 @@ export default function RadarScreen() {
         </View>
       )}
 
+      <View pointerEvents="none" style={[styles.radiusPill, { top: topInset }]}>
+        <GlassBackdrop radius={18} />
+        <Icon name="radar" size={14} color={colors.pink} />
+        <Text style={styles.radiusText}>{radiusLabel} Umkreis</Text>
+      </View>
+
       <View pointerEvents="box-none" style={[styles.locate, { bottom: panelHeight + space.md }]}>
         <IconButton icon="locate" accessibilityLabel="Zu meinem Standort, 30 Kilometer Umkreis" onPress={() => void reset()} />
       </View>
@@ -145,7 +152,7 @@ export default function RadarScreen() {
         <View style={styles.panelHeader}>
           <View style={styles.panelCopy}>
             <Text accessibilityRole="header" style={styles.headline}>{headline}</Text>
-            <Text numberOfLines={1} style={styles.summary}>{summary}</Text>
+            <Text numberOfLines={1} style={styles.summary}>{noFix ? `Kein Standort · ${location.label} als Mitte` : summary}</Text>
           </View>
           <PressableScale accessibilityRole="button" accessibilityLabel="Alle Events des Radars ansehen" onPress={() => router.push({ pathname: '/today', params: { category, radius: String(radius), latitude: String(searchCenter.latitude), longitude: String(searchCenter.longitude) } })} hitSlop={8} style={styles.more}>
             <Text style={styles.moreText}>Alle</Text>
@@ -191,6 +198,8 @@ const styles = StyleSheet.create({
   top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingHorizontal: space.lg },
   place: { flexShrink: 1, height: 44, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, borderRadius: 22, overflow: 'hidden' },
   placeLabel: { ...type.headline, fontSize: 16, color: colors.text, flexShrink: 1 },
+  radiusPill: { position: 'absolute', left: space.lg, height: 36, flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingHorizontal: space.md, borderRadius: 18, overflow: 'hidden' },
+  radiusText: { ...type.label, fontSize: 13, color: colors.text },
   filterDot: { position: 'absolute', top: 2, right: 2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent, borderWidth: 2, borderColor: colors.background },
   locate: { position: 'absolute', right: space.lg },
   panel: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.background, borderTopLeftRadius: corner.xl, borderTopRightRadius: corner.xl, borderTopWidth: 1, borderColor: '#b872ac50', overflow: 'hidden', ...squircle },

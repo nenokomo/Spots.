@@ -19,6 +19,7 @@ require.extensions['.ts'] = (module, filename) => {
   module._compile(result.outputText, filename);
 };
 require.extensions['.jpg'] = (module) => { module.exports = 1; };
+require.extensions['.png'] = (module) => { module.exports = 2; };
 
 process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://spots-test.supabase.co';
 process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_test_fixture';
