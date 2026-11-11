@@ -65,7 +65,7 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
         const point = project(venue.coordinate.latitude, venue.coordinate.longitude, zoom);
         const left = layout.width / 2 + (point.x - origin.x) * scale;
         const top = centerY + (point.y - origin.y) * scale;
-        return <Pressable key={`venue-${venue.id}`} onPress={() => onSelectVenue?.(venue.id)} accessibilityRole="button" accessibilityLabel={`${venue.name}, Ort öffnen`} style={[styles.venueHit, { left: left - 11, top: top - 11 }]}><View style={styles.venueDot} /></Pressable>;
+        return <Pressable key={`venue-${venue.id}`} onPress={() => onSelectVenue?.(venue.id)} accessibilityRole="button" accessibilityLabel={`${venue.name}, Ort öffnen`} style={[styles.venueHit, { left: left - 14, top: top - 14 }]}><View style={styles.venueDot} /></Pressable>;
       })}
       {events.map((event) => {
         const point = project(event.coordinate.latitude, event.coordinate.longitude, zoom);
@@ -89,8 +89,8 @@ const styles = StyleSheet.create({
   zoomButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   zoomText: { fontSize: 24, color: '#ffffff' },
   // Clubs: klein und grau, klar anders als die pinken Event-Pins.
-  venueHit: { position: 'absolute', width: 22, height: 22, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
-  venueDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#c9c7d1', borderWidth: 2, borderColor: '#2a292e' },
+  venueHit: { position: 'absolute', width: 28, height: 28, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
+  venueDot: { width: 13, height: 13, borderRadius: 6.5, backgroundColor: '#c9c7d1', borderWidth: 2, borderColor: '#2a292e' },
   markerTouch: { position: 'absolute', width: 54, height: 66, justifyContent: 'center', alignItems: 'center' },
   attribution: { position: 'absolute', alignSelf: 'center', bottom: 6, padding: 3, backgroundColor: '#191c27cc', borderRadius: 4 },
   attributionText: { color: '#bbc1cb', fontSize: 8 },

@@ -100,8 +100,8 @@ const styles = StyleSheet.create({
   frame: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: '#202023' },
   tint: { backgroundColor: '#00000020' },
   // Clubs: klein und grau, klar anders als die pinken Event-Pins.
-  venueHit: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
-  venueDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#c9c7d1', borderWidth: 2, borderColor: '#2a292e' },
+  venueHit: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  venueDot: { width: 13, height: 13, borderRadius: 6.5, backgroundColor: '#c9c7d1', borderWidth: 2, borderColor: '#2a292e' },
   locationHalo: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#388bff30', alignItems: 'center', justifyContent: 'center' },
   locationDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#348cff', borderWidth: 3, borderColor: '#ffffff' },
 });

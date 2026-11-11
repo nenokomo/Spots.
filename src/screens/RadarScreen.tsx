@@ -14,6 +14,7 @@ import { RadiusSlider } from '../components/RadiusSlider';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Button, IconButton } from '../components/ui/Button';
 import { PressableScale } from '../components/ui/PressableScale';
+import { ListRow } from '../components/ui/List';
 import { Sheet } from '../components/ui/Sheet';
 import { tabBarContentInset } from '../constants/navigation';
 import { colors, gutter, radius as corner, space, squircle, type, type Category } from '../constants/theme';
@@ -22,11 +23,13 @@ import { useLocation } from '../hooks/useLocation';
 import { useNow } from '../hooks/useNow';
 import { useRadarIntro } from '../hooks/useRadarIntro';
 import { useVenuesNear } from '../hooks/useVenues';
+import type { NearbyVenue } from '../services/venues';
+import { venueKindLabels } from '../types/venues';
 import { useToday } from '../hooks/useToday';
 import { eventHref } from '../navigation/eventRoutes';
 import { isLocatedEvent, matchesCategory, type LocatedEvent } from '../types/events';
 import { isTonight } from '../utils/eventStatus';
-import { distanceKm, type Coordinate } from '../utils/events';
+import { distanceKm, formatDistance, type Coordinate } from '../utils/events';
 
 const ROW = EVENT_ROW_HEIGHT + StyleSheet.hairlineWidth;
 
@@ -41,6 +44,7 @@ export default function RadarScreen() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [placeOpen, setPlaceOpen] = useState(false);
   const [preview, setPreview] = useState<LocatedEvent | null>(null);
+  const [venuePreview, setVenuePreview] = useState<NearbyVenue | null>(null);
   const location = useLocation();
   const { locate } = location;
   const live = useLiveEvents();
@@ -53,6 +57,7 @@ export default function RadarScreen() {
   const searchCenter = viewport.source === location.center ? viewport.center : location.center;
   const onCenterChange = useCallback((center: Coordinate) => {
     setPreview(null);
+    setVenuePreview(null);
     setViewport((previous) => previous.source === location.center && distanceKm(previous.center, center) < 0.01 ? previous : { source: location.center, center });
   }, [location.center]);
 
@@ -99,12 +104,13 @@ export default function RadarScreen() {
 
   useFocusEffect(useCallback(() => {
     setPreview(null);
+    setVenuePreview(null);
     setRadius(30);
     setVisibleRadius(30);
     void locate({ automatic: true });
   }, [locate]));
 
-  const select = useCallback((event: LocatedEvent) => setPreview(event), []);
+  const select = useCallback((event: LocatedEvent) => { setVenuePreview(null); setPreview(event); }, []);
   const previewVisible = !!preview && !radar.scanning && mapEvents.some((event) => event.id === preview.id);
 
   // The panel shows about three events at once; the map keeps the rest of the screen.
@@ -118,7 +124,7 @@ export default function RadarScreen() {
       {/* The map runs under the panel's rounded corners, so no background shows through there. */}
       <View style={[styles.map, { bottom: panelHeight - corner.xl }]}>
         <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={select}
-          venues={mapVenues} onSelectVenue={(id) => router.push({ pathname: '/venue/[id]', params: { id } })}
+          venues={mapVenues} onSelectVenue={(id) => { setPreview(null); setVenuePreview(nearbyVenues.venues.find((venue) => venue.id === id) ?? null); }}
           onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} topInset={topInset} bottomInset={corner.xl} locked={radar.scanning} />
       </View>
 
@@ -145,6 +151,18 @@ export default function RadarScreen() {
           <View testID="event-preview" style={styles.preview}>
             <GlassBackdrop radius={corner.xl} variant="panel" />
             <EventRow event={preview} href={eventHref(preview, 'radar')} now={now} today={today} distanceKm={distanceKm(searchCenter, preview.coordinate)} trailing={<SaveEventButton id={preview.id} title={preview.title} size={36} />} />
+          </View>
+        </View>
+      )}
+
+      {venuePreview && !radar.scanning && showClubs && (
+        <View style={[styles.previewLayer, { bottom: panelHeight }]} pointerEvents="box-none">
+          <Pressable accessibilityRole="button" accessibilityLabel="Ortsvorschau schließen" onPress={() => setVenuePreview(null)} style={StyleSheet.absoluteFill} />
+          <View testID="venue-preview" style={[styles.preview, styles.venuePreview]}>
+            <GlassBackdrop radius={corner.xl} variant="panel" />
+            <ListRow icon={venuePreview.kind === 'live' ? 'headphones' : venuePreview.kind === 'club' ? 'wave' : 'pin'} title={venuePreview.name}
+              subtitle={[venueKindLabels[venuePreview.kind], venuePreview.city, formatDistance(distanceKm(searchCenter, venuePreview.coordinate))].filter(Boolean).join(' · ')}
+              accessibilityLabel={`${venuePreview.name} öffnen`} onPress={() => router.push({ pathname: '/venue/[id]', params: { id: venuePreview.id } })} />
           </View>
         </View>
       )}
@@ -221,6 +239,8 @@ const styles = StyleSheet.create({
   more: { flexDirection: 'row', alignItems: 'center', gap: 3, minHeight: 32 },
   moreText: { ...type.callout, color: colors.pink },
   row: { paddingHorizontal: gutter },
+  // Orte: neutraler Rand statt Pink, damit klar ist, dass hier keine Party läuft.
+  venuePreview: { borderColor: '#ffffff26', paddingHorizontal: 0 },
   previewLayer: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40 },
   preview: { position: 'absolute', left: space.lg, right: space.lg, top: '50%', marginTop: -46, paddingHorizontal: space.md, borderRadius: corner.xl, overflow: 'hidden', borderWidth: 1, borderColor: '#de5ab970', ...squircle },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: gutter + 68 + space.md },

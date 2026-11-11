@@ -51,7 +51,7 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
 - **Abschluss**: `PROJECT_STATUS.md` auf den neuen Stand gebracht.
 - **Ticketmaster in Spots-Test aktiv (11.11., Jacint)**: Secret gesetzt, Function `import-ticketmaster` bereitgestellt, einmal per POST ausgelöst: 506 übernommen, 475 sichtbar, Sperre frei, Goabase unverändert. Auf dem Handy mit Testkonfiguration bestätigt: neue Events sichtbar. **Noch kein Zeitplan (Cron)**, Import läuft also nur bei manuellem Aufruf.
 - **Admin-Konto in Spots-Test (11.11.)**: Konto von Jacint angelegt, bestätigt, Anmeldung in der App klappt, als Admin eingetragen (ein früheres Testkonto mit vergessenem Passwort auf Wunsch gelöscht). Freigabe-Ablauf selbst noch nicht durchgespielt.
-- **Nachtrag 11.11.**: Formular „Event anlegen“ scrollt jetzt (Rückmeldung vom Handy). **Clubs auf der Radar-Karte**: graue Punkte (nativ + Web), erst nach dem Scan, max. 250, Tipp öffnet die Ortsseite, Schalter „Clubs auf der Karte“ im Radar-Filter (Standard an). Web-Vorschau geprüft (Karlsruhe, Test-Orte); auf dem Handy noch nicht. Betrifft Noyans Design (Radar).
+- **Nachtrag 11.11.**: Formular „Event anlegen“ scrollt jetzt (Rückmeldung vom Handy). **Clubs auf der Radar-Karte**: graue Punkte (nativ + Web), erst nach dem Scan, max. 250, Tipp öffnet die Ortsseite, Schalter „Clubs auf der Karte“ im Radar-Filter (Standard an). Web-Vorschau geprüft (Karlsruhe, Test-Orte); auf dem Handy noch nicht. Betrifft Noyans Design (Radar). Danach auf Wunsch: Punkte etwas größer (13 px), Tipp auf einen Punkt öffnet eine Vorschau-Box wie bei Events (neutraler Rand statt Pink), Tipp auf die Box öffnet die Ortsseite; in der Web-Vorschau geprüft.
 
 ## Läuft gerade
 
