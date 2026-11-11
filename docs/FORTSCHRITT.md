@@ -47,14 +47,18 @@ Regeln: Datenbankänderungen erst lokal (PGlite), dann Spots-Test (`nfomkdvotqtl
   - **In Spots-Test eingespielt**, Prüfsummen identisch, Events unverändert (außer neuer leerer Spalte `venue_id`). Noch **kein Admin eingetragen**.
   - App: `/admin` (nur mit Konto + Admin-Rolle; sonst „Nur für das Spots-Team“), Reiter Entwürfe/Orte/Meldungen, Formular „Event anlegen“ (Ortssuche, Datum/Zeit, Art, Genre, Links, Herkunft; „Speichern und freigeben“ oder nur Entwurf), Eintrag im Profil nur für Admins, Ortsseite zeigt freigegebene Events des Ortes. Web-Vorschau: Sperrseite ohne Konto geprüft, keine Datenabfragen ohne Konto. **Freigabe-Ablauf mit echtem Admin-Konto nicht geprüft** (kein Konto vorhanden).
 
+- **Teil 3b – Goabase geprüft (nur lesend, 2 Anfragen)**: Die API liefert Flyer in `small/medium/large/full` (Import nutzt `small`), Veranstaltername, Eintritt und Line-up als Text, aber **kein Genre-Feld**. Genres aus Freitext wären Raten → nicht umgesetzt. Größere Bilder wären ein neuer Release des eingefrorenen Produktionsimports → Entscheidung Jacint. Am Goabase-Import nichts geändert.
+- **Abschluss**: `PROJECT_STATUS.md` auf den neuen Stand gebracht.
+
 ## Läuft gerade
 
-- Teil 3b: Goabase lesend prüfen (größere Bilder, Genres), dann Abschluss.
+- Nichts. Auftrag dieser Runde abgearbeitet; offene Punkte siehe unten.
 
 ## Als Nächstes
 
-1. Goabase-Prüfung dokumentieren (kein Eingriff in den Produktionsimport)
-2. PROJECT_STATUS.md aktualisieren, Abschlussliste
+1. Branch `feature/event-sources` von Jacint (SQL, Function) und Noyan (Seiten) ansehen lassen, dann pushen und PR gegen `main`
+2. Konto anlegen, als Admin eintragen, Freigabe-Ablauf auf dem Handy testen
+3. Ticketmaster in Spots-Test aktivieren
 
 ## Offene Punkte (für die Abschlussliste)
 

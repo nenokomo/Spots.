@@ -1,66 +1,68 @@
 # Projektstatus – Spots
 
-Stand: 11.11.2026. Diese Datei beschreibt nur den **aktuellen** Stand. Frühere Runden und Berichte: [Redesign-Runden bis 11.11.](docs/history/PROJECT_STATUS_REDESIGN_2026-11.md) · [ältere Geschichte](docs/history/PROJECT_STATUS_HISTORY.md) · [Dokumentationsindex](docs/README.md)
+Stand: 11.11.2026 (abends). Diese Datei beschreibt nur den **aktuellen** Stand. Arbeitsprotokoll der laufenden Runde: [docs/FORTSCHRITT.md](docs/FORTSCHRITT.md). Frühere Runden: [Redesign-Runden bis 11.11.](docs/history/PROJECT_STATUS_REDESIGN_2026-11.md) · [ältere Geschichte](docs/history/PROJECT_STATUS_HISTORY.md) · [Dokumentationsindex](docs/README.md)
 
 ## Branches
 
 | Branch | Inhalt | Zustand |
 |---|---|---|
-| `main` | **Gemeinsamer Stand des Teams** seit 11.11.2026: Designsystem, Veranstalterseiten, Inhalts-Backend vorbereitet, Redesign als Grunddesign | gepusht |
-| `feature/design-refresh` | Zweig, über den dieser Stand nach `main` kam (gleicher Commit) | gepusht |
-| `feature/organizer-auth` | Accounts und Veranstalter-Backend | gepusht, in `main` enthalten |
+| `main` | Gemeinsamer Stand des Teams: Designsystem, Veranstalterseiten, Inhalts-Backend vorbereitet, Redesign als Grunddesign (mit Noyan abgestimmt) | gepusht |
+| `feature/event-sources` | **Neu:** Ticketmaster-Import, Club-Verzeichnis (OpenStreetMap), Admin-Bereich, Doku-Entwürfe | lokal, **nicht gepusht**, nicht gemergt |
+| `feature/design-refresh`, `feature/organizer-auth` | ältere Zweige, in `main` enthalten | gepusht |
 
-`experiment/redesign` wurde nach der Übernahme gelöscht. Neue Arbeit startet als eigener Branch von `main`.
+Neue Arbeit startet als eigener Branch von `main`. Stand vor dem Redesign: Commit `489ac06`.
 
-**Entscheidung 11.11.2026:** Der Stand von `experiment/redesign` ist das neue Grunddesign von Spots (mit Noyan abgestimmt). Noyan arbeitet das Design weiter aus; Feinschliff am Design ist sein Bereich. Das Redesign ist in `main` übernommen.
+## Was die App kann
 
-Das Redesign ändert nur die Oberfläche; Datenschicht, Navigation, Statuslogik, Accounts und SQL blieben unverändert. Stand vor dem Redesign: Commit `489ac06`.
-
-## Was die App jetzt kann
-
+Auf `main`:
 - **Vier Tabs**: Radar, Entdecken, Gemerkt, Profil.
-- **Radar**: Vollbildkarte mit Radar-Scan (3 s), Pins mit Eventbild (Magenta-Ring = läuft, heller Ring = startet heute später). Pin öffnet eine Vorschau-Box; Panel unten mit Liste und Entfernung; „Alle“ öffnet „Heute Nacht“ (`/today`). Umkreis Standard 30 km. Ohne Standortfreigabe ist die gewählte Stadt die Mitte.
-- **Entdecken**: Suche, Chips für Genre, Datum, Ort/Umkreis (10/30/50/100 km), Kalender im Glas-Stil (Monate per Wischen), „Als Nächstes“, „Alle Events“ als Story-Kacheln mit Vollbild-Story. „Gehypt“ nur in der Entwicklung (keine echten Verkaufszahlen).
-- **Eventdetail**: Flyer groß, Glas-Karte mit Titel/Tag/Uhrzeit/Ort, Veranstalter, Route (Apple/Google Maps), Tickets bzw. Originalquelle, Live-Snaps-Bereich (zeigt nur, was das Backend liefert).
-- **Veranstalterseite**: Feed-Aufbau mit Beiträgen (wischbare Galerie) und Events. In Produktion gibt es noch keine Veranstalter → Leerzustand.
-- **Gemerkt**: nur lokal auf dem Gerät gespeichert, Anstehend/Vergangen.
-- **Profil/Konto**: Login/Registrierung unter `/account`, nur aktiv mit der Testkonfiguration (Spots-Test).
+- **Radar**: Vollbildkarte mit Radar-Scan, Pins mit Eventbild (läuft / startet heute später), Vorschau-Box, Panel mit Liste und Entfernung, „Alle“ → „Heute Nacht“ (`/today`). Umkreis Standard 30 km.
+- **Entdecken**: Suche, Genre, Datum, Ort/Umkreis, Kalender, „Als Nächstes“, Story-Kacheln. „Gehypt“ nur in der Entwicklung.
+- **Eventdetail**, **Veranstalterseite** (in Produktion noch leer), **Gemerkt** (nur lokal), **Konto** unter `/account` (nur mit Testkonfiguration).
 
-**Design** (`src/constants/theme.ts`): fast schwarzer Hintergrund `#0a090c` mit Verlauf `#100e13 → #2a1222`, iOS-artige Grauflächen, Akzent `#c922ab` nur für Primäraktionen und Live-Status, Glas-Elemente.
+Zusätzlich auf `feature/event-sources`:
+- **Filter „Hip-Hop“ und „Konzerte“**; Eventseite „Tickets bei Ticketmaster“.
+- **Clubs & Locations**: Abschnitt in Entdecken (bei gewähltem Ort), Liste `/clubs`, Ortsseite `/venue/[id]` mit Route, Website, Öffnungszeiten, OSM-Quellenhinweis, Events des Ortes und **„Fehler melden“** (ohne Konto).
+- **Admin-Bereich `/admin`** (nur Konto mit Admin-Rolle): Events von Hand anlegen (immer mit Ort und Herkunft), Entwürfe freigeben/ablehnen, ungeprüfte Orte freigeben/ausblenden, Meldungen bearbeiten.
+- Ohne die neuen Tabellen (Produktion) bleiben Clubs und Admin unsichtbar; nichts bricht.
+
+**Design** (`src/constants/theme.ts`): fast schwarzer Hintergrund mit Pflaumen-Verlauf, iOS-artige Grauflächen, Akzent `#c922ab`. Neue Seiten nutzen die vorhandenen Bausteine; Feinschliff ist Noyans Bereich.
 
 ## Daten und Backend
 
-- Events kommen ausschließlich aus dem **Goabase-Import** (Cron alle 2 h in Produktion `yhnxdeypkbzyjappuzmv`). Rund 30 veröffentlichte Events; fast alle ohne Genre, Venue-Name, Beschreibung und Ticketlink.
-- SQL 15/16 (Accounts, Veranstalter) nur in **Spots-Test** `nfomkdvotqtlyymomksb` ausgeführt.
-- SQL 17 (Live Snaps, Meldungen, saved_events, Ticketarten), 18 (Storage), 19 (Beitragsgalerien) **nirgends ausgeführt**, nur lokal mit PGlite getestet (18 gar nicht automatisiert).
-- Lokale TEST-Events (Karlsruhe) und ein TEST-Veranstalter nur bei `__DEV__`; abschaltbar mit `EXPO_PUBLIC_SPOTS_TEST_EVENTS=0`.
+- **Produktion** `yhnxdeypkbzyjappuzmv`: unverändert. Events nur aus dem Goabase-Import (Cron alle 2 h), rund 30 veröffentlicht.
+- **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15/16 (Konten), **neu 20** (Ticketmaster-Backend), **21** (Orte + Meldungen; 56 echte Orte um Karlsruhe geladen), **22** (Admin, Entwürfe, `events.venue_id`). Prüfsummen aller neuen Funktionen identisch mit den Dateien; bestehende Events unverändert. Noch kein Admin eingetragen, Ticketmaster-Function nicht bereitgestellt (Secret fehlt).
+- SQL 17 (Live Snaps, Meldungen, Ticketarten), 18, 19: **nirgends ausgeführt**.
+- Ticketmaster-Import (`supabase/functions/import-ticketmaster/`): lokal Ende-zu-Ende geprüft (506 Musik-Events in Deutschland, 30 Tage). Details: [docs/TICKETMASTER_IMPORT.md](docs/TICKETMASTER_IMPORT.md).
+- Club-Verzeichnis: Plan in [docs/KARLSRUHE_EVENTS.md](docs/KARLSRUHE_EVENTS.md). Clubzahl für ganz Deutschland **nicht ermittelt** (Overpass-Server am 11.11. überlastet).
+- Lokale TEST-Events und TEST-Orte nur bei `__DEV__`; abschaltbar mit `EXPO_PUBLIC_SPOTS_TEST_EVENTS=0`.
 
 ## Geprüft
 
-- 11.11.2026 auf dem Redesign-Stand: **97/97 Tests bestanden, 0 übersprungen** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`, PGlite 0.5.15), Expo-Lint und Typecheck ohne Fehler.
-- Web-Vorschau 375 × 812: Radar, Entdecken, Eventdetail, Profil, Kalender.
-- **Handy-Test durch den Nutzer (11.11.2026)**: Redesign auf dem Handy getestet, laut Nutzer funktioniert alles einwandfrei. Nicht dokumentiert, ob iOS, Android oder beides.
+- `feature/event-sources`: **139/139 Tests** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`), Expo-Lint und Typecheck ohne Fehler. Web-Vorschau 375 × 812: neue Filter, Clubliste, Ortsseite, Melden-Sheet (Test-Ort), Admin-Sperrseite.
+- Handy-Test durch den Nutzer (11.11.) nur für den Redesign-Stand auf `main`, nicht für die neuen Funktionen.
 
 ## Nicht geprüft / bekannte Probleme
 
-- Filter Techno/House finden in echten Daten fast nichts (fehlende Genres).
+- **Freigabe-Ablauf mit echtem Admin-Konto** nicht durchgespielt; neue Seiten nicht auf iOS/Android getestet.
+- Radar zählt nur Events mit Endzeit als „live“; Ticketmaster-Konzerte haben meist keine (Produktentscheidung offen).
+- Erotik-Filter für Orte greift nur bei eindeutigen Merkmalen; Stichproben nötig.
 - Produktion: pro App-Start 2–3 erwartete 400-Antworten (organizer_id-Abfrage), bis SQL 15 dort eingespielt ist.
-- Goabase-Flyer nur in kleiner Auflösung.
-- Offene Abstimmung: Veranstalterseiten waren laut `docs/ORGANIZER_ARCHITECTURE.md` dem Kollegen zugeordnet und wurden neu gebaut. Das Redesign betrifft Noyans Designbereich; SQL 17–19 betreffen Jacints Backend.
+- Goabase liefert Flyer auch in `medium/large/full` (Import nutzt `small`) und **kein Genre-Feld** (nur Freitext → kein Genre ohne Raten). Umstellung der Bildgröße wäre ein neuer Release des eingefrorenen Imports (Jacint).
+- Aus den Doku-Entwürfen: Konto löschen fehlt (Apple/Google-Pflicht); Melden laut SQL 17 nur mit Konto (DSA verlangt Melden für alle); `live_snaps.author_id` wäre laut SQL 17 öffentlich lesbar; Ortssuche schickt Suchtext an Open-Meteo; keine Links zu Datenschutz/Impressum in der App.
 
 ## Fehlt noch
 
-- Upload-UI für Live Snaps und Beiträge (braucht `expo-image-picker`/`expo-video`, Development Build, SQL 17–19 in Spots-Test).
-- Merkliste mit Konto synchronisieren (`saved_events`).
-- Passwortreset, Accountlöschung, Moderationsoberfläche.
-- Weitere Eventquellen; Hip-Hop/Festival-Kategorien. **In Planung:** Ticketmaster als zweite Quelle, Entwurf in [docs/TICKETMASTER_IMPORT.md](docs/TICKETMASTER_IMPORT.md) (Branch `feature/ticketmaster-import`, noch kein Code; Machbarkeitsprüfung: 516 Musik-Events DE, aber nur 1 um Karlsruhe). Für Karlsruhe: Club-Verzeichnis aus OpenStreetMap plus geprüfte Event-Entwürfe, Plan in [docs/KARLSRUHE_EVENTS.md](docs/KARLSRUHE_EVENTS.md).
-- Veranstalter-Bereich mit Dashboard (Events verwalten, Aufrufe, Merkungen, Ticket- und Routen-Klicks) laut `docs/VISION.md`; Zählung möglichst früh starten, nur als Summen pro Event.
-- Englisch als zweite App-Sprache: noch kein Übersetzungssystem, alle Texte sind fest auf Deutsch im Code. Ansatz (z. B. `expo-localization` + Textdateien) vor dem Umbau abstimmen.
-- Release-Vorbereitung: kein `eas.json`, slug/scheme noch „meine-app“, keine Bundle-ID/Package, kein Google-Maps-Key für Android.
+- Ticketmaster in Spots-Test/Produktion aktivieren (Secret, Deploy, Cron); Club-Daten für ganz Deutschland; Ladeweg für Produktion.
+- Automatische Event-Entwürfe aus Club-Websites (Claude-API, nur mit Zustimmung der Clubs).
+- Upload-UI für Live Snaps und Beiträge (Development Build, SQL 17–19).
+- Merkliste mit Konto synchronisieren; Passwortreset, Kontolöschung.
+- Veranstalter-Dashboard (Statistiken), Englisch als zweite Sprache, Release-Grundlagen (`eas.json`, Bundle-ID, Icons, Maps-Key).
+- Rechtliches: Entwürfe in [docs/entwuerfe/](docs/entwuerfe/README.md) prüfen lassen und Lücken füllen.
 
 ## Nächste empfohlene Schritte
 
-1. Noyan und Jacint informieren, dass `main` jetzt den neuen Stand enthält (ihre eigenen Branches ggf. auf `main` aktualisieren).
-2. Notieren, auf welcher Plattform (iOS/Android) der Handy-Test lief; die andere ggf. nachtesten.
-3. SQL 17–19 in Spots-Test einspielen (mit Jacint) und Upload-UI für Live Snaps bauen.
-4. Release-Grundlagen (`eas.json`, Bundle-ID, Icons, Maps-Key).
+1. `feature/event-sources` ansehen (Jacint: SQL 20–22, Edge Function; Noyan: neue Seiten), dann pushen und PR gegen `main`.
+2. Konto in der Test-App anlegen, als Admin eintragen, Freigabe-Ablauf auf dem Handy testen.
+3. Ticketmaster in Spots-Test aktivieren (Secret + Deploy) und einige Tage beobachten.
+4. Offene Rechtsfragen P1 klären, bevor Clubs angeschrieben werden.
