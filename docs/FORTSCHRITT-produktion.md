@@ -47,8 +47,10 @@ Danach: Ticketmaster-Events und Clubs sind in Produktion sichtbar. Solange die A
   - Tests: `tests/ticketmaster-cron.test.cjs` (4, PGlite). Gesamt 149/149, Lint ok.
   - **In Spots-Test eingespielt (12.11.)**: pg_cron und pg_net neu aktiviert, Job angelegt und **aus**, Prüfsummen der beiden Funktionen identisch mit der Datei, Events vorher/nachher gleich (541, Prüfwert `bdd338ed…`).
 
+- **A1 (Jacint, 12.11.)**: Redirect URLs `exp://**` und `meine-app://**` in Spots-Test eingetragen.
+- **A2 Zeitplan in Spots-Test aktiv (12.11.)**: Vault-Einträge von Jacint angelegt (je genau einer), Job eingeschaltet, erster Lauf von Hand ausgelöst: HTTP 200 in 16 s, 540 gefunden, 33 neu, 4 aktualisiert, 497 unverändert, 11 einzeln nachgeprüft; Sperre frei; Goabase weiter 35 Events. Ab jetzt automatisch alle 6 Stunden.
+
 ## Läuft gerade
 
-- A1 Redirect URLs (Jacint).
-- A2 Vault-Einträge in Spots-Test (Jacint), danach Job einschalten und ersten Lauf prüfen.
+- A3 Freigabe-Ablauf auf dem Handy (Jacint).
 - A4 Abruf der Clubs aus OpenStreetMap für alle Bundesländer.
