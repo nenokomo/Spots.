@@ -17,7 +17,7 @@ const mapStyle = [
   { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#242426' }] },
 ];
 
-export default function RadarMap({ center, radius, userCoordinate, events, onSelect, venues = [], onSelectVenue, venueDotSize = 9, onCenterChange, onVisibleRadiusChange, scan, topInset = 0, bottomInset = 0, locked = false }: RadarMapProps) {
+export default function RadarMap({ center, radius, userCoordinate, events, onSelect, onCenterChange, onVisibleRadiusChange, scan, topInset = 0, bottomInset = 0, locked = false }: RadarMapProps) {
   const map = useRef<MapView>(null);
   const viewport = useRef(center);
   const focus = useRef(center);
@@ -84,10 +84,6 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
         toolbarEnabled={false}
       >
         {userCoordinate && <Marker coordinate={userCoordinate} anchor={{ x: 0.5, y: 0.5 }} title="Dein Standort" zIndex={1000}><View style={styles.locationHalo}><View style={styles.locationDot} /></View></Marker>}
-        {venues.map((venue) => <Marker key={`venue-${venue.id}-${venueDotSize}`} coordinate={venue.coordinate} anchor={{ x: 0.5, y: 0.5 }} zIndex={1}
-          tracksViewChanges={false} accessibilityLabel={`${venue.name}, Ort öffnen`} onPress={() => onSelectVenue?.(venue.id)}>
-          <View style={styles.venueHit}><View style={[styles.venueDot, { width: venueDotSize, height: venueDotSize, borderRadius: venueDotSize / 2, borderWidth: venueDotSize >= 11 ? 2 : 1.5 }]} /></View>
-        </Marker>)}
         {events.map((event) => <EventMapMarker key={event.id} event={event} reduceMotion={scan.reduceMotion || scan.settledIds.includes(event.id)} onSelect={onSelect} onSettled={scan.onPinSettled} />)}
       </MapView>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.tint]} />
@@ -99,10 +95,6 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
 const styles = StyleSheet.create({
   frame: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: '#202023' },
   tint: { backgroundColor: '#00000020' },
-  // Clubs: klein und grau, klar anders als die pinken Event-Pins.
-  // Große, unsichtbare Tippfläche (44 px), sichtbarer Punkt bleibt klein.
-  venueHit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  venueDot: { backgroundColor: '#c9c7d1', borderColor: '#2a292e' },
   locationHalo: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#388bff30', alignItems: 'center', justifyContent: 'center' },
   locationDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#348cff', borderWidth: 3, borderColor: '#ffffff' },
 });

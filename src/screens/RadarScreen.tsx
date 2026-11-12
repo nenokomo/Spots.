@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Switch, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CategoryFilters } from '../components/CategoryFilters';
 import { CitySearch } from '../components/CitySearch';
@@ -14,7 +14,6 @@ import { RadiusSlider } from '../components/RadiusSlider';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Button, IconButton } from '../components/ui/Button';
 import { PressableScale } from '../components/ui/PressableScale';
-import { ListRow } from '../components/ui/List';
 import { Sheet } from '../components/ui/Sheet';
 import { tabBarContentInset } from '../constants/navigation';
 import { colors, gutter, radius as corner, space, squircle, type, type Category } from '../constants/theme';
@@ -22,14 +21,11 @@ import { useLiveEvents, useUpcomingEvents } from '../hooks/useEvents';
 import { useLocation } from '../hooks/useLocation';
 import { useNow } from '../hooks/useNow';
 import { useRadarIntro } from '../hooks/useRadarIntro';
-import { useVenuesNear } from '../hooks/useVenues';
-import type { NearbyVenue } from '../services/venues';
-import { venueKindLabels } from '../types/venues';
 import { useToday } from '../hooks/useToday';
 import { eventHref } from '../navigation/eventRoutes';
 import { isLocatedEvent, matchesCategory, type LocatedEvent } from '../types/events';
 import { isTonight } from '../utils/eventStatus';
-import { distanceKm, formatDistance, type Coordinate } from '../utils/events';
+import { distanceKm, type Coordinate } from '../utils/events';
 
 const ROW = EVENT_ROW_HEIGHT + StyleSheet.hairlineWidth;
 
@@ -44,7 +40,6 @@ export default function RadarScreen() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [placeOpen, setPlaceOpen] = useState(false);
   const [preview, setPreview] = useState<LocatedEvent | null>(null);
-  const [venuePreview, setVenuePreview] = useState<NearbyVenue | null>(null);
   const location = useLocation();
   const { locate } = location;
   const live = useLiveEvents();
@@ -57,7 +52,6 @@ export default function RadarScreen() {
   const searchCenter = viewport.source === location.center ? viewport.center : location.center;
   const onCenterChange = useCallback((center: Coordinate) => {
     setPreview(null);
-    setVenuePreview(null);
     setViewport((previous) => previous.source === location.center && distanceKm(previous.center, center) < 0.01 ? previous : { source: location.center, center });
   }, [location.center]);
 
@@ -70,22 +64,6 @@ export default function RadarScreen() {
     return { mapEvents: [...running, ...tonight], liveCount: running.length };
   }, [live.events, upcoming.events, category, searchCenter, radius, now]);
   const radar = useRadarIntro(mapEvents);
-  const [showClubs, setShowClubs] = useState(true);
-  // Orte für einen größeren Bereich laden und nur neu holen, wenn die Karte ein Stück weiter wandert:
-  // Die Mitte wird auf ein Raster gerundet (Rasterweite ein Viertel des Ladebereichs).
-  const venueRange = visibleRadius > 30 ? 100 : visibleRadius > 12 ? 50 : 25;
-  const venueStep = venueRange / 4 / 111.32;
-  const venueLatitude = Math.round(searchCenter.latitude / venueStep) * venueStep;
-  const venueLongitudeStep = venueStep / Math.max(0.3, Math.cos(venueLatitude * Math.PI / 180));
-  const venueCenter = useMemo(() => ({ latitude: venueLatitude, longitude: Math.round(searchCenter.longitude / venueLongitudeStep) * venueLongitudeStep }),
-    [venueLatitude, venueLongitudeStep, searchCenter.longitude]);
-  const nearbyVenues = useVenuesNear(showClubs ? venueCenter : null, venueRange);
-  // Klein in der Übersicht, größer beim Hineinzoomen.
-  const venueDotSize = visibleRadius > 25 ? 7 : visibleRadius > 10 ? 9 : visibleRadius > 4 ? 11 : 13;
-  // Orte erst nach dem Scan (die Animation gehört den Events) und begrenzt, damit die Karte flüssig bleibt.
-  const mapVenues = useMemo(() => showClubs && !radar.scanning
-    ? nearbyVenues.venues.slice(0, 250).map(({ id, name, coordinate }) => ({ id, name, coordinate })) : [],
-  [showClubs, radar.scanning, nearbyVenues.venues]);
 
   // Quiet around here: offer the nearest real upcoming events instead of an empty panel. List only, no pins.
   const nearest = useMemo(() => mapEvents.length > 0 ? [] : upcoming.events
@@ -114,13 +92,12 @@ export default function RadarScreen() {
 
   useFocusEffect(useCallback(() => {
     setPreview(null);
-    setVenuePreview(null);
     setRadius(30);
     setVisibleRadius(30);
     void locate({ automatic: true });
   }, [locate]));
 
-  const select = useCallback((event: LocatedEvent) => { setVenuePreview(null); setPreview(event); }, []);
+  const select = useCallback((event: LocatedEvent) => setPreview(event), []);
   const previewVisible = !!preview && !radar.scanning && mapEvents.some((event) => event.id === preview.id);
 
   // The panel shows about three events at once; the map keeps the rest of the screen.
@@ -134,7 +111,6 @@ export default function RadarScreen() {
       {/* The map runs under the panel's rounded corners, so no background shows through there. */}
       <View style={[styles.map, { bottom: panelHeight - corner.xl }]}>
         <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={select}
-          venues={mapVenues} venueDotSize={venueDotSize} onSelectVenue={(id) => { setPreview(null); setVenuePreview(nearbyVenues.venues.find((venue) => venue.id === id) ?? null); }}
           onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} topInset={topInset} bottomInset={corner.xl} locked={radar.scanning} />
       </View>
 
@@ -161,18 +137,6 @@ export default function RadarScreen() {
           <View testID="event-preview" style={styles.preview}>
             <GlassBackdrop radius={corner.xl} variant="panel" />
             <EventRow event={preview} href={eventHref(preview, 'radar')} now={now} today={today} distanceKm={distanceKm(searchCenter, preview.coordinate)} trailing={<SaveEventButton id={preview.id} title={preview.title} size={36} />} />
-          </View>
-        </View>
-      )}
-
-      {venuePreview && !radar.scanning && showClubs && (
-        <View style={[styles.previewLayer, { bottom: panelHeight }]} pointerEvents="box-none">
-          <Pressable accessibilityRole="button" accessibilityLabel="Ortsvorschau schließen" onPress={() => setVenuePreview(null)} style={StyleSheet.absoluteFill} />
-          <View testID="venue-preview" style={[styles.preview, styles.venuePreview]}>
-            <GlassBackdrop radius={corner.xl} variant="panel" />
-            <ListRow icon={venuePreview.kind === 'live' ? 'headphones' : venuePreview.kind === 'club' ? 'wave' : 'pin'} title={venuePreview.name}
-              subtitle={[venueKindLabels[venuePreview.kind], venuePreview.city, formatDistance(distanceKm(searchCenter, venuePreview.coordinate))].filter(Boolean).join(' · ')}
-              accessibilityLabel={`${venuePreview.name} öffnen`} onPress={() => router.push({ pathname: '/venue/[id]', params: { id: venuePreview.id } })} />
           </View>
         </View>
       )}
@@ -219,10 +183,6 @@ export default function RadarScreen() {
       <Sheet visible={filterOpen} title="Filter" onClose={() => setFilterOpen(false)}>
         <View style={styles.group}><Text style={styles.label}>Worauf hast du Lust?</Text><CategoryFilters value={category} onChange={setCategory} /></View>
         <View style={styles.group}><Text style={styles.label}>Umkreis</Text><RadiusSlider value={radius} onChange={setRadius} /></View>
-        <View style={styles.toggle}>
-          <View style={styles.toggleCopy}><Text style={styles.label}>Clubs auf der Karte</Text><Text style={styles.hint}>Graue Punkte: Clubs und Locations, keine laufenden Partys.</Text></View>
-          <Switch value={showClubs} onValueChange={setShowClubs} trackColor={{ true: colors.accent, false: colors.surfaceHigh }} accessibilityLabel="Clubs auf der Karte anzeigen" />
-        </View>
         <Button label="Fertig" onPress={() => setFilterOpen(false)} />
       </Sheet>
     </View>
@@ -249,8 +209,6 @@ const styles = StyleSheet.create({
   more: { flexDirection: 'row', alignItems: 'center', gap: 3, minHeight: 32 },
   moreText: { ...type.callout, color: colors.pink },
   row: { paddingHorizontal: gutter },
-  // Orte: neutraler Rand statt Pink, damit klar ist, dass hier keine Party läuft.
-  venuePreview: { borderColor: '#ffffff26', paddingHorizontal: 0 },
   previewLayer: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40 },
   preview: { position: 'absolute', left: space.lg, right: space.lg, top: '50%', marginTop: -46, paddingHorizontal: space.md, borderRadius: corner.xl, overflow: 'hidden', borderWidth: 1, borderColor: '#de5ab970', ...squircle },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: gutter + 68 + space.md },
@@ -258,7 +216,5 @@ const styles = StyleSheet.create({
   citySearch: { minHeight: 48, zIndex: 10 },
   hint: { ...type.footnote, color: colors.faint },
   group: { gap: space.md },
-  toggle: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  toggleCopy: { flex: 1, gap: 2 },
   label: { ...type.headline, color: colors.text },
 });
