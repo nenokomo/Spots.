@@ -43,7 +43,12 @@ Danach: Ticketmaster-Events und Clubs sind in Produktion sichtbar. Solange die A
 ## Fertig
 
 - Plan geschrieben.
+- **A2 SQL 24** `supabase/ops/24_ticketmaster_cron.sql`: stündlicher Job `spots-import-ticketmaster` (Minute 17), startet den Import höchstens alle 6 Stunden, übernimmt das HTTP-Ergebnis sofort (pg_net vergisst Antworten nach einigen Stunden), pausiert sich bei HTTP ≠ 200/409, Zeitüberschreitung, fehlender Antwort nach 1 Stunde oder falschem Vault-Eintrag. Einschalten bzw. nach geprüfter Pause wieder einschalten: `select spots_sync_private.ticketmaster_cron_resume();`. Nutzt die Vault-Namen `spots_project_url` und `spots_import_goabase_secret_key`.
+  - Tests: `tests/ticketmaster-cron.test.cjs` (4, PGlite). Gesamt 149/149, Lint ok.
+  - **In Spots-Test eingespielt (12.11.)**: pg_cron und pg_net neu aktiviert, Job angelegt und **aus**, Prüfsummen der beiden Funktionen identisch mit der Datei, Events vorher/nachher gleich (541, Prüfwert `bdd338ed…`).
 
 ## Läuft gerade
 
-- Warte auf Go für Teil A.
+- A1 Redirect URLs (Jacint).
+- A2 Vault-Einträge in Spots-Test (Jacint), danach Job einschalten und ersten Lauf prüfen.
+- A4 Abruf der Clubs aus OpenStreetMap für alle Bundesländer.
