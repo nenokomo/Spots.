@@ -1,0 +1,36 @@
+---
+// Veranstalter-Dashboard als Karte. Die Werte sind Beispielwerte der Oberfläche, keine Aussagen über echte Reichweiten.
+const bars = [18, 22, 30, 38, 74, 100, 46];
+const days = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+---
+<div class="dash" role="img" aria-label="Beispielansicht des Veranstalter-Dashboards: Aufrufe, Merkungen, Ticket-Klicks und Routen eines Events sowie die Aufrufe der Woche.">
+  <div class="dash__in" aria-hidden="true">
+    <div class="dash__top">
+      <span class="fly fly--1"></span>
+      <div><b>Tiefgang</b><small>Sa., 23:00 · Kellerclub</small></div>
+      <span class="dash__live">LIVE</span>
+    </div>
+    <div class="dash__stats">
+      <div class="dash__stat"><small>Aufrufe</small><b>1.284</b><em>+38 % zur Vorwoche</em></div>
+      <div class="dash__stat"><small>Gemerkt</small><b>212</b><em>+54 neu</em></div>
+      <div class="dash__stat"><small>Ticket-Klicks</small><b>96</b><em>7,5 % der Aufrufe</em></div>
+      <div class="dash__stat"><small>Routen</small><b>143</b><em>heute Nacht</em></div>
+    </div>
+    <div class="dash__grid">
+      <div class="dash__box">
+        <small>Aufrufe diese Woche</small>
+        <div class="bars">{bars.map((h, i) => <span class:list={{ hot: i === 4 || i === 5 }} style={`--h:${h}%`}></span>)}</div>
+        <div class="bars-x">{days.map((d) => <span>{d}</span>)}</div>
+      </div>
+      <div class="dash__box">
+        <small>Deine nächsten Events</small>
+        <div class="dash__list">
+          <div><span>Fr., 20.06.</span><em>Nachtschicht</em></div>
+          <div><span>Sa., 21.06.</span><em>Tiefgang</em></div>
+          <div><span>Do., 26.06.</span><em>Studi-Donnerstag</em></div>
+          <div><span>Sa., 28.06.</span><em>Sommerfest</em></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

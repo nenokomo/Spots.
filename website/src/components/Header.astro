@@ -1,0 +1,45 @@
+---
+interface Props { audience: 'guest' | 'organizer' }
+const { audience } = Astro.props;
+const guest = audience === 'guest';
+---
+<header class="hdr" data-hdr>
+  <div class="wrap hdr__in">
+    <a href="/" class="logo" aria-label="Spots – zur Startseite">Spots<span aria-hidden="true">.</span></a>
+    <nav class="hdr__nav" aria-label="Hauptnavigation">
+      {guest ? (
+        <>
+          <a class="hdr__more" href="/#features">Features</a>
+          <a class="hdr__more" href="/#staedte">Städte</a>
+          <a class="hdr__more" href="/#faq">FAQ</a>
+          <a class="hdr__switch" href="/veranstalter/">Für Veranstalter</a>
+        </>
+      ) : (
+        <>
+          <a class="hdr__more" href="/veranstalter/#vorteile">Vorteile</a>
+          <a class="hdr__more" href="/veranstalter/#ablauf">So geht's</a>
+          <a class="hdr__more" href="/veranstalter/#faq">FAQ</a>
+          <a class="hdr__switch" href="/">Für Gäste</a>
+        </>
+      )}
+    </nav>
+    {guest
+      ? <a class="btn btn--primary btn--sm" href="/#download">App laden</a>
+      : <a class="btn btn--primary btn--sm" href="/veranstalter/#kontakt">Partner werden</a>}
+  </div>
+</header>
+
+<style>
+  .hdr { position: sticky; top: 0; z-index: 50; height: var(--header-h); border-bottom: 1px solid transparent; transition: background-color 0.3s var(--ease), border-color 0.3s var(--ease); }
+  .hdr.is-stuck { background: rgb(10 9 12 / 0.82); -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4); border-bottom-color: var(--line); }
+  .hdr__in { height: 100%; display: flex; align-items: center; gap: clamp(0.75rem, 3vw, 2rem); }
+  .logo { font-size: 1.6rem; font-weight: 850; letter-spacing: -0.035em; line-height: 1; padding: 0.3rem 0; }
+  .logo span { color: var(--magenta-hi); }
+  .hdr__nav { margin-left: auto; display: flex; align-items: center; gap: clamp(1rem, 2.4vw, 2rem); font-size: 0.9375rem; font-weight: 600; }
+  .hdr__nav a { color: var(--text-dim); padding: 0.6rem 0; transition: color 0.2s var(--ease); white-space: nowrap; }
+  .hdr__nav a:hover { color: var(--text); }
+  .hdr__switch { color: var(--text) !important; }
+  .hdr__more { display: none; }
+  @media (min-width: 860px) { .hdr__more { display: inline; } }
+  @media (max-width: 359px) { .hdr__switch { display: none; } }
+</style>

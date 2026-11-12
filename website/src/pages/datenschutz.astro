@@ -1,0 +1,57 @@
+---
+import Base from '../layouts/Base.astro';
+import { site, todo } from '../config/site';
+const l = site.legal;
+const ph = (value: string, label: string) => value || `[TODO: ${label}]`;
+const mail = site.contactEmail;
+---
+<Base title="Datenschutz – Spots" description="Datenschutzerklärung der Website von Spots." noindex>
+  <section class="section">
+    <div class="wrap prose">
+      <p class="eyebrow">Rechtliches</p>
+      <h1 class="h2 legal-title">Datenschutz&shy;erklärung</h1>
+      <p class="legal-note">Entwurf – gilt für diese Website, nicht für die App (dafür gibt es eine eigene Erklärung). Vor Veröffentlichung von einer Fachperson prüfen lassen. Platzhalter sind <span class="ph">[TODO: …]</span> markiert.</p>
+
+      <h2>1. Kurz gesagt</h2>
+      <ul>
+        <li>Diese Website setzt <strong>keine Cookies</strong>, nutzt <strong>kein Tracking</strong> und <strong>keine Analyse-Dienste</strong>.</li>
+        <li>Schriften und alle Dateien liefern wir selbst aus. Beim Besuch werden keine Daten an Google Fonts oder ähnliche Dienste übertragen.</li>
+        <li>Wenn du uns über das Formular für Veranstalter schreibst, speichern wir deine Angaben, um dir zu antworten.</li>
+      </ul>
+
+      <h2>2. Verantwortlicher</h2>
+      <p>
+        <span class:list={{ ph: !l.company }}>{ph(l.company, 'Name / Firma')}</span><br />
+        <span class:list={{ ph: !l.street }}>{ph(l.street, 'Straße und Hausnummer')}</span><br />
+        <span class:list={{ ph: !l.city }}>{ph(l.city, 'PLZ und Ort')}</span><br />
+        E-Mail: {mail ? <a href={`mailto:${mail}`}>{mail}</a> : <span class="ph">{todo('', 'Kontakt-Mail für Datenschutz')}</span>}
+      </p>
+      <p>Datenschutzbeauftragte/r: <span class="ph">[TODO: Name und Kontakt, falls benannt – sonst Satz entfernen]</span></p>
+
+      <h2>3. Aufruf der Website (Server-Protokolle)</h2>
+      <p>Beim Aufruf dieser Website verarbeitet unser Hosting-Anbieter technisch notwendige Daten: IP-Adresse, Datum und Uhrzeit, aufgerufene Seite, Browser und Betriebssystem sowie die zuvor besuchte Seite. Das ist nötig, um die Website sicher und stabil auszuliefern (Art. 6 Abs. 1 lit. f DSGVO). Die Protokolle werden nach <span class="ph">[TODO: Speicherdauer laut Hoster, z. B. 30 Tagen]</span> gelöscht.</p>
+      <p>Hosting-Anbieter: <span class:list={{ ph: !l.hosting }}>{ph(l.hosting, 'Name und Anschrift des Hosters, z. B. Vercel, Netlify oder Cloudflare')}</span>. Mit dem Anbieter besteht ein Vertrag zur Auftragsverarbeitung. <span class="ph">[TODO: Bei Anbietern mit Sitz in den USA: Grundlage der Übermittlung angeben, z. B. EU-US Data Privacy Framework oder Standardvertragsklauseln.]</span></p>
+
+      <h2>4. Formular für Veranstalter</h2>
+      <p>Wenn du das Formular auf der Seite „Für Veranstalter“ ausfüllst, verarbeiten wir die Angaben, die du machst: Name, Club/Location/Crew, E-Mail, Stadt, Art der Veranstaltungen und freiwillig Telefon, Website und Nachricht. Wir nutzen sie ausschließlich, um deine Anfrage zu bearbeiten und mit dir über eine Zusammenarbeit zu sprechen (Art. 6 Abs. 1 lit. b DSGVO, vorvertragliche Maßnahmen).</p>
+      <p>Die Daten werden in unserer Datenbank bei Supabase gespeichert (Supabase Inc., Rechenzentrum in der {l.supabaseRegion}). Mit Supabase besteht ein Vertrag zur Auftragsverarbeitung. <span class="ph">[TODO: Region und Vertrag bestätigen; Grundlage für einen möglichen Zugriff aus den USA angeben.]</span> Wir speichern keine IP-Adresse zu deiner Anfrage.</p>
+      <p>Wir löschen deine Anfrage, wenn sie erledigt ist und keine Zusammenarbeit zustande kommt, spätestens nach <span class="ph">[TODO: Frist, z. B. 6 Monaten]</span>. Wirst du Partner, gelten die Regeln unserer Vereinbarung.</p>
+      <p>Wählst du stattdessen den Weg per E-Mail, verarbeiten wir deine Nachricht auf derselben Grundlage. E-Mail-Anbieter: <span class="ph">[TODO: Name des Mail-Anbieters]</span>.</p>
+
+      <h2>5. Externe Links</h2>
+      <p>Links zu den App-Stores, zu Instagram oder TikTok sind normale Links. Erst wenn du sie anklickst, verlässt du diese Website, und es gilt der Datenschutz des jeweiligen Anbieters.</p>
+
+      <h2>6. Deine Rechte</h2>
+      <p>Du hast das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch gegen Verarbeitungen auf Grundlage berechtigter Interessen (Art. 21). Schreib uns dafür einfach an die oben genannte Adresse.</p>
+      <p>Außerdem kannst du dich bei einer Datenschutz-Aufsichtsbehörde beschweren, zum Beispiel bei der für uns zuständigen: <span class="ph">[TODO: Aufsichtsbehörde je nach Sitz, z. B. Landesbeauftragter für den Datenschutz Baden-Württemberg]</span>.</p>
+
+      <h2>7. Änderungen</h2>
+      <p>Wir passen diese Erklärung an, wenn sich die Website oder die Rechtslage ändert. Stand: <span class="ph">[TODO: Datum der Veröffentlichung]</span>.</p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .legal-title { margin: 1rem 0 1.5rem; hyphens: manual; }
+  .legal-note { padding: 0.9rem 1.1rem; border-radius: var(--radius-sm); border: 1px dashed var(--magenta-hi); color: var(--text-dim); font-size: 0.9375rem; }
+</style>
