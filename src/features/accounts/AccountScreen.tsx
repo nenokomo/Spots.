@@ -6,7 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, space, type } from '../../constants/theme';
-import { accountClientError, getAccountClient } from './client';
+import { accountClientError, accountClientMode, getAccountClient } from './client';
 import { createAccountActions } from './auth';
 import { useAccountSession } from './useAccountSession';
 import { savePrivateProfile } from './management';
@@ -49,9 +49,11 @@ export default function AccountScreen() {
     catch (reason) { setError(reason instanceof Error ? reason.message : 'Aktion fehlgeschlagen. Bitte erneut versuchen.'); }
     finally { setBusy(false); setPassword(''); }
   }
+  // Produktion: nur Anmelden fürs Spots-Team; Registrierung und private Profile (SQL 15) erst mit Konten für alle.
+  const team = accountClientMode === 'team';
   async function submit() {
     const actions = createAccountActions(getAccountClient());
-    if (mode === 'register') {
+    if (mode === 'register' && !team) {
       const result = await actions.register(email, password, Linking.createURL('/account'));
       setMessage(result.requiresEmailConfirmation ? 'Bitte deine E-Mail bestätigen und danach anmelden.' : 'Registrierung erfolgreich.');
     } else await actions.signIn(email, password);
@@ -60,19 +62,19 @@ export default function AccountScreen() {
   return <SafeAreaView style={styles.screen}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
     <Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={() => router.canGoBack() ? router.back() : router.replace('/profile')} style={styles.back}><Icon name="back" color={colors.text} /></Pressable>
     <Text accessibilityRole="header" style={styles.title}>{session ? 'Dein Konto' : mode === 'register' ? 'Konto erstellen' : 'Anmelden'}</Text>
-    <Text style={styles.note}>Ein Login für dich und deine Veranstalterseiten. Private Profildaten sind nicht öffentlich.</Text>
+    <Text style={styles.note}>{team ? 'Anmeldung nur für das Spots-Team. Konten für alle starten bald.' : 'Ein Login für dich und deine Veranstalterseiten. Private Profildaten sind nicht öffentlich.'}</Text>
     {loading && <ActivityIndicator color={colors.pink} />}
     {(error || sessionError) && <Text accessibilityRole="alert" style={styles.note}>{error ?? sessionError}</Text>}
     {message && <Text accessibilityLiveRegion="polite" style={styles.note}>{message}</Text>}
     {!accountClientError && !loading && (session ? <View style={styles.form}>
       <Text style={styles.note}>Angemeldet als {session.user.email}</Text>
-      <PrivateProfileForm key={session.user.id} busy={busy} save={name => action(async () => { await savePrivateProfile(name); setMessage('Privates Profil gespeichert.'); })} />
+      {!team && <PrivateProfileForm key={session.user.id} busy={busy} save={name => action(async () => { await savePrivateProfile(name); setMessage('Privates Profil gespeichert.'); })} />}
       <Button label="Abmelden" variant="ghost" disabled={disabled} onPress={() => void action(async () => { await createAccountActions(getAccountClient()).signOut(); setEmail(''); })} />
     </View> : <View style={styles.form}>
       <TextInput accessibilityLabel="E-Mail" placeholder="E-Mail" placeholderTextColor={colors.muted} autoCapitalize="none" autoComplete="email" keyboardType="email-address" value={email} onChangeText={setEmail} editable={!busy} style={styles.input} />
       <TextInput accessibilityLabel="Passwort" placeholder="Passwort" placeholderTextColor={colors.muted} secureTextEntry autoCapitalize="none" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} value={password} onChangeText={setPassword} editable={!busy} style={styles.input} />
       <Button label={mode === 'register' ? 'Registrieren' : 'Anmelden'} loading={busy} disabled={disabled} onPress={() => void action(submit)} />
-      <Button label={mode === 'register' ? 'Ich habe schon ein Konto' : 'Neues Konto erstellen'} variant="ghost" disabled={busy} onPress={() => { setMode(mode === 'register' ? 'signIn' : 'register'); setPassword(''); setError(null); setMessage(null); }} />
+      {!team && <Button label={mode === 'register' ? 'Ich habe schon ein Konto' : 'Neues Konto erstellen'} variant="ghost" disabled={busy} onPress={() => { setMode(mode === 'register' ? 'signIn' : 'register'); setPassword(''); setError(null); setMessage(null); }} />}
     </View>)}
   </ScrollView></SafeAreaView>;
 }

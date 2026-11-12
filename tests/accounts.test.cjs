@@ -8,11 +8,20 @@ function load(file,dependencies={}){
  return module.exports;
 }
 const {createAccountActions}=load('src/features/accounts/auth.ts');
-const {accountConfigurationError}=load('src/features/accounts/configuration.ts');
-test('account configuration rejects production, lookalike domains, missing configuration and secret-shaped keys',()=>{
- for(const url of [undefined,'https://yhnxdeypkbzyjappuzmv.supabase.co','https://nfomkdvotqtlyymomksb.supabase.co.evil.example','http://nfomkdvotqtlyymomksb.supabase.co'])assert(accountConfigurationError(url,'sb_publishable_fixture'));
+const {accountConfigurationError,accountMode,accountProject}=load('src/features/accounts/configuration.ts');
+test('account configuration rejects lookalike domains, missing configuration and secret-shaped keys',()=>{
+ for(const url of [undefined,'https://example.supabase.co','https://nfomkdvotqtlyymomksb.supabase.co.evil.example','http://nfomkdvotqtlyymomksb.supabase.co','https://yhnxdeypkbzyjappuzmv.supabase.co.evil.example'])assert(accountConfigurationError(url,'sb_publishable_fixture'));
  assert(accountConfigurationError('https://nfomkdvotqtlyymomksb.supabase.co','service-role-placeholder'));
+ assert(accountConfigurationError('https://yhnxdeypkbzyjappuzmv.supabase.co','sb_secret_placeholder'));
  assert.equal(accountConfigurationError('https://nfomkdvotqtlyymomksb.supabase.co','sb_publishable_fixture'),null);
+});
+test('Spots-Test has full accounts; production only the team login; sessions are kept per project',()=>{
+ assert.equal(accountMode('https://nfomkdvotqtlyymomksb.supabase.co'),'full');
+ assert.equal(accountMode('https://yhnxdeypkbzyjappuzmv.supabase.co'),'team');
+ assert.equal(accountMode('https://example.supabase.co'),null);
+ assert.equal(accountConfigurationError('https://yhnxdeypkbzyjappuzmv.supabase.co','sb_publishable_fixture'),null);
+ assert.equal(accountProject(' https://yhnxdeypkbzyjappuzmv.supabase.co '),'yhnxdeypkbzyjappuzmv');
+ assert.notEqual(accountProject('https://yhnxdeypkbzyjappuzmv.supabase.co'),accountProject('https://nfomkdvotqtlyymomksb.supabase.co'));
 });
 test('one Auth SDK handles signup, email-confirmation state, password login, PKCE and local logout without organizer metadata',async()=>{
  const calls=[];

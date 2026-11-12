@@ -8,7 +8,7 @@ import { ListGroup, ListRow } from '../components/ui/List';
 import { PageHeader } from '../components/ui/Section';
 import { tabBarContentInset } from '../constants/navigation';
 import { colors, space, type } from '../constants/theme';
-import { accountClientError } from '../features/accounts/client';
+import { accountClientError, accountClientMode } from '../features/accounts/client';
 import { useAccountSession } from '../features/accounts/useAccountSession';
 import { useIsAdmin } from '../features/admin/useIsAdmin';
 import { useSavedEvents } from '../hooks/useSavedEvents';
@@ -38,7 +38,7 @@ export default function ProfileScreen() {
           <ListGroup>
             {accountClientError
               ? <ListRow icon="profile" title="Konto" value="Startet bald" />
-              : <ListRow icon="profile" title={email ? 'Konto verwalten' : 'Anmelden'} subtitle={email ? undefined : account.loading ? 'Sitzung wird geprüft …' : 'Anmelden oder Konto erstellen'} onPress={() => router.push('/account')} />}
+              : <ListRow icon="profile" title={email ? 'Konto verwalten' : accountClientMode === 'team' ? 'Team-Anmeldung' : 'Anmelden'} subtitle={email ? undefined : account.loading ? 'Sitzung wird geprüft …' : accountClientMode === 'team' ? 'Nur für das Spots-Team' : 'Anmelden oder Konto erstellen'} onPress={() => router.push('/account')} />}
             <ListRow icon="heart" title="Gemerkt" value={!ready ? '…' : String(ids.length)} onPress={() => router.navigate('/saved')} accessibilityLabel="Gemerkte Events öffnen" />
             {isAdmin && <ListRow icon="grid" title="Spots-Team: Freigaben" subtitle="Entwürfe, Orte und Meldungen prüfen" onPress={() => router.push('/admin')} />}
           </ListGroup>
@@ -49,7 +49,7 @@ export default function ProfileScreen() {
           </ListGroup>
 
           <ListGroup header="Über Spots" footer="Echte Veranstaltungen aus öffentlichen Quellen.">
-            <ListRow icon="radar" title="Eventdaten" value="Goabase" />
+            <ListRow icon="radar" title="Eventdaten" value="Goabase, Ticketmaster" />
             {version && <ListRow icon="grid" title="Version" value={version} />}
           </ListGroup>
         </View>
