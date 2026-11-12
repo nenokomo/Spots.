@@ -172,6 +172,37 @@ Requirements:
 - Changes in these areas are allowed when the user asks for them. In the summary, always say which owner's area was touched (for example "betrifft Jacints Backend") so the team can coordinate. Before larger rewrites in someone else's area (new structure, deleting or replacing their files), ask first.
 - The contract between app and backend is documented in `docs/ORGANIZER_ARCHITECTURE.md`; do not break it silently.
 
+## Working as a Team (two people, two chats)
+
+Jacint and Noyan work in parallel, each with their own Claude chat on their own computer and their own branch.
+
+**Who is talking?** At the start of a chat the user says „ich bin Jacint“ or „ich bin Noyan“. Work only in that person's area. If it is not clear who is writing, ask before changing files.
+
+**Jacint – Backend & Daten**
+- `supabase/` (SQL in `supabase/ops/`, Edge Functions, `config.toml`), imports (Goabase, Ticketmaster, OpenStreetMap), cron, database schema, RLS, SQL tests in `tests/`.
+- Data access in the app: `src/services/`, `src/lib/`, `src/hooks/` (loading and mapping data), `src/features/accounts/`, admin backend calls.
+- Website backend: contact form and `supabase/ops/23_partner_requests.sql`.
+- Only Jacint runs SQL in Spots-Test and deploys Edge Functions. Production only with explicit approval from both.
+- Branches: `backend/<thema>`.
+- New screens or fields needed for data: build only the simple, functional UI and note it for Noyan („Design offen für Noyan“).
+
+**Noyan – Design & Oberfläche**
+- `src/constants/theme.ts`, `src/components/ui/`, the look of all screens and components (`src/screens/`, `src/components/`), icons, animations, `app.json` visuals (icon, splash).
+- Website design: `website/src/styles/`, `website/src/components/`, layout and texts of `website/src/pages/`.
+- No SQL, no Supabase changes, no Edge Functions, no changes to how data is loaded. If the design needs new data, write it down for Jacint („Daten nötig von Jacint“).
+- Branches: `design/<thema>`.
+
+**Shared files – keep changes small, coordinate first**
+- Screens use both data (Jacint) and design (Noyan): Jacint changes data hooks/props, Noyan changes layout and styles. Do not restructure a screen in the other person's area without asking.
+- `PROJECT_STATUS.md`: only change the lines about your own work; never rewrite the whole file. On merge conflicts keep both sides.
+- Progress files: one per person and topic (e.g. `docs/FORTSCHRITT-<thema>.md`), not one shared file.
+- SQL file numbers: before creating a new file, check `supabase/ops/` on `main` and on open branches for the next free number.
+
+**Workflow**
+- Always branch from the latest `main`; run `git pull origin main` regularly and before opening a pull request.
+- Small pull requests into `main`; the other person takes a quick look before merging.
+- In every summary, name the area that was touched (e.g. „betrifft Jacints Backend“, „betrifft Noyans Design“).
+
 ## Project Progress and Continuity
 
 Maintain a `PROJECT_STATUS.md` file in the project root.
