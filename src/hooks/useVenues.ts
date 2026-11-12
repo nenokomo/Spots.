@@ -1,39 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchVenueEvents } from '../services/events';
-import { fetchVenue, fetchVenuesNear, type NearbyVenue } from '../services/venues';
+import { fetchVenue } from '../services/venues';
 import type { SpotEvent } from '../types/events';
 import type { Venue } from '../types/venues';
-import type { Coordinate } from '../utils/events';
-
-type NearbyResult = { key: string; error: string | null; available: boolean; venues: NearbyVenue[] };
-
-/** Orte im Umkreis. Ohne Mitte (kein Standort, keine Stadt) wird nichts geladen. Muster wie useOrganizerPage. */
-export function useVenuesNear(center: Coordinate | null, radiusKm: number) {
-  const [revision, setRevision] = useState(0);
-  const [result, setResult] = useState<NearbyResult | null>(null);
-  const latitude = center?.latitude;
-  const longitude = center?.longitude;
-  const key = latitude === undefined || longitude === undefined ? null : `${latitude}:${longitude}:${radiusKm}:${revision}`;
-  const reload = useCallback(() => setRevision((value) => value + 1), []);
-
-  useEffect(() => {
-    if (key === null || latitude === undefined || longitude === undefined) return;
-    const controller = new AbortController();
-    fetchVenuesNear({ latitude, longitude }, radiusKm, controller.signal)
-      .then((list) => { if (!controller.signal.aborted) setResult({ key, error: null, ...list }); })
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted) {
-          setResult({ key, available: true, venues: [],
-            error: error instanceof Error ? error.message : 'Clubs konnten nicht geladen werden.' });
-        }
-      });
-    return () => controller.abort();
-  }, [key, latitude, longitude, radiusKm]);
-
-  const current = key !== null && result?.key === key ? result : null;
-  return { loading: key !== null && !current, error: current?.error ?? null, available: current?.available ?? false,
-    venues: key === null ? [] : current?.venues ?? result?.venues ?? [], reload };
-}
 
 type VenueResult = { key: string; error: string | null; venue: Venue | null };
 

@@ -1,6 +1,5 @@
 import { getSupabase } from '../lib/supabase';
 import type { Venue, VenueKind, VenueReportReason } from '../types/venues';
-import { distanceKm, type Coordinate } from '../utils/events';
 import { safeExternalUrl } from './eventAdapter';
 import { testVenues } from './testEvents';
 
@@ -34,29 +33,6 @@ export function mapVenueRow(value: unknown): Venue | null {
 function tableMissing(error: { code?: string; message?: string }) {
   return error.code === 'PGRST205' || error.code === '42P01'
     || (/venues/.test(error.message ?? '') && /(does not exist|could not find)/i.test(error.message ?? ''));
-}
-
-export type NearbyVenue = Venue & { distanceKm: number };
-export type VenueList = { available: boolean; venues: NearbyVenue[] };
-
-/** Orte im Umkreis, nächste zuerst. Rechteck-Abfrage in der Datenbank, genaue Entfernung hier. */
-export async function fetchVenuesNear(center: Coordinate, radiusKm: number, signal?: AbortSignal): Promise<VenueList> {
-  const latDelta = radiusKm / 111.32;
-  const lonDelta = radiusKm / (111.32 * Math.max(Math.cos((center.latitude * Math.PI) / 180), 0.01));
-  let query = getSupabase().from('venues').select(projection).eq('is_published', true)
-    .gte('latitude', center.latitude - latDelta).lte('latitude', center.latitude + latDelta)
-    .gte('longitude', center.longitude - lonDelta).lte('longitude', center.longitude + lonDelta)
-    .limit(1000);
-  if (signal) query = query.abortSignal(signal);
-  const { data, error } = await query;
-  if (error && !tableMissing(error)) throw new Error('Clubs konnten nicht geladen werden. Bitte Internetverbindung prüfen.');
-  const remote = error ? [] : (data ?? []).map(mapVenueRow).filter((venue): venue is Venue => !!venue);
-  const local = testVenues();
-  const venues = [...remote, ...local]
-    .map((venue) => ({ ...venue, distanceKm: distanceKm(center, venue.coordinate) }))
-    .filter((venue) => venue.distanceKm <= radiusKm)
-    .sort((a, b) => a.distanceKm - b.distanceKm || a.name.localeCompare(b.name, 'de'));
-  return { available: !error || local.length > 0, venues };
 }
 
 export async function fetchVenue(id: string, signal?: AbortSignal): Promise<Venue | null> {

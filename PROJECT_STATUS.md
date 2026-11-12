@@ -22,7 +22,7 @@ Auf `main`:
 
 Zusätzlich auf `feature/event-sources`:
 - **Filter „Hip-Hop“ und „Konzerte“**; Eventseite „Tickets bei Ticketmaster“.
-- **Clubs & Locations**: Abschnitt in Entdecken (bei gewähltem Ort), Liste `/clubs`, Ortsseite `/venue/[id]` mit Route, Website, Öffnungszeiten, OSM-Quellenhinweis, Events des Ortes und **„Fehler melden“** (ohne Konto).
+- **Orte (Clubs)**: Entscheidung Jacint + Noyan (13.11.): **keine Clubs ohne Event** – keine Club-Punkte auf dem Radar, kein Clubs-Bereich in Entdecken, keine Liste `/clubs` (Branch `backend/clubs-nur-mit-event`). Die Ortsdaten bleiben als Adressbuch für den Admin-Bereich. Ortsseite `/venue/[id]` (Events des Ortes, „Fehler melden“) bleibt, ist aber noch nirgends verlinkt.
 - **Admin-Bereich `/admin`** (nur Konto mit Admin-Rolle): Events von Hand anlegen (immer mit Ort und Herkunft), Entwürfe freigeben/ablehnen, ungeprüfte Orte freigeben/ausblenden, Meldungen bearbeiten.
 - Ohne die neuen Tabellen (Produktion) bleiben Clubs und Admin unsichtbar; nichts bricht.
 
@@ -34,7 +34,7 @@ Zusätzlich auf `feature/event-sources`:
 - **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15/16 (Konten), **neu 20** (Ticketmaster-Backend), **21** (Orte + Meldungen; 56 echte Orte um Karlsruhe geladen), **22** (Admin, Entwürfe, `events.venue_id`). Prüfsummen aller neuen Funktionen identisch mit den Dateien; bestehende Events unverändert. Ein Admin-Konto (Jacint) eingetragen, Anmeldung klappt. **Ticketmaster-Import läuft** (Function bereitgestellt, 506 Events, 475 sichtbar; auf dem Handy bestätigt), aber noch ohne Zeitplan.
 - SQL 17 (Live Snaps, Meldungen, Ticketarten), 18, 19: **nirgends ausgeführt**.
 - Ticketmaster-Import (`supabase/functions/import-ticketmaster/`): lokal Ende-zu-Ende geprüft (506 Musik-Events in Deutschland, 30 Tage). Details: [docs/TICKETMASTER_IMPORT.md](docs/TICKETMASTER_IMPORT.md).
-- Club-Verzeichnis: Plan in [docs/KARLSRUHE_EVENTS.md](docs/KARLSRUHE_EVENTS.md). Clubzahl für ganz Deutschland **nicht ermittelt** (Overpass-Server am 11.11. überlastet).
+- Club-Verzeichnis: nur noch Adressbuch für Events (siehe oben). Deutschlandweiter OSM-Import gestoppt; Abrufe liegen nur lokal in `supabase/.temp/osm/`.
 - Lokale TEST-Events und TEST-Orte nur bei `__DEV__`; abschaltbar mit `EXPO_PUBLIC_SPOTS_TEST_EVENTS=0`.
 
 ## Geprüft
@@ -53,7 +53,8 @@ Zusätzlich auf `feature/event-sources`:
 
 ## Fehlt noch
 
-- Ticketmaster: Zeitplan in Spots-Test, später Produktion; Club-Daten für ganz Deutschland; Ladeweg für Produktion.
+- Ticketmaster: Zeitplan in Produktion (SQL 24 auf `backend/produktion-start`).
+- Events in Karlsruhe ohne Veranstalter-Konten: redaktionell über den Admin-Bereich, Clubs anschreiben, später Formular „Event einreichen“ ohne Konto.
 - Automatische Event-Entwürfe aus Club-Websites (Claude-API, nur mit Zustimmung der Clubs).
 - Upload-UI für Live Snaps und Beiträge (Development Build, SQL 17–19).
 - Merkliste mit Konto synchronisieren; Passwortreset, Kontolöschung.
