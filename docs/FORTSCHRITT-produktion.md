@@ -56,6 +56,7 @@ Danach: Ticketmaster-Events sind in Produktion sichtbar. Solange die App nicht i
 - **B5 (Jacint, 13.11.)**: Normale App (Produktion) auf dem Handy geprüft: Ticketmaster-Konzerte sichtbar.
 - **Team-Login Produktion (13.11., Branch `backend/team-login`)**: App erlaubt in Produktion nur Anmelden (keine Registrierung, kein privates Profil aus SQL 15), Sitzung pro Projekt getrennt; Spots-Test unverändert. Tests 150/150, Vorschau geprüft.
 - **Produktion, Freigabe Jacint + Noyan (13.11.)**: Jacint hat die öffentliche Registrierung ausgeschaltet und sein Konto im Dashboard angelegt (bestätigt). Adressbuch Baden-Württemberg von Jacint per `scripts/load-osm-venues.cjs produktion DE-BW` geladen: 644 Orte, 467 freigegeben, 34 um Karlsruhe. Konto als Admin eingetragen (1 Admin). Events unverändert (560; Goabase-Prüfwert `e707dadc…`).
+- **Handy (13.11.)**: Admin-Ablauf in Spots-Test durchgespielt (Event „Testparty“, Krokokeller, freigegeben). Anmeldung mit dem Produktionskonto in der normalen App geklappt (Anmeldung in Produktion bestätigt). Noch kein Event in Produktion angelegt. Hinweis: Die Testzeile (`$env:EXPO_PUBLIC_SUPABASE_URL`) gilt, bis das PowerShell-Fenster geschlossen wird.
 
 ## Läuft gerade
 
@@ -63,7 +64,7 @@ Danach: Ticketmaster-Events sind in Produktion sichtbar. Solange die App nicht i
 
 ## Offen
 
-- Admin-Ablauf auf dem Handy in Produktion (Team-Login) durchspielen.
+- Erstes echtes Event in Produktion über den Admin-Bereich anlegen.
 - Branch `backend/produktion-start` pushen und PR nach `main`.
 - Teil C (Konten in Produktion, Rechtliches, Website online, Store-Release, Live Snaps).
 - Formular „Event einreichen“ ohne Konto (vorgeschlagen, noch nicht freigegeben).
