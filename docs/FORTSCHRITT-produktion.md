@@ -54,6 +54,8 @@ Danach: Ticketmaster-Events sind in Produktion sichtbar. Solange die App nicht i
 - **B2 (Jacint, 13.11.)**: Secret `TICKETMASTER_API_KEY` in Produktion gesetzt, Function `import-ticketmaster` bereitgestellt.
 - **B3 Ticketmaster-Zeitplan in Produktion (13.11., ausdrückliche Freigabe)**: SQL 24 eingespielt, Prüfsummen identisch mit Datei und Spots-Test, nutzt die vorhandenen Goabase-Vault-Einträge. Job eingeschaltet, erster Lauf: HTTP 200, 538 gefunden, 521 neu, 488 sichtbar; Sperre frei; Goabase unverändert (39, `e707dadc…`). Ab jetzt alle 6 Stunden.
 - **B5 (Jacint, 13.11.)**: Normale App (Produktion) auf dem Handy geprüft: Ticketmaster-Konzerte sichtbar.
+- **Team-Login Produktion (13.11., Branch `backend/team-login`)**: App erlaubt in Produktion nur Anmelden (keine Registrierung, kein privates Profil aus SQL 15), Sitzung pro Projekt getrennt; Spots-Test unverändert. Tests 150/150, Vorschau geprüft.
+- **Produktion, Freigabe Jacint + Noyan (13.11.)**: Jacint hat die öffentliche Registrierung ausgeschaltet und sein Konto im Dashboard angelegt (bestätigt). Adressbuch Baden-Württemberg von Jacint per `scripts/load-osm-venues.cjs produktion DE-BW` geladen: 644 Orte, 467 freigegeben, 34 um Karlsruhe. Konto als Admin eingetragen (1 Admin). Events unverändert (560; Goabase-Prüfwert `e707dadc…`).
 
 ## Läuft gerade
 
@@ -61,7 +63,7 @@ Danach: Ticketmaster-Events sind in Produktion sichtbar. Solange die App nicht i
 
 ## Offen
 
-- A3 Admin-Ablauf auf dem Handy (Spots-Test).
+- Admin-Ablauf auf dem Handy in Produktion (Team-Login) durchspielen.
 - Branch `backend/produktion-start` pushen und PR nach `main`.
 - Teil C (Konten in Produktion, Rechtliches, Website online, Store-Release, Live Snaps).
 - Formular „Event einreichen“ ohne Konto (vorgeschlagen, noch nicht freigegeben).
