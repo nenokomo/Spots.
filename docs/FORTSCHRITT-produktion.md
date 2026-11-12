@@ -49,6 +49,8 @@ Danach: Ticketmaster-Events sind in Produktion sichtbar. Solange die App nicht i
 
 - **A1 (Jacint, 12.11.)**: Redirect URLs `exp://**` und `meine-app://**` in Spots-Test eingetragen.
 - **A2 Zeitplan in Spots-Test aktiv (12.11.)**: Vault-Einträge von Jacint angelegt (je genau einer), Job eingeschaltet, erster Lauf von Hand ausgelöst: HTTP 200 in 16 s, 540 gefunden, 33 neu, 4 aktualisiert, 497 unverändert, 11 einzeln nachgeprüft; Sperre frei; Goabase weiter 35 Events. Ab jetzt automatisch alle 6 Stunden.
+- **B0 Produktion gelesen (13.11., Freigabe Jacint + Noyan)**: 39 Goabase-Events (32 sichtbar, Prüfwert `e707dadc…`), Goabase-Cron aktiv, Vault-Einträge `spots_project_url` und `spots_import_goabase_secret_key` je einmal vorhanden, pg_cron/pg_net installiert, SQL 15–23 fehlten. Events-Tabelle ohne SQL 15 (keine organizer_id).
+- **B1 SQL 20–23 in Produktion (13.11., Freigabe Jacint + Noyan)**: vorher lokal gegen einen PGlite-Nachbau des Produktionsschemas geprüft (zweimal ausführbar, Goabase unverändert, anon ohne Rechte). Eingespielt in der Reihenfolge 20, 21, 22, 23. Alle 15 Funktionen haben dieselbe Prüfsumme wie Dateien und Spots-Test; Events vorher/nachher gleich (39, `e707dadc…`); neue leere Spalte `events.venue_id`; 0 Orte, 0 Admins; Goabase-Cron unverändert aktiv.
 
 ## Läuft gerade
 
