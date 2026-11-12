@@ -15,7 +15,7 @@ Stand: 12.11.2026. Branch `backend/produktion-start`. Plan und Protokoll für di
 | A1 | Jacint (5 min) | Bestätigungsmails: im Dashboard von Spots-Test unter Authentication → URL Configuration die Adressen `exp://**` und `meine-app://**` als Redirect URLs erlauben. Dann führt der Link zurück in die App statt auf localhost. |
 | A2 | Claude + Jacint | Zeitplan für den Ticketmaster-Import: neue Datei `supabase/ops/24_…` (alle 6 Stunden, gleiche Sicherungen wie bei Goabase: erster Lauf kontrolliert, dann regelmäßig). Lokal testen, dann in Spots-Test. Falls dort Vault-Einträge fehlen, legt Jacint sie an. |
 | A3 | Jacint (10 min) | Freigabe-Ablauf auf dem Handy: Event im Admin-Bereich anlegen, freigeben, in der App sichtbar? |
-| A4 | Claude | Clubs für ganz Deutschland aus OpenStreetMap abrufen (pro Bundesland). Falls die Server wieder überlastet sind: nur die größten Städte. Stichprobe beim Erotik-Filter. Dann in Spots-Test laden. |
+| ~~A4~~ | – | **Gestrichen (13.11., Jacint + Noyan):** Clubs erscheinen nur noch mit Event, kein deutschlandweiter Club-Import. Die Karlsruher Orte bleiben als Adressbuch für den Admin-Bereich. |
 
 ## Teil B – Produktion (ca. 1,5–2 Stunden, jeder Schritt mit Freigabe)
 
@@ -25,10 +25,10 @@ Stand: 12.11.2026. Branch `backend/produktion-start`. Plan und Protokoll für di
 | B1 | Claude | SQL 20 (Ticketmaster), 21 (Clubs und Meldungen), 22 (Admin und Entwürfe, neue leere Spalte `events.venue_id`), 23 (Kontaktanfragen der Website). Danach Prüfsummen mit den Dateien vergleichen. |
 | B2 | Jacint | Ticketmaster: API-Key als Secret setzen und Function bereitstellen (Befehle mit `--project-ref yhnxdeypkbzyjappuzmv`), einmal von Hand starten, Ergebnis prüfen. |
 | B3 | Claude | Ticketmaster-Zeitplan in Produktion (SQL 24). Nutzt voraussichtlich die vorhandenen Vault-Einträge von Goabase, dann braucht es kein neues Secret (wird in B0 geprüft). |
-| B4 | Claude | Clubs in Produktion laden (Daten aus A4). |
-| B5 | Jacint | App mit Produktionsdaten auf dem Handy prüfen: Ticketmaster-Events, Filter „Konzerte“, Clubs auf der Karte. |
+| B4 | Claude | Nur die Karlsruher Orte (Adressbuch für den Admin-Bereich) in Produktion laden, falls gewünscht. |
+| B5 | Jacint | App mit Produktionsdaten auf dem Handy prüfen: Ticketmaster-Events, Filter „Konzerte“. |
 
-Danach: Ticketmaster-Events und Clubs sind in Produktion sichtbar. Solange die App nicht im Store ist, sieht das niemand außer dem Team.
+Danach: Ticketmaster-Events sind in Produktion sichtbar. Solange die App nicht im Store ist, sieht das niemand außer dem Team.
 
 **Admin bleibt in Produktion vorerst unsichtbar**, weil Konten dort im Code noch gesperrt sind (`src/features/accounts/configuration.ts`). Siehe Teil C.
 
@@ -53,4 +53,4 @@ Danach: Ticketmaster-Events und Clubs sind in Produktion sichtbar. Solange die A
 ## Läuft gerade
 
 - A3 Freigabe-Ablauf auf dem Handy (Jacint).
-- A4 Abruf der Clubs aus OpenStreetMap für alle Bundesländer.
+- **Clubs nur mit Event (13.11.)**: Club-Punkte, Clubs-Bereich und `/clubs` aus der App entfernt, auf `main` gepusht (`02e6260`) und hier übernommen. OSM-Abruf abgebrochen, 8 Bundesländer liegen nur lokal. Ladeskript `scripts/load-osm-venues.cjs` bleibt für das Adressbuch.
