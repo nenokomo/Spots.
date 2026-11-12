@@ -53,8 +53,15 @@ Danach: Ticketmaster-Events sind in Produktion sichtbar. Solange die App nicht i
 - **B1 SQL 20–23 in Produktion (13.11., Freigabe Jacint + Noyan)**: vorher lokal gegen einen PGlite-Nachbau des Produktionsschemas geprüft (zweimal ausführbar, Goabase unverändert, anon ohne Rechte). Eingespielt in der Reihenfolge 20, 21, 22, 23. Alle 15 Funktionen haben dieselbe Prüfsumme wie Dateien und Spots-Test; Events vorher/nachher gleich (39, `e707dadc…`); neue leere Spalte `events.venue_id`; 0 Orte, 0 Admins; Goabase-Cron unverändert aktiv.
 - **B2 (Jacint, 13.11.)**: Secret `TICKETMASTER_API_KEY` in Produktion gesetzt, Function `import-ticketmaster` bereitgestellt.
 - **B3 Ticketmaster-Zeitplan in Produktion (13.11., ausdrückliche Freigabe)**: SQL 24 eingespielt, Prüfsummen identisch mit Datei und Spots-Test, nutzt die vorhandenen Goabase-Vault-Einträge. Job eingeschaltet, erster Lauf: HTTP 200, 538 gefunden, 521 neu, 488 sichtbar; Sperre frei; Goabase unverändert (39, `e707dadc…`). Ab jetzt alle 6 Stunden.
+- **B5 (Jacint, 13.11.)**: Normale App (Produktion) auf dem Handy geprüft: Ticketmaster-Konzerte sichtbar.
 
 ## Läuft gerade
 
-- A3 Freigabe-Ablauf auf dem Handy (Jacint).
-- **Clubs nur mit Event (13.11.)**: Club-Punkte, Clubs-Bereich und `/clubs` aus der App entfernt, auf `main` gepusht (`02e6260`) und hier übernommen. OSM-Abruf abgebrochen, 8 Bundesländer liegen nur lokal. Ladeskript `scripts/load-osm-venues.cjs` bleibt für das Adressbuch.
+- Nichts. Teil B abgeschlossen.
+
+## Offen
+
+- A3 Admin-Ablauf auf dem Handy (Spots-Test).
+- Branch `backend/produktion-start` pushen und PR nach `main`.
+- Teil C (Konten in Produktion, Rechtliches, Website online, Store-Release, Live Snaps).
+- Formular „Event einreichen“ ohne Konto (vorgeschlagen, noch nicht freigegeben).
