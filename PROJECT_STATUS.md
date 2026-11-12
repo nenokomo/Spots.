@@ -30,7 +30,7 @@ Zusätzlich auf `feature/event-sources`:
 
 ## Daten und Backend
 
-- **Produktion** `yhnxdeypkbzyjappuzmv`: unverändert. Events nur aus dem Goabase-Import (Cron alle 2 h), rund 30 veröffentlicht.
+- **Produktion** `yhnxdeypkbzyjappuzmv` (Stand 13.11.): SQL 20–24 eingespielt (Ticketmaster, Orte, Admin, Partner-Anfragen, Ticketmaster-Zeitplan). Goabase-Import (Cron alle 2 h, 39 Events) und **Ticketmaster-Import (Cron alle 6 h, erster Lauf 521 Events, 488 sichtbar)**. Noch ohne SQL 15 (Konten), 0 Orte, 0 Admins. Protokoll: [docs/FORTSCHRITT-produktion.md](docs/FORTSCHRITT-produktion.md).
 - **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15/16 (Konten), **neu 20** (Ticketmaster-Backend), **21** (Orte + Meldungen; 56 echte Orte um Karlsruhe geladen), **22** (Admin, Entwürfe, `events.venue_id`). Prüfsummen aller neuen Funktionen identisch mit den Dateien; bestehende Events unverändert. Ein Admin-Konto (Jacint) eingetragen, Anmeldung klappt. **Ticketmaster-Import läuft** (Function bereitgestellt, 506 Events, 475 sichtbar; auf dem Handy bestätigt), aber noch ohne Zeitplan.
 - SQL 17 (Live Snaps, Meldungen, Ticketarten), 18, 19: **nirgends ausgeführt**.
 - Ticketmaster-Import (`supabase/functions/import-ticketmaster/`): lokal Ende-zu-Ende geprüft (506 Musik-Events in Deutschland, 30 Tage). Details: [docs/TICKETMASTER_IMPORT.md](docs/TICKETMASTER_IMPORT.md).
