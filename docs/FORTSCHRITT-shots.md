@@ -24,10 +24,11 @@ Branch `backend/shots` (von `main`, 15.11.). Alles nur lokal (PGlite) und in Spo
   - Admin-Bereich: neuer Reiter **„Shots“** mit Vorschaubild, Status, Meldungen und Ausblenden / Wieder zeigen / Entfernen.
 - Prüfung: 203/203 Tests, Lint, Typecheck. Web-Vorschau: laufendes Club-Event → „Shot posten“ → Auslöser als Gast → „Bitte anmelden“; Adresse in der Karten-Vorschau.
 
+- **Handy (15.11.)**: Shot mit privatem Konto während eines laufenden Club-Events gepostet, unter „Shots“ sichtbar, im Admin-Reiter ausgeblendet und wieder gezeigt. Datenbank: 3 Shots, Dateien im eigenen Konto-Ordner, Lebensdauer genau 24 h.
+
 ## Offen
 
-- Handy-Test: angemeldet während eines laufenden Events einen Shot posten → erscheint unter „Shots“; melden; im Admin-Reiter „Shots“ ausblenden/wieder zeigen.
-- Echtes Löschen von Dateien sehen wir, wenn die ersten Shots nach 24 h ablaufen (Antwort der Function in `net._http_response`).
+- Echtes Löschen prüfen: die Test-Shots vom 15.11. laufen am 16.11. gegen 22:30 ab; der Job um 23:43 sollte sie samt Dateien löschen (Antwort der Function in `net._http_response`).
 - Event-Story für Clubs (Club postet im Studio; Daten-Seite: `by_organizer` gibt es schon).
 - Shots im Studio moderieren (Club blendet bei eigenen Events aus – Datenbank kann es seit SQL 17, Oberfläche fehlt).
 - Live-Vorschau im Kamera-Rahmen: expo-camera + Development Build. Videos (bis 15 s) später.
