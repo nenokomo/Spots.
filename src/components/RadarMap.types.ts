@@ -6,7 +6,8 @@ export type RadarMapProps = {
   radius: number;
   userCoordinate: { latitude: number; longitude: number } | null;
   events: LocatedEvent[];
-  onSelect: (event: LocatedEvent) => void;
+  /** point: pin tip in map coordinates (px from the map's top-left), so the preview can sit next to the pin. */
+  onSelect: (event: LocatedEvent, point: MapPoint | null) => void;
   onCenterChange: (center: { latitude: number; longitude: number }) => void;
   onVisibleRadiusChange: (radiusKm: number) => void;
   /** Height of the floating header; keeps the scan overlay clear of it. */
@@ -17,3 +18,5 @@ export type RadarMapProps = {
   locked?: boolean;
   scan: { scanning: boolean; rotation: Animated.Value; opacity: Animated.Value; reduceMotion: boolean; settledIds: string[]; onPinSettled: (id: string) => void };
 };
+
+export type MapPoint = { x: number; y: number };

@@ -63,8 +63,6 @@ export default function ExploreScreen() {
   const [areaRadius, setAreaRadius] = useState<number>(30);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [story, setStory] = useState<string | null>(null);
-  const [seenStories, setSeenStories] = useState<string[]>([]);
-  const markSeen = useCallback((id: string) => setSeenStories((previous) => previous.includes(id) ? previous : [...previous, id]), []);
   const closeStory = useCallback(() => setStory(null), []);
 
   // Use an existing location permission to show what is on nearby. Never prompts again after a refusal.
@@ -108,7 +106,7 @@ export default function ExploreScreen() {
       data={events}
       numColumns={2}
       keyExtractor={(event) => event.id}
-      renderItem={({ item }) => <View style={styles.cell}><StoryTile event={item} today={today} now={now} seen={seenStories.includes(item.id)} distanceKm={distances.get(item.id)} onOpen={() => setStory(item.id)} /></View>}
+      renderItem={({ item }) => <View style={styles.cell}><StoryTile event={item} today={today} now={now} distanceKm={distances.get(item.id)} onOpen={() => setStory(item.id)} /></View>}
       columnWrapperStyle={styles.gridRow}
       initialNumToRender={6}
       windowSize={7}
@@ -196,8 +194,8 @@ export default function ExploreScreen() {
       </View>
     </Sheet>
 
-    <Modal visible={story !== null} animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={closeStory}>
-      {story !== null && <EventStoryViewer events={events} initialId={story} today={today} onClose={closeStory} onSeen={markSeen}
+    <Modal visible={story !== null} animationType="none" transparent statusBarTranslucent navigationBarTranslucent onRequestClose={closeStory}>
+      {story !== null && <EventStoryViewer events={events} initialId={story} today={today} onClose={closeStory}
         actionLabel={(event) => toOrganizer(event) ? 'Zum Veranstalter' : 'Event ansehen'}
         onOpenEvent={(event) => { setStory(null); router.push(eventHref(event, 'discover')); }} />}
     </Modal>
@@ -219,7 +217,7 @@ const styles = StyleSheet.create({
   shelf: { paddingHorizontal: gutter },
   heroGap: { width: HERO_GAP },
   fallback: { ...type.footnote, color: colors.muted, paddingHorizontal: gutter, paddingBottom: space.md },
-  gridRow: { gap: space.md, paddingHorizontal: gutter, paddingBottom: space.md },
+  gridRow: { gap: space.xs, paddingHorizontal: gutter, paddingBottom: space.xs },
   cell: { flex: 1, maxWidth: '50%' },
   dateModal: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#000000b3' },
   dateSheet: { borderTopLeftRadius: 26, borderTopRightRadius: 26 },

@@ -12,7 +12,7 @@ export function EventMapMarker({ event, reduceMotion, onSelect, onSettled }: { e
     onSettled(event.id);
   }, [event.id, onSettled]);
   return (
-    <Marker ref={marker} coordinate={event.coordinate} onPress={() => onSelect(event)} tracksViewChanges={tracking} anchor={{ x: 0.5, y: 0.86 }} centerOffset={{ x: 0, y: -27 }} accessibilityLabel={`${event.title}, Vorschau öffnen`}>
+    <Marker ref={marker} coordinate={event.coordinate} onPress={() => onSelect(event)} tracksViewChanges={tracking} anchor={{ x: 0.5, y: 0.86 }} centerOffset={{ x: 0, y: -28 }} accessibilityLabel={`${event.title}, Vorschau öffnen`}>
       <EventPin event={event} reduceMotion={reduceMotion} onReady={finishTracking} />
     </Marker>
   );

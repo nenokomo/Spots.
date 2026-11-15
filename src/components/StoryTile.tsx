@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { colors, radius, space, squircle, type } from '../constants/theme';
+import { colors, space, type } from '../constants/theme';
 import type { SpotEvent } from '../types/events';
 import { eventPhase } from '../utils/eventStatus';
 import { eventDayLabel, eventTimeLabel } from '../utils/events';
@@ -9,12 +9,12 @@ import { SaveEventButton } from './SaveEventButton';
 import { PressableScale } from './ui/PressableScale';
 import { StatusBadge } from './ui/StatusBadge';
 
-type Props = { event: SpotEvent; today: string; now: number; seen: boolean; onOpen: () => void; distanceKm?: number };
+type Props = { event: SpotEvent; today: string; now: number; onOpen: () => void; distanceKm?: number };
 
 const distanceLabel = (km: number) => `${new Intl.NumberFormat('de-DE', { maximumFractionDigits: km < 10 ? 1 : 0 }).format(km)} km`;
 
-/** Tall story preview of one event. Opens the story viewer; the brand ring marks unseen stories. */
-export function StoryTile({ event, today, now, seen, onOpen, distanceKm }: Props) {
+/** Tall story preview of one event in a discover-style grid: small corners, no frame, text on the image. */
+export function StoryTile({ event, today, now, onOpen, distanceKm }: Props) {
   const phase = eventPhase(event, now);
   const live = phase === 'live' || phase === 'started';
   return (
@@ -23,7 +23,7 @@ export function StoryTile({ event, today, now, seen, onOpen, distanceKm }: Props
         accessibilityRole="button"
         accessibilityLabel={`${event.title}, ${eventDayLabel(event.startsAt, today)} ${eventTimeLabel(event.startsAt)} Uhr, ${event.location}, Story öffnen`}
         onPress={onOpen}
-        style={[styles.tile, seen ? styles.seen : styles.unseen]}
+        style={styles.tile}
       >
         <Image source={event.image} resizeMode="cover" style={styles.cover} accessibilityLabel={event.imageIsPlaceholder ? 'Symbolfoto einer Veranstaltung' : `Eventbild: ${event.title}`} />
         <LinearGradient pointerEvents="none" colors={['#0a090c00', '#0a090c00', '#0a090ce0', '#0a090cfc']} locations={[0, 0.34, 0.68, 1]} style={styles.cover} />
@@ -41,9 +41,7 @@ export function StoryTile({ event, today, now, seen, onOpen, distanceKm }: Props
 
 const styles = StyleSheet.create({
   wrapper: { flex: 1 },
-  tile: { aspectRatio: 0.72, overflow: 'hidden', borderRadius: radius.lg, borderWidth: 1, backgroundColor: colors.surface, justifyContent: 'flex-end', ...squircle },
-  unseen: { borderColor: '#c922ab8c' },
-  seen: { borderColor: '#ffffff14' },
+  tile: { aspectRatio: 0.62, overflow: 'hidden', borderRadius: 8, backgroundColor: colors.surface, justifyContent: 'flex-end' },
   cover: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
   badge: { position: 'absolute', left: space.sm, top: space.sm },
   content: { padding: space.md, gap: 3 },

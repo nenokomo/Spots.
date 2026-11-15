@@ -1,7 +1,15 @@
 import type { ImageSourcePropType } from 'react-native';
 import type { SpotEvent } from '../types/events';
 
-export type StoryMedia = { kind: 'image'; source: ImageSourcePropType; placeholder: boolean };
+/** test: local symbol photo added only in development so stories can be tried with several slides. */
+export type StoryMedia = { kind: 'image'; source: ImageSourcePropType; placeholder: boolean; test?: boolean };
+
+// Development only (never in a release build): extra symbol photos per story, clearly labelled as test images.
+const DEV_STORY_IMAGES: ImageSourcePropType[] = __DEV__ ? [
+  require('../../assets/events/club.jpg'),
+  require('../../assets/events/today-hero-party.png'),
+  require('../../assets/events/today-hero-dj.png'),
+] : [];
 
 /**
  * Preview media of an event for the Explore stories.
@@ -11,7 +19,8 @@ export type StoryMedia = { kind: 'image'; source: ImageSourcePropType; placehold
  * Videos need a media relation in the backend and a player module first.
  */
 export function eventStoryMedia(event: SpotEvent): StoryMedia[] {
-  return [{ kind: 'image', source: event.image, placeholder: !!event.imageIsPlaceholder }];
+  const own: StoryMedia = { kind: 'image', source: event.image, placeholder: !!event.imageIsPlaceholder };
+  return [own, ...DEV_STORY_IMAGES.map((source): StoryMedia => ({ kind: 'image', source, placeholder: true, test: true }))];
 }
 
 export function remoteImageUri(source: ImageSourcePropType) {

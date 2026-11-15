@@ -9,7 +9,8 @@ export const PIN_STAGGER_MS = 160;
 // App session only. Navigation/backgrounding must not replay the intro.
 const session = { complete: false, revealed: new Set<string>(), settled: new Set<string>() };
 
-export function useRadarIntro<T extends SpotEvent>(events: T[]) {
+/** ready: the map is visible. The scan waits for it, so it never runs behind a hidden map. */
+export function useRadarIntro<T extends SpotEvent>(events: T[], ready = true) {
   const [rotation] = useState(() => new Animated.Value(0));
   const [opacity] = useState(() => new Animated.Value(session.complete ? 0 : 1));
   const [complete, setComplete] = useState(() => session.complete);
@@ -22,6 +23,7 @@ export function useRadarIntro<T extends SpotEvent>(events: T[]) {
   }, []);
 
   useEffect(() => {
+    if (!ready) return;
     let disposed = false;
     let animation: Animated.CompositeAnimation | undefined;
 
@@ -70,7 +72,7 @@ export function useRadarIntro<T extends SpotEvent>(events: T[]) {
       motion.remove();
       appState.remove();
     };
-  }, [rotation, opacity]);
+  }, [rotation, opacity, ready]);
 
   useEffect(() => {
     if (!complete || reduceMotion) return;

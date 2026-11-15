@@ -10,6 +10,7 @@ import { EVENT_ROW_HEIGHT, EventRow } from '../components/EventRow';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Icon } from '../components/Icon';
 import RadarMap from '../components/RadarMap';
+import type { MapPoint } from '../components/RadarMap.types';
 import { RadiusSlider } from '../components/RadiusSlider';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Button, IconButton } from '../components/ui/Button';
@@ -27,19 +28,27 @@ import { isLocatedEvent, matchesCategory, type LocatedEvent } from '../types/eve
 import { isTonight } from '../utils/eventStatus';
 import { distanceKm, type Coordinate } from '../utils/events';
 
+const DEFAULT_RADIUS_KM = 10;
+// Pin head + tip above the coordinate, and the approximate preview card height (EventRow).
+const PIN_HEIGHT = 56;
+const PREVIEW_GAP = 6;
+const PREVIEW_HEIGHT = 96;
 const ROW = EVENT_ROW_HEIGHT + StyleSheet.hairlineWidth;
 
 export default function RadarScreen() {
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const now = useNow();
   const today = useToday();
   const [category, setCategory] = useState<Category>('Alle');
-  const [radius, setRadius] = useState(30);
-  const [visibleRadius, setVisibleRadius] = useState(30);
+  const [radius, setRadius] = useState(DEFAULT_RADIUS_KM);
+  const [visibleRadius, setVisibleRadius] = useState(DEFAULT_RADIUS_KM);
+  // The map stays hidden until the first location lookup has finished, so it never flashes Berlin first.
+  const [located, setLocated] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [placeOpen, setPlaceOpen] = useState(false);
   const [preview, setPreview] = useState<LocatedEvent | null>(null);
+  const [previewPoint, setPreviewPoint] = useState<MapPoint | null>(null);
   const location = useLocation();
   const { locate } = location;
   const live = useLiveEvents();
@@ -63,7 +72,7 @@ export default function RadarScreen() {
       .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
     return { mapEvents: [...running, ...tonight], liveCount: running.length };
   }, [live.events, upcoming.events, category, searchCenter, radius, now]);
-  const radar = useRadarIntro(mapEvents);
+  const radar = useRadarIntro(mapEvents, located);
 
   // Quiet around here: offer the nearest real upcoming events instead of an empty panel. List only, no pins.
   const nearest = useMemo(() => mapEvents.length > 0 ? [] : upcoming.events
@@ -76,7 +85,7 @@ export default function RadarScreen() {
   const quiet = !radar.scanning && !loading && !error && mapEvents.length === 0;
   const rows = mapEvents.length > 0 ? radar.visibleEvents : quiet ? nearest : [];
   const laterCount = mapEvents.length - liveCount;
-  const filtered = category !== 'Alle' || radius !== 30;
+  const filtered = category !== 'Alle' || radius !== DEFAULT_RADIUS_KM;
   const radiusLabel = `${new Intl.NumberFormat('de-DE', { maximumFractionDigits: visibleRadius < 10 ? 1 : 0 }).format(visibleRadius)} km`;
 
   const headline = radar.scanning ? 'Scan läuft' : quiet ? 'Gerade ruhig hier' : liveCount > 0 ? 'Partys heute' : 'Heute Nacht';
@@ -87,17 +96,17 @@ export default function RadarScreen() {
 
   const reset = useCallback(async () => {
     await locate();
-    setRadius(30);
+    setRadius(DEFAULT_RADIUS_KM);
   }, [locate]);
 
   useFocusEffect(useCallback(() => {
     setPreview(null);
-    setRadius(30);
-    setVisibleRadius(30);
-    void locate({ automatic: true });
+    setRadius(DEFAULT_RADIUS_KM);
+    setVisibleRadius(DEFAULT_RADIUS_KM);
+    void locate({ automatic: true }).finally(() => setLocated(true));
   }, [locate]));
 
-  const select = useCallback((event: LocatedEvent) => setPreview(event), []);
+  const select = useCallback((event: LocatedEvent, point: MapPoint | null) => { setPreview(event); setPreviewPoint(point); }, []);
   const previewVisible = !!preview && !radar.scanning && mapEvents.some((event) => event.id === preview.id);
 
   // The panel shows about three events at once; the map keeps the rest of the screen.
@@ -106,12 +115,24 @@ export default function RadarScreen() {
   const panelHeight = Math.min(Math.max(235, height * 0.33), 315) + tabInset;
   const topInset = insets.top + 64;
 
+  // Preview card sits right above the tapped pin (or below it near the top edge), never somewhere else on the map.
+  const cardWidth = Math.min(width - space.lg * 2, 340);
+  const layerHeight = height - panelHeight;
+  const previewPlacement = (() => {
+    if (!previewPoint) return { left: space.lg, right: space.lg, top: '50%' as const, marginTop: -46 };
+    const left = Math.min(Math.max(previewPoint.x - cardWidth / 2, space.lg), width - space.lg - cardWidth);
+    const pinTop = previewPoint.y - PIN_HEIGHT;
+    return pinTop - PREVIEW_GAP - PREVIEW_HEIGHT > topInset
+      ? { left, width: cardWidth, bottom: layerHeight - pinTop + PREVIEW_GAP }
+      : { left, width: cardWidth, top: previewPoint.y + PREVIEW_GAP };
+  })();
+
   return (
     <View style={styles.screen}>
       {/* The map runs under the panel's rounded corners, so no background shows through there. */}
       <View style={[styles.map, { bottom: panelHeight - corner.xl }]}>
-        <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={select}
-          onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} topInset={topInset} bottomInset={corner.xl} locked={radar.scanning} />
+        {located && <RadarMap center={location.center} userCoordinate={location.userCoordinate} radius={radius} events={radar.visibleEvents} onSelect={select}
+          onCenterChange={onCenterChange} onVisibleRadiusChange={onVisibleRadiusChange} scan={radar} topInset={topInset} bottomInset={corner.xl} locked={radar.scanning} />}
       </View>
 
       <LinearGradient pointerEvents="none" colors={['#0a090cb3', '#0a090c00']} style={[styles.topShade, { height: insets.top + 110 }]} />
@@ -120,13 +141,13 @@ export default function RadarScreen() {
         <PressableScale accessibilityRole="button" accessibilityLabel={`Ort ändern, aktuell ${location.label}`} onPress={() => setPlaceOpen(true)} scaleTo={0.96} hitSlop={4} style={styles.place}>
           <GlassBackdrop radius={19} />
           <Icon name="pin" size={13} color={colors.pink} />
-          <Text numberOfLines={1} style={styles.placeLabel}>{location.loading ? 'Standort …' : location.label}</Text>
+          <Text numberOfLines={1} style={styles.placeLabel}>{!located || location.loading ? 'Standort …' : location.label}</Text>
           <Icon name="down" size={11} color={colors.muted} />
         </PressableScale>
         <PressableScale accessibilityRole="button" accessibilityLabel={`Filter, Umkreis ${radiusLabel}${category !== 'Alle' ? `, ${category}` : ''}`} onPress={() => setFilterOpen(true)} scaleTo={0.96} hitSlop={4} style={styles.filterPill}>
           <GlassBackdrop radius={19} />
           <Icon name="sliders" size={13} color={colors.text} />
-          <Text style={styles.filterPillText}>{radiusLabel}</Text>
+          <Text style={styles.filterPillText}>Filter</Text>
           {filtered && <View pointerEvents="none" style={styles.filterDot} />}
         </PressableScale>
       </View>
@@ -134,7 +155,7 @@ export default function RadarScreen() {
       {previewVisible && (
         <View style={[styles.previewLayer, { bottom: panelHeight }]} pointerEvents="box-none">
           <Pressable accessibilityRole="button" accessibilityLabel="Eventvorschau schließen" onPress={() => setPreview(null)} style={StyleSheet.absoluteFill} />
-          <View testID="event-preview" style={styles.preview}>
+          <View testID="event-preview" style={[styles.preview, previewPlacement]}>
             <GlassBackdrop radius={corner.xl} variant="panel" />
             <EventRow event={preview} href={eventHref(preview, 'radar')} now={now} today={today} distanceKm={distanceKm(searchCenter, preview.coordinate)} trailing={<SaveEventButton id={preview.id} title={preview.title} size={36} />} />
           </View>
@@ -142,7 +163,7 @@ export default function RadarScreen() {
       )}
 
       <View pointerEvents="box-none" style={[styles.locate, { bottom: panelHeight + space.md }]}>
-        <IconButton icon="locate" accessibilityLabel="Zu meinem Standort, 30 Kilometer Umkreis" onPress={() => void reset()} />
+        <IconButton icon="locate" accessibilityLabel="Zu meinem Standort, 10 Kilometer Umkreis" onPress={() => void reset()} />
       </View>
 
       <View style={[styles.panel, { height: panelHeight, paddingBottom: tabInset }]}>
@@ -191,7 +212,7 @@ export default function RadarScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  map: { position: 'absolute', top: 0, left: 0, right: 0 },
+  map: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: '#202023' },
   topShade: { position: 'absolute', top: 0, left: 0, right: 0 },
   top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingHorizontal: space.lg },
   place: { flexShrink: 1, height: 38, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, borderRadius: 19, overflow: 'hidden' },
@@ -210,7 +231,7 @@ const styles = StyleSheet.create({
   moreText: { ...type.callout, color: colors.pink },
   row: { paddingHorizontal: gutter },
   previewLayer: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40 },
-  preview: { position: 'absolute', left: space.lg, right: space.lg, top: '50%', marginTop: -46, paddingHorizontal: space.md, borderRadius: corner.xl, overflow: 'hidden', borderWidth: 1, borderColor: '#de5ab970', ...squircle },
+  preview: { position: 'absolute', paddingHorizontal: space.md, borderRadius: corner.xl, overflow: 'hidden', borderWidth: 1, borderColor: '#de5ab970', ...squircle },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: gutter + 68 + space.md },
   empty: { ...type.callout, color: colors.faint, paddingHorizontal: gutter, paddingTop: space.lg },
   citySearch: { minHeight: 48, zIndex: 10 },

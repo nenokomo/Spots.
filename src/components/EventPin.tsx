@@ -39,12 +39,12 @@ export function EventPin({ event, reduceMotion, onReady }: Props) {
 }
 
 const styles = StyleSheet.create({
-  frame: { width: 54, height: 66, alignItems: 'center', justifyContent: 'center', paddingBottom: 9 },
-  avatar: { height: 40, width: 40, borderRadius: 22, borderWidth: 2, padding: 2.5, backgroundColor: '#1b111f' },
-  live: { borderColor: colors.pink, boxShadow: '0 0 12px 2px #ff4ab84d' },
+  frame: { width: 54, height: 68, alignItems: 'center', justifyContent: 'center', paddingBottom: 9 },
+  avatar: { height: 41, width: 41, borderRadius: 22, borderWidth: 2.5, padding: 2.5, backgroundColor: '#1b111f' },
+  live: { borderColor: colors.pink, boxShadow: '0 0 8px 1px #ff4ab84d' },
   soon: { borderColor: '#d4bcd8' },
   image: { width: '100%', height: '100%', borderRadius: 22, backgroundColor: colors.surface },
-  dot: { position: 'absolute', right: -1, bottom: 0, height: 8, width: 8, borderRadius: 5, backgroundColor: colors.pink, borderWidth: 1.5, borderColor: '#1b111f' },
-  tail: { position: 'absolute', bottom: 12, height: 10, width: 10, backgroundColor: colors.pink, transform: [{ rotate: '45deg' }], borderRadius: 2 },
+  dot: { position: 'absolute', right: -1, bottom: 0, height: 8, width: 8, borderRadius: 4, backgroundColor: colors.pink, borderWidth: 1.5, borderColor: '#1b111f' },
+  tail: { position: 'absolute', bottom: 11, height: 11, width: 11, backgroundColor: colors.pink, transform: [{ rotate: '45deg' }], borderRadius: 2 },
   tailSoon: { backgroundColor: '#d4bcd8' },
 });
