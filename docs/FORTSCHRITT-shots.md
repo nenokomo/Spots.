@@ -5,7 +5,7 @@ Branch `backend/shots` (von `main`, 15.11.). Alles nur lokal (PGlite) und in Spo
 ## Entscheidungen (Jacint, 15.11.)
 
 - Shots von Gästen sind **sofort sichtbar**. Schutz: Melden (3 Meldungen blenden automatisch aus), Club blendet bei eigenen Events aus, Spots-Team prüft im Admin-Bereich.
-- Posten **nur mit Konto**; ansehen auch als Gast.
+- Posten **nur mit Konto**. **Ansehen von Gäste-Shots ebenfalls nur mit Konto** (Änderung Jacint, 15.11. abends); die Event-Story des Clubs bleibt für alle sichtbar.
 - Domain und Mailserver: Jacint, nächste Woche. Entwicklerkonten Apple/Google: kurz vor dem Release. Rechtstexte: Jacint.
 
 ## Fertig
@@ -26,11 +26,13 @@ Branch `backend/shots` (von `main`, 15.11.). Alles nur lokal (PGlite) und in Spo
 
 - **Handy (15.11.)**: Shot mit privatem Konto während eines laufenden Club-Events gepostet, unter „Shots“ sichtbar, im Admin-Reiter ausgeblendet und wieder gezeigt. Datenbank: 3 Shots, Dateien im eigenen Konto-Ordner, Lebensdauer genau 24 h.
 
+- **SQL 32** `supabase/ops/32_shots_signed_in_only.sql`, in Spots-Test: Gäste-Shots nur für angemeldete Konten lesbar (Dateien folgen der Zeile, also auch nicht signierbar), Club-Story weiter für alle. Probe: ohne Konto 0 Gäste-Shots, mit Konto alle. Test `tests/shots-signed-in.test.cjs`. App lädt Shots mit der Sitzung, wenn angemeldet; Gäste sehen bei laufenden Events „Shots ansehen · Nur mit Konto“ und beim Antippen „Shots siehst du nur mit Konto“ mit Link „Melde dich hier an, um sie zu sehen“ (Web-Vorschau geprüft). 208/208 Tests.
+
 ## Offen
 
 - Echtes Löschen prüfen: die Test-Shots vom 15.11. laufen am 16.11. gegen 22:30 ab; der Job um 23:43 sollte sie samt Dateien löschen (Antwort der Function in `net._http_response`).
 - Event-Story für Clubs (Club postet im Studio; Daten-Seite: `by_organizer` gibt es schon).
 - Shots im Studio moderieren (Club blendet bei eigenen Events aus – Datenbank kann es seit SQL 17, Oberfläche fehlt).
 - Live-Vorschau im Kamera-Rahmen: expo-camera + Development Build. Videos (bis 15 s) später.
-- Produktion: SQL 17–19, 30, 31 und die Function erst in der Produktions-Runde.
+- Produktion: SQL 17–19, 30–32 und die Function erst in der Produktions-Runde.
 - Datenschutz: Shots (Fotos von Gästen, 24 h, Melden) in die Rechtstexte.

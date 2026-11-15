@@ -176,3 +176,13 @@ test('shots: posting needs an account, uploads into the own folder and notifies 
   await content.reportShot('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'spam', ' zu laut ');
   assert.deepEqual(JSON.parse(JSON.stringify(calls[0])), ['insert', 'content_reports', { snap_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', reason: 'spam', details: 'zu laut' }]);
 });
+
+test('shots for guests: locked tile with a sign-in link; signed-in accounts read shots with their session', () => {
+  const shots = fs.readFileSync(path.join(__dirname, '../src/components/Shots.tsx'), 'utf8');
+  assert.match(shots, /onPress=\{\(\) => guest \? setSignInHint\(true\) : setOpen\(unseen\)\}/, 'guests get the hint instead of the viewer');
+  assert.match(shots, /Melde dich hier an, um sie zu sehen/);
+  assert.match(shots, /router\.push\('\/account'\)/);
+  const content = fs.readFileSync(path.join(__dirname, '../src/services/content.ts'), 'utf8');
+  const fetchBlock = content.slice(content.indexOf('export async function fetchEventSnaps'), content.indexOf('export async function fetchTicketTypes'));
+  assert.match(fetchBlock, /const client = await readClient\(\);/, 'shots are read with the account session when signed in');
+});

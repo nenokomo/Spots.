@@ -12,6 +12,14 @@ async function signedInClient(message: string) {
   return client;
 }
 
+/** Zum Lesen: mit Sitzung, wenn angemeldet; sonst der öffentliche Client. */
+async function readClient() {
+  if (accountClientError) return getSupabase();
+  const client = getAccountClient();
+  const { data } = await client.auth.getSession().catch(() => ({ data: { session: null } }));
+  return data.session ? client : getSupabase();
+}
+
 // Nach einem neuen Shot laden offene Eventseiten ihre Shots neu.
 const snapListeners = new Set<(eventId: string) => void>();
 export function onSnapsChanged(listener: (eventId: string) => void) {
@@ -88,7 +96,8 @@ type TicketRow = { id: string; event_id: string; name: string; description: stri
 /** Visible, unexpired snaps of an event. Expiry is enforced by RLS and re-checked here. */
 export async function fetchEventSnaps(eventId: string, now = Date.now()): Promise<LiveSnap[]> {
   if (!uuid.test(eventId) || unavailable.has('live_snaps')) return [];
-  const client = getSupabase();
+  // Gäste-Shots gibt es nur mit Konto (SQL 32): angemeldet mit der Sitzung lesen, sonst öffentlich (nur Club-Story).
+  const client = await readClient();
   const { data, error } = await client.from('live_snaps')
     .select('id,event_id,organizer_id,media_type,storage_path,caption,created_at,expires_at,by_organizer')
     .eq('event_id', eventId).eq('moderation_status', 'visible').gt('expires_at', new Date(now).toISOString())
