@@ -136,7 +136,7 @@ export default function OrganizerProfileScreen() {
         </View>}
       </ScrollView>
 
-      <Modal visible={story !== null} animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setStory(null)}>
+      <Modal visible={story !== null} animationType="none" transparent statusBarTranslucent navigationBarTranslucent onRequestClose={() => setStory(null)}>
         {story !== null && <EventStoryViewer events={groups.stories} initialId={story} today={today} onClose={() => setStory(null)} onSeen={(seenId) => setSeen((previous) => previous.includes(seenId) ? previous : [...previous, seenId])} onOpenEvent={(event) => { setStory(null); router.push(eventDetailHref(event.id)); }} />}
       </Modal>
     </View>

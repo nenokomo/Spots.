@@ -1,15 +1,18 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Image, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventDataState } from '../components/EventDataState';
 import { EventPhotoViewer } from '../components/EventPhotoViewer';
 import { OrganizerAvatar } from '../components/GalleryPost';
 import { GlassBackdrop } from '../components/GlassBackdrop';
-import { Icon, type IconName } from '../components/Icon';
+import { Icon } from '../components/Icon';
+import { Shots } from '../components/Shots';
+import { PlacePreview } from '../components/PlacePreview';
 import { SaveEventButton } from '../components/SaveEventButton';
+import { SnapViewer } from '../components/SnapViewer';
 import { Backdrop } from '../components/Screen';
 import { Button, IconButton } from '../components/ui/Button';
 import { PressableScale } from '../components/ui/PressableScale';
@@ -22,27 +25,38 @@ import { useOrganizerSummary } from '../hooks/useOrganizer';
 import { organizerHref } from '../navigation/eventRoutes';
 import { formatPrice } from '../services/content';
 import { shouldTrack, trackEvent } from '../services/eventStats';
+import type { PublicOrganizer } from '../types/accounts';
 import { sourceLabel, ticketSeller } from '../utils/eventSource';
-import { eventPhase, phaseLabel } from '../utils/eventStatus';
+import { eventPhase } from '../utils/eventStatus';
+import { eventSnaps } from '../utils/stories';
 
 const dayFormat = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'long', day: 'numeric', month: 'long' });
+const shortDay = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: 'numeric', month: 'short' });
 const timeFormat = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
 
-/** One row of the info list: icon, headline, detail, optional chevron. */
-function Row({ icon, title, detail, onPress, accessibilityLabel }: { icon: IconName; title: string; detail?: string; onPress?: () => void; accessibilityLabel?: string }) {
-  const body = <>
-    <View style={styles.rowIcon}><Icon name={icon} size={18} color={colors.pink} /></View>
-    <View style={styles.rowCopy}><Text numberOfLines={2} style={styles.rowTitle}>{title}</Text>{detail && <Text numberOfLines={1} style={styles.rowDetail}>{detail}</Text>}</View>
-    {onPress && <Icon name="chevron" size={14} color={colors.faint} />}
-  </>;
-  return onPress
-    ? <PressableScale accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? title} onPress={onPress} scaleTo={0.98} style={styles.row}>{body}</PressableScale>
-    : <View style={styles.row}>{body}</View>;
+/**
+ * Organizer picture with a Snapchat-style ring. With an event story: thick brand-gradient ring, pink glow and a
+ * „STORY“ label (grey once watched). Without a story: plain picture, tapping opens the profile.
+ */
+function StoryRing({ organizer, story, watched, onPress, size = 76 }: { organizer: PublicOrganizer; story: boolean; watched: boolean; onPress: () => void; size?: number }) {
+  const outer = { width: size + 14, height: size + 14, borderRadius: (size + 14) / 2 };
+  const avatar = <View style={[styles.ringGap, { borderRadius: (size + 8) / 2 }]}><OrganizerAvatar organizer={organizer} size={size} /></View>;
+  const ring = story && !watched
+    ? <LinearGradient colors={[colors.pink, colors.accent, '#7a2bd6', colors.pink]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.ring, styles.ringGlow, outer]}>{avatar}</LinearGradient>
+    : <View style={[styles.ring, outer, story ? styles.ringSeen : styles.ringPlain]}>{avatar}</View>;
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={story ? `Event-Story von ${organizer.displayName} ansehen` : `Profil von ${organizer.displayName} ansehen`} onPress={onPress} hitSlop={6} style={({ pressed }) => pressed && styles.pressed}>
+      {ring}
+      {story && <View style={[styles.storyPill, watched && styles.storyPillSeen]}><Text style={styles.storyPillText}>STORY</Text></View>}
+    </Pressable>
+  );
 }
 
 /**
- * Poster-first event page: the flyer fills most of the screen, a glass card
- * with the essentials floats over its lower edge, details follow underneath.
+ * Poster-first event page: the flyer fades into the page; the organizer's picture (event story ring),
+ * title and time sit on its lower edge.
+ * Every piece of information appears once: when (title block), where (map preview, opens the route),
+ * tickets (bottom bar). The organizer's event story and the visitors' Shots live only on this page.
  */
 export default function EventDetailScreen() {
   const { width, height } = useWindowDimensions();
@@ -53,8 +67,11 @@ export default function EventDetailScreen() {
   const event = remote.event;
   const organizer = useOrganizerSummary(event?.organizerId);
   const content = useEventContent(event?.id);
-  const [viewer, setViewer] = useState<number | null>(null);
+  const [viewer, setViewer] = useState(false);
+  const [story, setStory] = useState(false);
+  const [storyWatched, setStoryWatched] = useState(false);
   const [linkError, setLinkError] = useState(false);
+  const closeStory = useCallback(() => { setStory(false); setStoryWatched(true); }, []);
   const back = () => router.canGoBack() ? router.back() : router.replace('/');
   // Statistik für Veranstalter (SQL 26): ein Aufruf pro Gerät und Tag, nur bei Veranstalter-Events.
   const trackedId = shouldTrack(event) ? event!.id : null;
@@ -80,12 +97,14 @@ export default function EventDetailScreen() {
   const seller = ticketSeller(event.sourceName);
   const point = event.coordinate;
   const tags = [...new Set([...(event.genres ?? []), ...event.categories])];
-  const snaps = content.snaps.filter((snap) => snap.mediaType === 'image');
-  const gallery = [...(event.imageIsPlaceholder ? [] : [event.image]), ...snaps.map((snap) => ({ uri: snap.url }))];
-  const posterHeight = Math.min(height * 0.64, width * 1.35);
-  const primary = !ended ? ticketUrl ?? sourceUrl : undefined;
+  const snaps = eventSnaps(event, content.snaps, now);
+  const posterHeight = Math.min(height * 0.6, width * 1.3);
+  // Mit Adresse (Club-Events, SQL 29) steht die volle Anschrift da, sonst Ort und Stadt.
   const place = address ? [event.venue, address.street, address.postcodeCity].filter(Boolean).join(', ')
     : event.venue ? `${event.venue}, ${event.location}` : event.location;
+  const placeDetail = address ? `${address.street}, ${address.postcodeCity}` : event.venue ? event.location : undefined;
+  const when = `${shortDay.format(start)} · ${timeFormat.format(start)}${end ? `–${timeFormat.format(end)}` : ''} Uhr`;
+  const attribution = event.sourceName?.toLowerCase() === 'goabase' ? sourceUrl ?? 'https://www.goabase.net/' : sourceUrl;
 
   async function open(url: string, ticket = false) {
     if (ticket && trackedId) void trackEvent(trackedId, 'ticket_click');
@@ -100,95 +119,105 @@ export default function EventDetailScreen() {
   async function share() {
     try { await Share.share({ title: `${event!.title} · Spots`, message: `${event!.title}\n${dayFormat.format(start)}, ${timeFormat.format(start)} Uhr\n${place}${sourceUrl ? `\n${sourceUrl}` : ''}` }); } catch { /* dismissed */ }
   }
+  // One clear main action: tickets, otherwise the source page, otherwise the route.
+  const main = ended ? null
+    : ticketUrl ? { label: 'Tickets kaufen', icon: 'ticket' as const, a11y: seller ? `Tickets bei ${seller} kaufen` : 'Tickets beim Anbieter kaufen', run: () => void open(ticketUrl, true) }
+    : sourceUrl ? { label: 'Infos & Tickets', icon: 'ticket' as const, a11y: `Infos und Tickets auf der Originalseite bei ${source}`, run: () => void open(sourceUrl, true) }
+    : point ? { label: 'Route anzeigen', icon: 'map' as const, a11y: 'Route zum Veranstaltungsort anzeigen', run: route }
+    : null;
 
   return <View style={styles.screen}>
     <Backdrop />
     <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
-      {/* Poster: blurred fill behind, the complete flyer in front, darkening towards the card. */}
+      {/* Poster: blurred fill behind, the complete flyer in front, fading into the page. */}
       <View style={[styles.poster, { height: posterHeight }]}>
         <Image source={event.image} resizeMode="cover" blurRadius={event.imageIsPlaceholder ? 0 : 40} style={StyleSheet.absoluteFill} />
-        {!event.imageIsPlaceholder && <Pressable accessibilityRole="button" accessibilityLabel="Eventbild groß anzeigen" onPress={() => setViewer(0)} style={[StyleSheet.absoluteFill, { top: insets.top + 56, bottom: 96 }]}><Image source={event.image} resizeMode="contain" style={StyleSheet.absoluteFill} accessibilityLabel={`Eventbild: ${event.title}`} /></Pressable>}
-        <LinearGradient pointerEvents="none" colors={['#0a090cb3', '#0a090c00', '#0a090c00', colors.background]} locations={[0, 0.22, 0.6, 1]} style={StyleSheet.absoluteFill} />
+        {!event.imageIsPlaceholder && <Pressable accessibilityRole="button" accessibilityLabel="Eventbild groß anzeigen" onPress={() => setViewer(true)} style={[StyleSheet.absoluteFill, { top: insets.top + 56, bottom: organizer ? 154 : 76 }]}><Image source={event.image} resizeMode="contain" style={StyleSheet.absoluteFill} accessibilityLabel={`Eventbild: ${event.title}`} /></Pressable>}
+        <LinearGradient pointerEvents="none" colors={['#0a090cb3', '#0a090c00', '#0a090c00', '#0a090ccc', colors.background]} locations={[0, 0.2, 0.55, 0.85, 1]} style={StyleSheet.absoluteFill} />
         <View style={[styles.toolbar, { paddingTop: insets.top + space.sm }]}>
           <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} />
-          <View style={styles.toolbarActions}><IconButton icon="share" accessibilityLabel="Event teilen" onPress={() => void share()} /><SaveEventButton id={event.id} title={event.title} overlay size={44} /></View>
+          <IconButton icon="share" accessibilityLabel="Event teilen" onPress={() => void share()} />
         </View>
       </View>
 
-      {/* Floating essentials card. */}
-      <View style={styles.cardWrap}>
-        <View style={styles.card}>
-          <GlassBackdrop radius={radius.xl} variant="panel" />
-          <View style={styles.cardTop}>
-            <Text numberOfLines={1} style={[styles.kicker, live && styles.kickerLive]}>{live ? '●  LIVE' : phase === 'upcoming' ? tags.slice(0, 2).join(' · ').toLocaleUpperCase('de') || 'EVENT' : phaseLabel[phase].toLocaleUpperCase('de')}</Text>
-            {event.imageIsPlaceholder && <Text style={styles.placeholderNote}>Symbolbild</Text>}
-          </View>
-          <Text style={styles.title}>{event.title}</Text>
-          <View style={styles.essentials}>
-            <View style={styles.essential}><Text style={styles.essentialValue}>{dayFormat.format(start).split(',')[0]}</Text><Text style={styles.essentialLabel}>{new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: 'numeric', month: 'short' }).format(start)}</Text></View>
-            <View style={styles.essentialDivider} />
-            <View style={styles.essential}><Text style={styles.essentialValue}>{timeFormat.format(start)}</Text><Text style={styles.essentialLabel}>{end ? `bis ${timeFormat.format(end)}` : 'Beginn'}</Text></View>
-            <View style={styles.essentialDivider} />
-            <View style={[styles.essential, styles.essentialWide]}><Text numberOfLines={1} style={styles.essentialValue}>{event.venue ?? event.location}</Text><Text numberOfLines={1} style={styles.essentialLabel}>{event.venue ? event.location : 'Ort'}</Text></View>
-          </View>
+      {/* Title block on the flyer's lower edge: status, title, one line for the time, genres. */}
+      <View style={[styles.head, { marginTop: organizer ? -150 : -72 }]}>
+        {/* Organizer on the flyer: the ring opens the 24-hour event story, the name leads to the profile. */}
+        {organizer && <View style={styles.organizer}>
+          <StoryRing organizer={organizer} story={snaps.organizer.length > 0} watched={storyWatched} onPress={snaps.organizer.length > 0 ? () => setStory(true) : () => router.push(organizerHref(organizer.id))} />
+          <Link href={organizerHref(organizer.id)} asChild><Pressable accessibilityRole="link" accessibilityLabel={`Profil von ${organizer.displayName} ansehen`} hitSlop={8} style={styles.organizerCopy}>
+            <Text numberOfLines={1} style={styles.organizerName}>{organizer.displayName}</Text>
+            <Text numberOfLines={1} style={styles.organizerLabel}>{snaps.organizer.length > 0 ? (storyWatched ? 'Story nochmal ansehen' : 'Neue Story · Bild antippen') : 'Profil ansehen ›'}</Text>
+          </Pressable></Link>
+        </View>}
+        <View style={styles.badges}>
+          {live && <View style={styles.liveBadge}><View style={styles.liveDot} /><Text style={styles.liveText}>LIVE</Text></View>}
+          {ended && <View style={styles.endedBadge}><Text style={styles.endedText}>Beendet</Text></View>}
+          {event.imageIsPlaceholder && <Text style={styles.placeholderNote}>Symbolbild</Text>}
         </View>
+        <Text accessibilityRole="header" style={styles.title}>{event.title}</Text>
+        <Text style={styles.when}>{when}</Text>
+        {tags.length > 0 && <View style={styles.tags}>{tags.map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}</View>}
       </View>
 
       <View style={styles.body}>
-        {organizer && <Link href={organizerHref(organizer.id)} asChild><PressableScale accessibilityRole="link" accessibilityLabel={`Veranstalter ${organizer.displayName} öffnen`} scaleTo={0.98} style={styles.organizer}>
-          <OrganizerAvatar organizer={organizer} size={40} />
-          <View style={styles.rowCopy}><Text style={styles.organizerLabel}>Veranstalter</Text><Text numberOfLines={1} style={styles.organizerName}>{organizer.displayName}</Text></View>
-          <Icon name="chevron" size={14} color={colors.faint} />
-        </PressableScale></Link>}
-
-        <View style={styles.rows}>
-          {point && !ended && <Row icon="map" title="Route anzeigen" detail={place} onPress={route} accessibilityLabel="Route zum Veranstaltungsort anzeigen" />}
-          {!point && <Row icon="pin" title={place} />}
-          <Row icon="ticket" title={ended ? 'Event beendet' : ticketUrl ? (seller ? `Tickets bei ${seller}` : 'Tickets beim Anbieter') : sourceUrl ? `Infos & Tickets bei ${source}` : 'Noch keine Ticketinformationen'} detail={ended ? undefined : primary ? 'Öffnet den Anbieter' : undefined} onPress={primary ? () => void open(primary, true) : undefined} />
-          {tags.length > 2 && <Row icon="headphones" title={tags.join(' · ')} />}
-        </View>
-        {linkError && <Text accessibilityRole="alert" style={styles.error}>Der Link konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
-
-        {content.tickets.length > 0 && !ended && <View style={styles.block}>
-          <Text style={styles.blockTitle}>Ticketarten</Text>
-          {content.tickets.map((ticket) => (
-            <PressableScale key={ticket.id} accessibilityRole="button" disabled={!ticket.externalUrl || ticket.soldOut} onPress={() => ticket.externalUrl && void open(ticket.externalUrl, true)} style={styles.ticket}>
-              <View style={styles.rowCopy}><Text style={styles.rowTitle}>{ticket.name}</Text>{ticket.description && <Text numberOfLines={1} style={styles.rowDetail}>{ticket.description}</Text>}</View>
-              <Text style={[styles.price, ticket.soldOut && styles.soldOut]}>{ticket.soldOut ? 'Ausverkauft' : formatPrice(ticket.priceCents, ticket.currency)}</Text>
-            </PressableScale>
-          ))}
+        {/* Tickets: ticket types with prices when known, and always a clear way to buy at the provider. */}
+        {!ended && <View style={styles.block}>
+          <Text style={styles.blockTitle}>Tickets</Text>
+          <View style={styles.ticketCard}>
+            {content.tickets.length > 0
+              ? content.tickets.map((ticket) => (
+                  <PressableScale key={ticket.id} accessibilityRole="button" accessibilityLabel={`${ticket.name}, ${ticket.soldOut ? 'ausverkauft' : formatPrice(ticket.priceCents, ticket.currency)}${ticket.externalUrl && !ticket.soldOut ? ', kaufen' : ''}`}
+                    disabled={!ticket.externalUrl || ticket.soldOut} onPress={() => ticket.externalUrl && void open(ticket.externalUrl, true)} scaleTo={0.98} style={styles.ticket}>
+                    <View style={styles.flex}><Text style={styles.ticketName}>{ticket.name}</Text>{ticket.description && <Text numberOfLines={1} style={styles.ticketDetail}>{ticket.description}</Text>}</View>
+                    <Text style={[styles.price, ticket.soldOut && styles.soldOut]}>{ticket.soldOut ? 'Ausverkauft' : formatPrice(ticket.priceCents, ticket.currency)}</Text>
+                    {ticket.externalUrl && !ticket.soldOut && <View style={styles.buyPill}><Text style={styles.buyPillText}>Kaufen</Text></View>}
+                  </PressableScale>
+                ))
+              : <View style={styles.ticketInfo}>
+                  <View style={styles.ticketIcon}><Icon name="ticket" size={20} color={colors.pink} /></View>
+                  <Text style={styles.ticketInfoText}>{ticketUrl ? `Tickets gibt es online bei ${seller ?? 'dem Anbieter'}.` : sourceUrl ? `Infos und Tickets findest du bei ${source}.` : 'Für dieses Event gibt es noch keine Online-Tickets.'}</Text>
+                </View>}
+            {(ticketUrl ?? sourceUrl) && <Button label={ticketUrl ? 'Tickets kaufen' : 'Zu den Tickets'} icon="ticket"
+              accessibilityLabel={ticketUrl ? (seller ? `Tickets bei ${seller} kaufen` : 'Tickets beim Anbieter kaufen') : `Tickets und Infos bei ${source}`}
+              onPress={() => void open((ticketUrl ?? sourceUrl)!, true)} />}
+          </View>
         </View>}
 
-        {event.description && <View style={styles.block}><Text style={styles.blockTitle}>Über das Event</Text><Text style={styles.description}>{event.description}</Text></View>}
+        {/* About tonight's event, right above the place. */}
+        <View style={styles.block}>
+          <Text style={styles.blockTitle}>Über das Event</Text>
+          <Text style={[styles.description, !event.description && styles.descriptionEmpty]}>{event.description ?? 'Für dieses Event liegt noch keine Beschreibung vor.'}</Text>
+        </View>
 
         <View style={styles.block}>
-          <View style={styles.blockHead}><Text style={styles.blockTitle}>Live Snaps</Text><Text style={styles.blockNote}>24 h</Text></View>
-          {snaps.length > 0
-            ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.snaps}>
-                {snaps.map((snap, index) => <Pressable key={snap.id} accessibilityRole="button" accessibilityLabel={`Live Snap ${index + 1} öffnen`} onPress={() => setViewer(gallery.length - snaps.length + index)} style={styles.snap}><Image source={{ uri: snap.url }} style={StyleSheet.absoluteFill} resizeMode="cover" /></Pressable>)}
-              </ScrollView>
-            : <Text style={styles.description}>{live ? 'Noch keine Eindrücke von heute Nacht.' : 'Eindrücke von Besuchern erscheinen, sobald das Event läuft.'}</Text>}
+          <Text style={styles.blockTitle}>Ort</Text>
+          {point
+            ? <PlacePreview coordinate={point} title={event.venue ?? event.location} detail={placeDetail} onRoute={ended ? undefined : route} />
+            : <View style={styles.placeCard}><Icon name="pin" size={18} color={colors.pink} /><Text style={styles.placeText}>{place}</Text></View>}
         </View>
 
-        <View style={styles.footer}>
-          {sourceUrl && sourceUrl !== ticketUrl && <Link href={sourceUrl} style={styles.link}>Original auf {source} öffnen ↗</Link>}
-          {event.sourceName?.toLowerCase() === 'goabase' && <Link href="https://www.goabase.net/" style={styles.link}>Veranstaltungen von Goabase ↗</Link>}
-          <Text style={styles.footnote}>Zeiten in Europe/Berlin · Angaben der Veranstaltungsquelle{event.sourceName ? ` (${source})` : ''}</Text>
-        </View>
+        <Shots snaps={snaps.visitors} live={live} now={now} eventTitle={event.title} />
+
+        {linkError && <Text accessibilityRole="alert" style={styles.error}>Der Link konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
+        {attribution && <Link href={attribution} style={styles.source}>Infos von {source} ↗</Link>}
       </View>
     </ScrollView>
 
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       <GlassBackdrop radius={0} variant="panel" />
       <View style={styles.barRow}>
-        {primary
-          ? <Button label={ticketUrl ? 'Tickets kaufen' : 'Infos & Tickets'} accessibilityLabel={ticketUrl ? (seller ? `Tickets bei ${seller} kaufen` : 'Tickets beim Anbieter kaufen') : `Infos und Tickets auf der Originalseite bei ${source}`} icon="ticket" onPress={() => void open(primary, true)} style={styles.flex} />
-          : <View style={styles.flex}><Text numberOfLines={1} style={styles.barTitle}>{ended ? 'Event beendet' : `${timeFormat.format(start)} Uhr · ${place}`}</Text></View>}
-        {point && !ended && <IconButton icon="map" accessibilityLabel="Route zum Veranstaltungsort anzeigen" onPress={route} size={52} plain style={styles.barButton} />}
+        {main
+          ? <Button label={main.label} accessibilityLabel={main.a11y} icon={main.icon} onPress={main.run} style={styles.flex} />
+          : <Button label={ended ? 'Event beendet' : 'Noch keine Tickets'} variant="secondary" disabled onPress={() => {}} style={styles.flex} />}
+        <SaveEventButton id={event.id} title={event.title} size={52} />
       </View>
     </View>
 
-    <Modal visible={viewer !== null} animationType="fade" onRequestClose={() => setViewer(null)}>{viewer !== null && <EventPhotoViewer images={gallery} initialIndex={viewer} onClose={() => setViewer(null)} />}</Modal>
+    <Modal visible={viewer} animationType="fade" onRequestClose={() => setViewer(false)}>{viewer && <EventPhotoViewer images={[event.image]} initialIndex={0} onClose={() => setViewer(false)} />}</Modal>
+    {organizer && <Modal visible={story} animationType="none" transparent statusBarTranslucent navigationBarTranslucent onRequestClose={closeStory}>
+      {story && <SnapViewer items={snaps.organizer} author={{ name: organizer.displayName, avatar: <OrganizerAvatar organizer={organizer} size={34} />, label: 'Event-Story' }} now={now} onClose={closeStory} />}
+    </Modal>}
   </View>;
 }
 
@@ -199,46 +228,52 @@ const styles = StyleSheet.create({
   stateBack: { backgroundColor: colors.surface, marginBottom: space.lg },
   poster: { overflow: 'hidden', backgroundColor: colors.surface },
   toolbar: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: space.lg },
-  toolbarActions: { flexDirection: 'row', gap: space.sm },
-  cardWrap: { paddingHorizontal: gutter, marginTop: -84 },
-  card: { padding: space.xl, borderRadius: radius.xl, overflow: 'hidden', gap: space.sm, ...squircle },
-  cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  kicker: { ...type.overline, fontSize: 11, color: colors.pink, flexShrink: 1 },
-  kickerLive: { color: colors.pink },
-  placeholderNote: { ...type.footnote, fontSize: 10, color: colors.faint },
-  title: { ...type.title, color: colors.text },
-  essentials: { flexDirection: 'row', alignItems: 'stretch', marginTop: space.sm, paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator },
-  essential: { alignItems: 'flex-start', gap: 1, paddingRight: space.md },
-  essentialWide: { flex: 1, minWidth: 0, paddingRight: 0 },
-  essentialValue: { ...type.label, color: colors.text },
-  essentialLabel: { ...type.footnote, fontSize: 11, color: colors.faint },
-  essentialDivider: { width: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginRight: space.md },
+  head: { paddingHorizontal: gutter, gap: space.sm },
+  badges: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 4 },
+  liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, height: 26, borderRadius: 13, backgroundColor: colors.accent, boxShadow: '0 0 16px 2px #ff4ab866' },
+  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.text },
+  liveText: { color: colors.text, fontSize: 12, fontWeight: '800', letterSpacing: 1 },
+  endedBadge: { paddingHorizontal: 10, height: 26, borderRadius: 13, justifyContent: 'center', backgroundColor: colors.surfaceHigh },
+  endedText: { color: colors.muted, fontSize: 12, fontWeight: '700' },
+  placeholderNote: { ...type.footnote, fontSize: 11, color: colors.faint },
+  title: { fontSize: 32, lineHeight: 37, fontWeight: '800', letterSpacing: -0.6, color: colors.text },
+  when: { ...type.headline, color: colors.pink },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
+  tag: { color: colors.text, fontSize: 12, fontWeight: '600', backgroundColor: '#ffffff14', borderRadius: 13, overflow: 'hidden', paddingHorizontal: 11, paddingVertical: 5 },
   body: { paddingHorizontal: gutter, paddingTop: space.xl },
-  organizer: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.lg, backgroundColor: '#ffffff0a', marginBottom: space.md, ...squircle },
-  organizerLabel: { ...type.footnote, fontSize: 11, color: colors.faint },
-  organizerName: { ...type.label, color: colors.text },
-  rows: { borderRadius: radius.lg, overflow: 'hidden', backgroundColor: '#ffffff0a', ...squircle },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 60, paddingHorizontal: space.md, paddingVertical: space.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.separator },
-  rowIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentSoft },
-  rowCopy: { flex: 1, minWidth: 0 },
-  rowTitle: { ...type.label, fontSize: 15, color: colors.text },
-  rowDetail: { ...type.footnote, color: colors.muted, marginTop: 1 },
-  error: { ...type.footnote, color: colors.danger, marginTop: space.sm },
+  organizer: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.xs },
+  ring: { alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 18px #00000080' },
+  ringGlow: { boxShadow: '0 0 22px 4px #ff4ab88c' },
+  ringSeen: { borderWidth: 3, borderColor: '#ffffff4d', backgroundColor: '#0a090c66' },
+  ringPlain: { borderWidth: 2, borderColor: '#ffffff26', backgroundColor: '#0a090c66' },
+  ringGap: { padding: 4, backgroundColor: colors.background },
+  storyPill: { position: 'absolute', bottom: -6, alignSelf: 'center', paddingHorizontal: 9, height: 20, borderRadius: 10, justifyContent: 'center', backgroundColor: colors.accent, borderWidth: 2, borderColor: colors.background },
+  storyPillSeen: { backgroundColor: colors.surfaceHigh },
+  storyPillText: { color: colors.text, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  pressed: { opacity: 0.85 },
+  organizerCopy: { flex: 1, minWidth: 0 },
+  organizerName: { ...type.title3, fontWeight: '700', color: colors.text, textShadowColor: '#000000aa', textShadowRadius: 8 },
+  organizerLabel: { ...type.footnote, color: colors.pink, fontWeight: '600' },
   block: { marginTop: space.xxl, gap: space.md },
-  blockHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   blockTitle: { ...type.title3, color: colors.text },
-  blockNote: { ...type.footnote, color: colors.faint },
-  ticket: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.md, backgroundColor: '#ffffff0a', ...squircle },
+  ticketCard: { gap: space.md, padding: space.md, borderRadius: radius.lg, backgroundColor: '#ffffff0a', borderWidth: 1, borderColor: colors.accentLine, ...squircle },
+  ticket: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm, paddingHorizontal: space.xs },
+  ticketInfo: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  ticketIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentSoft },
+  ticketInfoText: { ...type.callout, color: colors.muted, flex: 1 },
+  buyPill: { paddingHorizontal: space.md, height: 30, borderRadius: 15, justifyContent: 'center', backgroundColor: colors.accent },
+  buyPillText: { ...type.label, fontSize: 13, color: colors.text },
+  ticketName: { ...type.label, color: colors.text },
+  ticketDetail: { ...type.footnote, color: colors.muted, marginTop: 1 },
   price: { ...type.headline, color: colors.text },
   soldOut: { color: colors.faint },
+  placeCard: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.lg, backgroundColor: '#ffffff0a', ...squircle },
+  placeText: { ...type.callout, color: colors.text, flex: 1 },
   description: { ...type.body, color: colors.muted },
-  snaps: { gap: space.sm },
-  snap: { width: 104, height: 156, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surface, ...squircle },
-  footer: { marginTop: space.xxl, gap: space.xs },
+  descriptionEmpty: { color: colors.faint },
+  error: { ...type.footnote, color: colors.danger, marginTop: space.lg },
+  source: { ...type.footnote, color: colors.faint, marginTop: space.xxl, paddingVertical: space.sm },
   link: { ...type.callout, color: colors.pink, paddingVertical: space.sm },
-  footnote: { ...type.footnote, color: colors.faint },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: space.md, paddingHorizontal: space.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  barTitle: { ...type.headline, color: colors.text },
-  barButton: { backgroundColor: colors.surfaceHigh },
 });

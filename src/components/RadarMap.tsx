@@ -1,21 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { EventMapMarker } from './EventMapMarker';
 import { RadarOverlay, radarCoverSize } from './RadarOverlay';
+import { darkMapStyle as mapStyle } from '../constants/mapStyle';
+import type { LocatedEvent } from '../types/events';
 import type { RadarMapProps } from './RadarMap.types';
-
-const mapStyle = [
-  { elementType: 'geometry', stylers: [{ color: '#202023' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#8b8b90' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#202023' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#363639' }] },
-  { featureType: 'road', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111113' }] },
-  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#242426' }] },
-];
 
 export default function RadarMap({ center, radius, userCoordinate, events, onSelect, onCenterChange, onVisibleRadiusChange, scan, topInset = 0, bottomInset = 0, locked = false }: RadarMapProps) {
   const map = useRef<MapView>(null);
@@ -26,7 +16,29 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
   const pendingRadius = useRef<number | null>(radius);
   const initialized = useRef(false);
   const [layout, setLayout] = useState({ width: 360, height: 360 });
+  // Screen position of the tapped pin (dp on both platforms), so the preview can be placed next to it.
+  const select = useCallback((event: LocatedEvent) => {
+    const pending = map.current?.pointForCoordinate(event.coordinate);
+    if (!pending) { onSelect(event, null); return; }
+    pending.then((point) => onSelect(event, point), () => onSelect(event, null));
+  }, [onSelect]);
   const size = radarCoverSize(layout.width, layout.height);
+  // Screen point of the location dot; the scan is centred on it. Fallback: middle of the visible map (above the panel).
+  // Measured only once the map has settled on the fitted region; earlier values would make the radar jump.
+  const [userPoint, setUserPoint] = useState<{ x: number; y: number } | null>(null);
+  const settled = useRef(false);
+  const updateUserPoint = useCallback(() => {
+    if (!userCoordinate) { setUserPoint(null); return; }
+    map.current?.pointForCoordinate(userCoordinate).then(setUserPoint, () => setUserPoint(null));
+  }, [userCoordinate]);
+  useEffect(() => { if (settled.current) updateUserPoint(); }, [updateUserPoint, layout]);
+  // Safety net if the map never reports a settled region.
+  useEffect(() => {
+    if (!mapReady || !layoutReady) return;
+    const timer = setTimeout(() => { settled.current = true; updateUserPoint(); }, 1200);
+    return () => clearTimeout(timer);
+  }, [mapReady, layoutReady, updateUserPoint]);
+  const scanCenter = userCoordinate ? userPoint : { x: layout.width / 2, y: (layout.height - bottomInset) / 2 };
   const latitudeDelta = radius * 2 / 111.32;
   const longitudeDelta = latitudeDelta * layout.width / layout.height / Math.max(0.01, Math.cos(center.latitude * Math.PI / 180));
   useEffect(() => {
@@ -68,6 +80,8 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
             pendingRadius.current = null;
           }
           onVisibleRadiusChange(actualRadius);
+          settled.current = true;
+          if (scan.scanning) updateUserPoint();
           viewport.current = { latitude: region.latitude, longitude: region.longitude };
           onCenterChange(viewport.current);
         }}
@@ -82,12 +96,14 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
         scrollEnabled={!locked}
         zoomEnabled={!locked}
         toolbarEnabled={false}
+        // Android would otherwise pan to the tapped pin, which moves it away from its preview card.
+        moveOnMarkerPress={false}
       >
         {userCoordinate && <Marker coordinate={userCoordinate} anchor={{ x: 0.5, y: 0.5 }} title="Dein Standort" zIndex={1000}><View style={styles.locationHalo}><View style={styles.locationDot} /></View></Marker>}
-        {events.map((event) => <EventMapMarker key={event.id} event={event} reduceMotion={scan.reduceMotion || scan.settledIds.includes(event.id)} onSelect={onSelect} onSettled={scan.onPinSettled} />)}
+        {events.map((event) => <EventMapMarker key={event.id} event={event} reduceMotion={scan.reduceMotion || scan.settledIds.includes(event.id)} onSelect={select} onSettled={scan.onPinSettled} />)}
       </MapView>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.tint]} />
-      {scan.scanning && <RadarOverlay size={size} rotation={scan.rotation} opacity={scan.opacity} />}
+      {scan.scanning && scanCenter && <RadarOverlay size={size} rotation={scan.rotation} opacity={scan.opacity} center={scanCenter} />}
     </View>
   );
 }

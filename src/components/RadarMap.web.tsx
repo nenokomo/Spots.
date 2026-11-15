@@ -45,6 +45,8 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
     onResponderRelease: () => latest.current.onCenterChange(drag.current.result),
     onResponderTerminate: () => latest.current.onCenterChange(drag.current.result),
   };
+  const userPoint = userCoordinate ? project(userCoordinate.latitude, userCoordinate.longitude, zoom) : null;
+  const scanCenter = userPoint ? { x: layout.width / 2 + (userPoint.x - origin.x) * scale, y: centerY + (userPoint.y - origin.y) * scale } : undefined;
   const minX = Math.floor((origin.x - layout.width / 2 / scale) / 256);
   const maxX = Math.floor((origin.x + layout.width / 2 / scale) / 256);
   const minY = Math.floor((origin.y - centerY / scale) / 256);
@@ -60,12 +62,12 @@ export default function RadarMap({ center, radius, userCoordinate, events, onSel
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.tiles]}>{tiles}</View>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.tint]} />
       {userCoordinate && <View accessibilityLabel="Dein Standort" pointerEvents="none" style={[styles.locationDot, { left: layout.width / 2 + (project(userCoordinate.latitude, userCoordinate.longitude, zoom).x - origin.x) * scale - 8, top: centerY + (project(userCoordinate.latitude, userCoordinate.longitude, zoom).y - origin.y) * scale - 8 }]} />}
-      {scan.scanning && <RadarOverlay size={size} rotation={scan.rotation} opacity={scan.opacity} />}
+      {scan.scanning && <RadarOverlay size={size} rotation={scan.rotation} opacity={scan.opacity} center={scanCenter} />}
       {events.map((event) => {
         const point = project(event.coordinate.latitude, event.coordinate.longitude, zoom);
         const left = layout.width / 2 + (point.x - origin.x) * scale;
         const top = centerY + (point.y - origin.y) * scale;
-        return <Pressable key={event.id} onPress={() => onSelect(event)} accessibilityRole="button" accessibilityLabel={`${event.title}, Vorschau öffnen`} style={[styles.markerTouch, { left: left - 27, top: top - 56 }]}><EventPin event={event} reduceMotion={scan.reduceMotion || scan.settledIds.includes(event.id)} onReady={() => scan.onPinSettled(event.id)} /></Pressable>;
+        return <Pressable key={event.id} onPress={() => onSelect(event, { x: left, y: top })} accessibilityRole="button" accessibilityLabel={`${event.title}, Vorschau öffnen`} style={[styles.markerTouch, { left: left - 27, top: top - 58 }]}><EventPin event={event} reduceMotion={scan.reduceMotion || scan.settledIds.includes(event.id)} onReady={() => scan.onPinSettled(event.id)} /></Pressable>;
       })}
       {tileError && <Text style={[styles.error, { bottom: 40 + bottomInset }]}>Karte nicht verfügbar · Internetverbindung prüfen</Text>}
       {!locked && <View style={[styles.zoomControls, { top: topInset + 8 }]}>{[{ label: '+', factor: 0.5, hint: 'Karte vergrößern' }, { label: '−', factor: 2, hint: 'Karte verkleinern' }].map((item) => <Pressable key={item.label} accessibilityRole="button" accessibilityLabel={item.hint} onPress={() => changeZoom(item.factor)} style={styles.zoomButton}><Text style={styles.zoomText}>{item.label}</Text></Pressable>)}</View>}
@@ -82,7 +84,7 @@ const styles = StyleSheet.create({
   zoomControls: { position: 'absolute', right: 16, borderRadius: 22, overflow: 'hidden', backgroundColor: '#1c1c1ed9' },
   zoomButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   zoomText: { fontSize: 24, color: '#ffffff' },
-  markerTouch: { position: 'absolute', width: 54, height: 66, justifyContent: 'center', alignItems: 'center' },
+  markerTouch: { position: 'absolute', width: 54, height: 68, justifyContent: 'center', alignItems: 'center' },
   attribution: { position: 'absolute', alignSelf: 'center', bottom: 6, padding: 3, backgroundColor: '#191c27cc', borderRadius: 4 },
   attributionText: { color: '#bbc1cb', fontSize: 8 },
   error: { position: 'absolute', bottom: 40, color: '#e5cfe8', fontSize: 11, backgroundColor: '#25172b', padding: 8 },

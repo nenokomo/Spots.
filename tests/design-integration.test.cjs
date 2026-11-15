@@ -29,6 +29,7 @@ function load(file, resource = {}) {
     if (id.endsWith('/useEventContent')) return { useEventContent: () => ({ snaps: [], tickets: [] }) };
     if (id.endsWith('/services/eventStats')) return { shouldTrack: () => false, trackEvent: async () => {} };
     if (id.endsWith('/hooks/useEventAddress')) return { useEventAddress: () => null };
+    if (id.endsWith('/utils/stories')) return { eventSnaps: () => ({ organizer: [], visitors: [] }) };
     if (id.endsWith('/utils/eventStatus')) return { eventPhase: () => 'upcoming' };
     if (id.endsWith('/utils/eventSource')) {
       // Echte Anzeigenamen der Quellen statt Platzhalter.
@@ -76,7 +77,8 @@ test('new detail layout displays the fetched record and real original/backlinks'
   assert(elements.some(node => node.props?.children === event.title));
   assert(elements.some(node => node.props?.children === event.description));
   assert(elements.some(node => node.type === 'Link' && node.props.href === event.sourceUrl));
-  assert(elements.some(node => node.type === 'Link' && node.props.href === 'https://www.goabase.net/'));
+  // Eventseite (Noyan, 15.11.): ein Quellen-Link „Infos von Goabase“ zur Eventseite bei Goabase statt zwei Links.
+  assert(elements.some(node => node.type === 'Link' && /^https:\/\/www\.goabase\.net\//.test(node.props.href ?? '')), 'Goabase stays visibly credited');
   assert(!elements.some(node => node.type === 'Link' && node.props.href?.pathname === '/organizer/[id]'));
 });
 test('new detail layout retains loading/error states without rendering a stale or fallback event', () => {

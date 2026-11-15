@@ -11,57 +11,66 @@ export function useLocation() {
   const [message, setMessage] = useState('Kartenmitte · Berlin');
   const [loading, setLoading] = useState(false);
   const requesting = useRef(false);
+  // A second call while a lookup runs waits for that lookup instead of returning at once.
+  const pending = useRef<Promise<void> | null>(null);
   const revision = useRef(0);
 
   function selectCity(city: City) {
     revision.current++;
     requesting.current = false;
+    pending.current = null;
     setLoading(false);
     setCenter({ latitude: city.latitude, longitude: city.longitude });
     setLabel(city.name);
     setMessage(`${city.name} · gewählte Kartenmitte`);
   }
 
-  const locate = useCallback(async ({ automatic = false }: { automatic?: boolean } = {}) => {
-    if (requesting.current) return;
-    requesting.current = true;
-    const currentRevision = ++revision.current;
-    setLoading(true);
-    try {
-      let permission = await Location.getForegroundPermissionsAsync();
-      if (currentRevision !== revision.current) return;
-      // Ask on first use; do not repeat a denied permission prompt on each tab visit.
-      if (permission.status === 'undetermined' || (!automatic && permission.status !== 'granted' && permission.canAskAgain)) {
-        permission = await Location.requestForegroundPermissionsAsync();
-      }
-      if (currentRevision !== revision.current) return;
-      if (permission.status !== 'granted') {
-        setMessage('Keine Standortfreigabe · Stadt manuell wählen');
-        return;
-      }
-      const servicesEnabled = await Location.hasServicesEnabledAsync();
-      if (currentRevision !== revision.current) return;
-      if (!servicesEnabled) {
-        setMessage('Bitte die Standortdienste aktivieren');
-        return;
-      }
-      // No tracking or background access. Use a recent fix, then a one-off lookup.
-      const position = await Location.getLastKnownPositionAsync({ maxAge: 60_000 })
-        ?? await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      if (currentRevision !== revision.current) return;
-      const coordinate = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-      setUserCoordinate(coordinate);
-      setCenter(coordinate);
-      setLabel('Dein Standort');
-      setMessage('Standort gefunden · Umkreis ab Kartenmitte');
-    } catch {
-      if (currentRevision === revision.current) setMessage('Standort nicht verfügbar · bitte erneut versuchen');
-    } finally {
-      if (currentRevision === revision.current) {
-        requesting.current = false;
-        setLoading(false);
+  const locate = useCallback(({ automatic = false }: { automatic?: boolean } = {}): Promise<void> => {
+    async function lookup(automatic: boolean) {
+      const currentRevision = ++revision.current;
+      setLoading(true);
+      try {
+        let permission = await Location.getForegroundPermissionsAsync();
+        if (currentRevision !== revision.current) return;
+        // Ask on first use; do not repeat a denied permission prompt on each tab visit.
+        if (permission.status === 'undetermined' || (!automatic && permission.status !== 'granted' && permission.canAskAgain)) {
+          permission = await Location.requestForegroundPermissionsAsync();
+        }
+        if (currentRevision !== revision.current) return;
+        if (permission.status !== 'granted') {
+          setMessage('Keine Standortfreigabe · Stadt manuell wählen');
+          return;
+        }
+        const servicesEnabled = await Location.hasServicesEnabledAsync();
+        if (currentRevision !== revision.current) return;
+        if (!servicesEnabled) {
+          setMessage('Bitte die Standortdienste aktivieren');
+          return;
+        }
+        // No tracking or background access. Use a recent fix, then a one-off lookup.
+        const position = await Location.getLastKnownPositionAsync({ maxAge: 60_000 })
+          ?? await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (currentRevision !== revision.current) return;
+        const coordinate = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+        setUserCoordinate(coordinate);
+        setCenter(coordinate);
+        setLabel('Dein Standort');
+        setMessage('Standort gefunden · Umkreis ab Kartenmitte');
+      } catch {
+        if (currentRevision === revision.current) setMessage('Standort nicht verfügbar · bitte erneut versuchen');
+      } finally {
+        if (currentRevision === revision.current) {
+          requesting.current = false;
+          pending.current = null;
+          setLoading(false);
+        }
       }
     }
+    if (requesting.current && pending.current) return pending.current;
+    requesting.current = true;
+    const run = lookup(automatic);
+    pending.current = run;
+    return run;
   }, []);
 
   return { center, userCoordinate, label, message, loading, locate, selectCity };

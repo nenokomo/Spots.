@@ -1,39 +1,76 @@
 import { Animated, StyleSheet, View } from 'react-native';
-import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, Line, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
+import { colors } from '../constants/theme';
 
 /**
- * Radar diameter that covers the whole map while scanning: centred, the outer ring (r 150 of 160 in the
- * drawing) reaches the corners of the map area. Edges beyond the map are clipped by the map frame.
+ * Overlay size so the radar circle (r 150 of 160 in the viewBox) spans exactly the map's short side,
+ * with 2 px left so the outer ring stays fully visible.
  */
 export function radarCoverSize(width: number, height: number) {
-  return Math.ceil(Math.hypot(width, height) * 160 / 150);
+  return Math.round((Math.min(width, height) - 4) * 160 / 150);
 }
 
-export function RadarOverlay({ size, rotation, opacity }: { size: number; rotation: Animated.Value; opacity: Animated.Value }) {
+const C = 160;
+const R = 150;
+const TRAIL_DEGREES = 90;
+const TRAIL_STEPS = 18;
+// Hairline distance rings inside the circle.
+const RINGS = [R / 3, (R * 2) / 3];
+
+function wedge(fromDeg: number, toDeg: number) {
+  const point = (deg: number) => {
+    const rad = (deg - 90) * Math.PI / 180;
+    return `${(C + R * Math.cos(rad)).toFixed(2)} ${(C + R * Math.sin(rad)).toFixed(2)}`;
+  };
+  return `M${C} ${C}L${point(fromDeg)}A${R} ${R} 0 0 1 ${point(toDeg)}Z`;
+}
+
+const trail = Array.from({ length: TRAIL_STEPS }, (_, index) => {
+  const step = TRAIL_DEGREES / TRAIL_STEPS;
+  const from = -TRAIL_DEGREES + index * step;
+  const strength = ((index + 1) / TRAIL_STEPS) ** 2.2;
+  return { d: wedge(from, from + step + 0.4), opacity: strength };
+});
+
+/**
+ * Scan look: a thin pink circle on the map around your position with two hairline rings inside, and a
+ * strong pink sweep turning within it. No dark disc: the map stays fully visible.
+ */
+export function RadarOverlay({ size, rotation, opacity, center }: { size: number; rotation: Animated.Value; opacity: Animated.Value; center?: { x: number; y: number } }) {
+  // center: screen point of your location dot, so the radar's middle sits exactly on it.
+  const place = center ? { left: center.x - size / 2, top: center.y - size / 2 } : null;
   return (
-    <Animated.View testID="radar-scan" pointerEvents="none" style={[styles.radar, { width: size, height: size, opacity, transform: [{ scale: rotation.interpolate({ inputRange: [0, 0.5, 1, 1.5, 2, 2.5, 3], outputRange: [1, 1.025, 1, 1.025, 1, 1.025, 1] }) }] }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Svg width={size} height={size} viewBox="0 0 320 320">
-        <Defs>
-          <RadialGradient id="radarGlow"><Stop offset="0" stopColor="#ff43b3" stopOpacity="0.2" /><Stop offset="1" stopColor="#c922ab" stopOpacity="0" /></RadialGradient>
-        </Defs>
-        <Circle cx="160" cy="160" r="158" fill="url(#radarGlow)" />
-        {[30, 68, 108, 150].map((radius) => <Circle key={radius} cx="160" cy="160" r={radius} stroke="#ed42ac" strokeOpacity={0.8} strokeWidth={0.9} fill="none" />)}
-        <Path d="M10 160h300M160 10v300" stroke="#ef48ad" strokeOpacity="0.12" strokeWidth={0.8} />
+    <Animated.View testID="radar-scan" pointerEvents="none" style={[styles.radar, { width: size, height: size, opacity }, place]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Svg width={size} height={size} viewBox="0 0 320 320" style={StyleSheet.absoluteFill}>
+        {RINGS.map((r) => <Circle key={r} cx={C} cy={C} r={r} stroke={colors.pink} strokeOpacity={0.55} strokeWidth={0.8} fill="none" />)}
+        <Circle cx={C} cy={C} r={R} stroke={colors.pink} strokeOpacity={0.75} strokeWidth={0.9} fill="none" />
       </Svg>
       <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ rotate: rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }]}>
         <Svg width={size} height={size} viewBox="0 0 320 320">
-          <Defs><RadialGradient id="beam"><Stop offset="0" stopColor="#ff62ca" stopOpacity="0.75" /><Stop offset="1" stopColor="#ff38b0" stopOpacity="0.02" /></RadialGradient></Defs>
-          <Path d="M160 160 230 27A150 150 0 0 1 279 69Z" fill="url(#beam)" />
-          <Path d="m160 160 119-91" stroke="#ff6dcf" strokeWidth={0.7} strokeOpacity="0.35" />
+          <Defs>
+            {/* userSpaceOnUse: the fade is centred on you, not on each wedge. */}
+            <RadialGradient id="sweepFade" gradientUnits="userSpaceOnUse" cx={C} cy={C} r={R} fx={C} fy={C}>
+              <Stop offset="0" stopColor={colors.pink} stopOpacity="0.7" />
+              <Stop offset="0.6" stopColor={colors.pink} stopOpacity="0.42" />
+              <Stop offset="1" stopColor={colors.pink} stopOpacity="0.18" />
+            </RadialGradient>
+            <LinearGradient id="edgeFade" gradientUnits="userSpaceOnUse" x1={C} y1={C} x2={C} y2={C - R}>
+              <Stop offset="0" stopColor="#ffe3f5" stopOpacity="0.95" />
+              <Stop offset="1" stopColor="#ffe3f5" stopOpacity="0.5" />
+            </LinearGradient>
+          </Defs>
+          {trail.map((slice) => <Path key={slice.d} d={slice.d} fill="url(#sweepFade)" fillOpacity={slice.opacity} />)}
+          <Line x1={C} y1={C} x2={C} y2={C - R} stroke="url(#edgeFade)" strokeWidth={0.9} strokeLinecap="round" />
         </Svg>
       </Animated.View>
-      <View style={styles.glow}><View style={styles.core} /></View>
+      <View style={styles.glow} />
+      <View style={styles.core} />
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   radar: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
-  glow: { position: 'absolute', height: 42, width: 42, borderRadius: 24, backgroundColor: '#ff42af22', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 26px 8px #f53aad45' },
-  core: { height: 14, width: 14, borderRadius: 8, backgroundColor: '#fa4cb4', borderWidth: 2.5, borderColor: '#fff2fb', boxShadow: '0 0 13px 4px #ff49ba99' },
+  glow: { position: 'absolute', height: 34, width: 34, borderRadius: 17, backgroundColor: '#ff42af26', boxShadow: '0 0 22px 6px #f53aad38' },
+  core: { position: 'absolute', height: 11, width: 11, borderRadius: 6, backgroundColor: colors.pink, borderWidth: 2, borderColor: '#fff2fb' },
 });
