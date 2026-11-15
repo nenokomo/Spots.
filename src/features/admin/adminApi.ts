@@ -83,6 +83,28 @@ export async function resolveReport(id: string, status: 'resolved' | 'dismissed'
   if (error) throw failure('Abschließen der Meldung');
 }
 
+export type OrganizerStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
+export type OrganizerRequest = {
+  id: string; slug: string; displayName: string; city: string | null; biography: string | null; websiteUrl: string | null;
+  avatarUrl: string | null; status: OrganizerStatus; note: string | null; submittedAt: string | null; ownerEmail: string | null; eventCount: number;
+};
+
+/** Veranstalter-Anträge (SQL 26): offene zuerst, dann freigegebene, abgelehnte und gesperrte. */
+export async function fetchOrganizerQueue(): Promise<OrganizerRequest[]> {
+  const { data, error } = await getAccountClient().rpc('spots_admin_organizer_queue', { p_status: null });
+  if (error) throw failure('Laden der Veranstalter');
+  return ((data ?? []) as { id: string; slug: string; display_name: string; city: string | null; biography: string | null; website_url: string | null;
+    avatar_url: string | null; review_status: OrganizerStatus; review_note: string | null; submitted_at: string | null; owner_email: string | null; event_count: number }[])
+    .map((row) => ({ id: row.id, slug: row.slug, displayName: row.display_name, city: row.city, biography: row.biography, websiteUrl: row.website_url,
+      avatarUrl: row.avatar_url, status: row.review_status, note: row.review_note, submittedAt: row.submitted_at, ownerEmail: row.owner_email,
+      eventCount: Number(row.event_count) }));
+}
+
+export async function reviewOrganizer(id: string, status: 'approved' | 'rejected' | 'suspended', note?: string): Promise<void> {
+  const { error } = await getAccountClient().rpc('spots_admin_review_organizer', { p_organizer_id: id, p_status: status, p_note: note?.trim() || null });
+  if (error) throw failure(status === 'approved' ? 'Freigeben' : status === 'rejected' ? 'Ablehnen' : 'Sperren');
+}
+
 /** Ortssuche für neue Events: Admins sehen auch ungeprüfte Orte, nie ausgeblendete. */
 export async function searchVenues(query: string): Promise<VenueChoice[]> {
   const term = query.trim().replace(/[%_\\,()]/g, ' ').slice(0, 60);

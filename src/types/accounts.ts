@@ -12,7 +12,7 @@ export type OrganizerEventSummary = {
   city: string | null; imageUrl: string | null; status: 'scheduled' | 'cancelled' | 'postponed';
 };
 export type OrganizerProfileChanges = Partial<Pick<PublicOrganizer,
-  'slug' | 'displayName' | 'biography' | 'city' | 'avatarUrl' | 'websiteUrl' | 'isPublished'>>;
+  'slug' | 'displayName' | 'biography' | 'city' | 'avatarUrl' | 'websiteUrl'>>;
 export type SpotsEventInput = {
   organizerId: string; title: string; startsAt: string; endsAt?: string | null;
   description?: string | null; city?: string | null; venue?: string | null;
