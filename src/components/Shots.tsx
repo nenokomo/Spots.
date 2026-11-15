@@ -1,8 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Image, Modal, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, space, squircle, type } from '../constants/theme';
+import { accountClientError } from '../features/accounts/client';
+import { useAccountSession } from '../features/accounts/useAccountSession';
 import type { SnapMedia } from '../utils/stories';
 import { Icon } from './Icon';
 import { ShotCamera } from './ShotCamera';
@@ -41,10 +44,14 @@ function useSeenSnaps() {
  * Deliberately no list and no numbers: one button opens all new shots, nobody sees how many there are
  * or how many people posted. While the event runs, a camera button leads to „Poste einen Shot“.
  */
-export function Shots({ snaps, live, now, eventTitle }: { snaps: SnapMedia[]; live: boolean; now: number; eventTitle: string }) {
+export function Shots({ snaps, live, now, eventId, eventTitle }: { snaps: SnapMedia[]; live: boolean; now: number; eventId: string; eventTitle: string }) {
   const { seen, markSeen } = useSeenSnaps();
   const [open, setOpen] = useState<SnapMedia[] | null>(null);
   const [camera, setCamera] = useState(false);
+  // Shots von Gästen sehen nur angemeldete Konten (SQL 32). Gäste bekommen einen Hinweis mit Link zur Anmeldung.
+  const { session, loading } = useAccountSession();
+  const guest = !session && !loading && !accountClientError;
+  const [signInHint, setSignInHint] = useState(false);
   const unseen = snaps.filter((snap) => !seen[snap.id]);
   const onSeen = useCallback((id: string) => { const snap = snaps.find((item) => item.id === id); if (snap) markSeen(snap); }, [snaps, markSeen]);
   const close = useCallback(() => setOpen(null), []);
@@ -57,16 +64,16 @@ export function Shots({ snaps, live, now, eventTitle }: { snaps: SnapMedia[]; li
       <Text style={styles.title}>Shots</Text>
       <Text style={styles.note}>Echte Eindrücke von Gästen. Jeden Shot siehst du nur einmal.</Text>
       <View style={styles.actions}>
-        <PressableScale disabled={!cover} accessibilityRole="button" accessibilityState={{ disabled: !cover }}
-          accessibilityLabel={cover ? 'Neue Shots ansehen' : 'Gerade keine neuen Shots'} onPress={() => setOpen(unseen)} scaleTo={0.97}
-          style={[styles.open, !cover && styles.openEmpty]}>
+        <PressableScale disabled={!cover && !guest} accessibilityRole="button" accessibilityState={{ disabled: !cover && !guest }}
+          accessibilityLabel={guest ? 'Shots ansehen – nur mit Konto' : cover ? 'Neue Shots ansehen' : 'Gerade keine neuen Shots'} onPress={() => guest ? setSignInHint(true) : setOpen(unseen)} scaleTo={0.97}
+          style={[styles.open, !cover && !guest && styles.openEmpty]}>
           {cover && <>
             <Image source={cover.source} resizeMode="cover" blurRadius={18} style={StyleSheet.absoluteFill} />
             <LinearGradient pointerEvents="none" colors={['#c922ab55', '#0a090ccc']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
           </>}
-          <View style={[styles.openIcon, !cover && styles.openIconEmpty]}><Icon name="wave" size={20} color={colors.text} /></View>
-          <Text style={styles.openTitle}>{cover ? 'Shots ansehen' : 'Keine neuen Shots'}</Text>
-          <Text style={styles.openText}>{cover ? 'Antippen und durchklicken' : live ? 'Sei der Erste von heute Nacht' : 'Schau später wieder vorbei'}</Text>
+          <View style={[styles.openIcon, !cover && !guest && styles.openIconEmpty]}><Icon name={guest ? 'profile' : 'wave'} size={20} color={colors.text} /></View>
+          <Text style={styles.openTitle}>{guest || cover ? 'Shots ansehen' : 'Keine neuen Shots'}</Text>
+          <Text style={styles.openText}>{guest ? 'Nur mit Konto' : cover ? 'Antippen und durchklicken' : live ? 'Sei der Erste von heute Nacht' : 'Schau später wieder vorbei'}</Text>
         </PressableScale>
         {live && <PressableScale accessibilityRole="button" accessibilityLabel="Kamera öffnen und einen Shot posten" onPress={() => setCamera(true)} scaleTo={0.97} style={styles.post}>
           <LinearGradient pointerEvents="none" colors={[colors.pink, colors.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
@@ -75,10 +82,17 @@ export function Shots({ snaps, live, now, eventTitle }: { snaps: SnapMedia[]; li
           <Text style={styles.postText}>Zeig, was gerade abgeht</Text>
         </PressableScale>}
       </View>
+      {guest && signInHint && <View accessibilityRole="alert" style={styles.hint}>
+        <Text style={styles.hintTitle}>Shots siehst du nur mit Konto</Text>
+        <Text style={styles.note}>Die Fotos von Gästen sind nur für angemeldete Nutzer sichtbar.</Text>
+        <Pressable accessibilityRole="link" onPress={() => router.push('/account')} hitSlop={8}>
+          <Text style={styles.hintLink}>Melde dich hier an, um sie zu sehen ›</Text>
+        </Pressable>
+      </View>}
       <Modal visible={open !== null} animationType="none" transparent statusBarTranslucent navigationBarTranslucent onRequestClose={close}>
         {open && <SnapViewer items={open} author={{ name: 'Shots', label: 'Von Gästen' }} now={now} onSeen={onSeen} onClose={close} reportable hideCount />}
       </Modal>
-      <ShotCamera visible={camera} eventTitle={eventTitle} onClose={closeCamera} />
+      <ShotCamera visible={camera} eventId={eventId} eventTitle={eventTitle} onClose={closeCamera} />
     </View>
   );
 }
@@ -97,4 +111,7 @@ const styles = StyleSheet.create({
   post: { flex: 1, height: 132, padding: space.md, borderRadius: radius.lg, overflow: 'hidden', justifyContent: 'flex-end', gap: 2, ...squircle },
   postIcon: { position: 'absolute', top: space.md, left: space.md, width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff33' },
   postText: { ...type.footnote, color: '#ffffffd9' },
+  hint: { marginTop: space.md, gap: space.xs, padding: space.lg, borderRadius: radius.lg, backgroundColor: '#ffffff0a', borderWidth: 1, borderColor: colors.accentLine, ...squircle },
+  hintTitle: { ...type.headline, color: colors.text },
+  hintLink: { ...type.label, color: colors.pink, marginTop: space.xs },
 });

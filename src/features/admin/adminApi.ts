@@ -109,6 +109,31 @@ export async function reviewOrganizer(id: string, status: 'approved' | 'rejected
   if (error) throw failure(status === 'approved' ? 'Freigeben' : status === 'rejected' ? 'Ablehnen' : 'Sperren');
 }
 
+export type SnapStatus = 'visible' | 'hidden' | 'removed';
+export type AdminSnap = {
+  id: string; eventId: string | null; eventTitle: string | null; url: string | null; status: SnapStatus; byOrganizer: boolean;
+  createdAt: string; expiresAt: string; reportCount: number; reasons: string[];
+};
+
+/** Shots der letzten 24 Stunden (SQL 30): gemeldete und ausgeblendete zuerst, mit kurz gültigen Bild-Links. */
+export async function fetchSnapQueue(): Promise<AdminSnap[]> {
+  const client = getAccountClient();
+  const { data, error } = await client.rpc('spots_admin_snap_queue', { p_limit: 100 });
+  if (error) throw failure('Laden der Shots');
+  const rows = (data ?? []) as { id: string; event_id: string | null; event_title: string | null; storage_path: string; moderation_status: SnapStatus;
+    by_organizer: boolean; created_at: string; expires_at: string; report_count: number; reasons: string[] | null }[];
+  const signed = rows.length ? (await client.storage.from('live-snaps').createSignedUrls(rows.map((row) => row.storage_path), 60 * 15)).data ?? [] : [];
+  const urls = new Map(signed.flatMap((item) => item.path && item.signedUrl ? [[item.path, item.signedUrl] as const] : []));
+  return rows.map((row) => ({ id: row.id, eventId: row.event_id, eventTitle: row.event_title, url: urls.get(row.storage_path) ?? null,
+    status: row.moderation_status, byOrganizer: row.by_organizer, createdAt: row.created_at, expiresAt: row.expires_at,
+    reportCount: Number(row.report_count), reasons: row.reasons ?? [] }));
+}
+
+export async function setSnapStatus(id: string, status: SnapStatus): Promise<void> {
+  const { error } = await getAccountClient().rpc('spots_admin_set_snap_status', { p_snap_id: id, p_status: status });
+  if (error) throw failure(status === 'visible' ? 'Wieder zeigen' : status === 'hidden' ? 'Ausblenden' : 'Entfernen');
+}
+
 /** Ortssuche für neue Events: Admins sehen auch ungeprüfte Orte, nie ausgeblendete. */
 export async function searchVenues(query: string): Promise<VenueChoice[]> {
   const term = query.trim().replace(/[%_\\,()]/g, ' ').slice(0, 60);

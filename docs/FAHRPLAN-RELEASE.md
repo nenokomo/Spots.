@@ -28,6 +28,6 @@ Grobe Dauer bis zur Einreichung: etwa 6–8 Wochen, abhängig von verfügbarer Z
 
 ## Stand
 
-- Konten in Spots-Test: Anmelden/Registrieren vorhanden, SQL 15 eingespielt. Produktion: nur Team-Anmeldung, Registrierung im Dashboard aus.
-- SQL 17–19 geschrieben, noch nirgends eingespielt.
+- Stand 15.11.: Etappe 1 (Konten) und Etappe 2 (Veranstalter, Spots Studio, Startseite) in `main`; Etappe 3 (Shots) Backend in Spots-Test. Spots-Test hat SQL 15–31, Produktion nur 20–24 (nur Team-Anmeldung).
+- Absprachen 15.11.: Domain und Mailserver – Jacint, nächste Woche. Entwicklerkonten Apple/Google – kurz vor dem Release. Rechtstexte – Jacint. Produktion: zuerst nur der Aufbau (Registrierung bleibt aus), Konten erst mit Mailserver und Rechtstexten.
 - Fortschritt je Etappe in eigener Datei `docs/FORTSCHRITT-<thema>.md`.

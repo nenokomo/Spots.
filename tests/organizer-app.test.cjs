@@ -5,7 +5,7 @@ function load(file, requireMap = {}) {
   const module = { exports: {} };
   const source = ts.transpileModule(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'),
     { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  vm.runInNewContext(source, { module, exports: module.exports, Intl, Date, Math, URL, URLSearchParams, require: (name) => {
+  vm.runInNewContext(source, { module, exports: module.exports, Intl, Date, Math, URL, URLSearchParams, fetch: (...args) => globalThis.fetch(...args), require: (name) => {
     if (name in requireMap) return requireMap[name];
     throw new Error(`unexpected import ${name}`);
   } });
@@ -131,4 +131,58 @@ test('start page: first Privat/Veranstalter, then login; registering uses that c
   assert.ok(!profile.includes('Konto verwalten'), 'old login row removed');
   assert.match(profile, /title="Abmelden"/);
   assert.match(profile, /title="Konto löschen" destructive/);
+});
+
+test('shots: posting needs an account, uploads into the own folder and notifies the event page; reporting uses the account session', async () => {
+  const calls = [];
+  const session = { current: { user: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' } } };
+  let insertError = null;
+  const accountClient = {
+    auth: { getSession: async () => ({ data: { session: session.current } }), getUser: async () => ({ data: { user: session.current?.user ?? null } }) },
+    storage: { from: (bucket) => ({
+      upload: async (path, body, options) => { calls.push(['upload', bucket, path, options.contentType]); return { error: null }; },
+      remove: async (paths) => { calls.push(['remove', bucket, ...paths]); return { error: null }; },
+    }) },
+    from: (table) => ({ insert: async (row) => { calls.push(['insert', table, row]); return { error: insertError }; } }),
+  };
+  const content = load('src/services/content.ts', {
+    '../features/accounts/client': { accountClientError: null, getAccountClient: () => accountClient },
+    '../lib/supabase': { getSupabase: () => { throw new Error('public client must not be used for writes'); } },
+    './eventAdapter': { safeExternalUrl: (value) => value },
+    './savedEventsSync': load('src/services/savedEventsSync.ts'),
+  });
+  const EVENT = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  globalThis.fetch = async () => ({ arrayBuffer: async () => new ArrayBuffer(10) });
+  const changed = [];
+  content.onSnapsChanged((id) => changed.push(id));
+
+  await content.postShot(EVENT, { uri: 'file:///shot.jpg', mimeType: 'image/jpeg' });
+  const [upload, insert] = calls;
+  assert.equal(upload[1], 'live-snaps');
+  assert.match(upload[2], /^aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\/[a-z0-9]+-[a-z0-9]+\.jpg$/, 'own folder, random name');
+  assert.deepEqual(JSON.parse(JSON.stringify(insert)), ['insert', 'live_snaps', { event_id: EVENT, media_type: 'image', storage_path: upload[2] }]);
+  assert.deepEqual(changed, [EVENT]);
+
+  calls.length = 0; insertError = { code: '42501', message: 'new row violates row-level security policy' };
+  await assert.rejects(content.postShot(EVENT, { uri: 'file:///late.jpg', mimeType: 'image/jpeg' }), /während das Event läuft/);
+  assert.equal(calls[2][0], 'remove', 'uploaded file is removed again when the row is rejected');
+
+  insertError = null;
+  await assert.rejects(content.postShot('f0f0f0f0-0000-4000-8000-000000000001', { uri: 'file:///test.jpg' }), /Test-Events/, 'local TEST events never reach the database');
+  session.current = null;
+  await assert.rejects(content.postShot(EVENT, { uri: 'file:///guest.jpg' }), /bitte zuerst anmelden/i);
+  await assert.rejects(content.reportShot('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'spam', ''), /Zum Melden bitte zuerst anmelden/);
+  session.current = { user: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' } }; calls.length = 0;
+  await content.reportShot('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'spam', ' zu laut ');
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0])), ['insert', 'content_reports', { snap_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', reason: 'spam', details: 'zu laut' }]);
+});
+
+test('shots for guests: locked tile with a sign-in link; signed-in accounts read shots with their session', () => {
+  const shots = fs.readFileSync(path.join(__dirname, '../src/components/Shots.tsx'), 'utf8');
+  assert.match(shots, /onPress=\{\(\) => guest \? setSignInHint\(true\) : setOpen\(unseen\)\}/, 'guests get the hint instead of the viewer');
+  assert.match(shots, /Melde dich hier an, um sie zu sehen/);
+  assert.match(shots, /router\.push\('\/account'\)/);
+  const content = fs.readFileSync(path.join(__dirname, '../src/services/content.ts'), 'utf8');
+  const fetchBlock = content.slice(content.indexOf('export async function fetchEventSnaps'), content.indexOf('export async function fetchTicketTypes'));
+  assert.match(fetchBlock, /const client = await readClient\(\);/, 'shots are read with the account session when signed in');
 });
