@@ -24,6 +24,11 @@ Clubs registrieren sich **direkt als Veranstalter** – getrenntes System, kein 
   - Admin-Reiter „Veranstalter“ zeigt Adresse, Ansprechperson, Telefon, Social Media, Mail-Status.
 - Prüfung: 185/185 Tests, Lint und Typecheck ohne Fehler. Web-Vorschau: Registrierung mit Club-Feldern sichtbar, `/studio` ohne Anmeldung leitet aufs Radar, keine Konsolenfehler. **Studio von innen noch nicht gesehen** (braucht ein bestätigtes Veranstalter-Konto).
 
+- **Studio-Navigation (15.11.)**: Event-Editor öffnete nicht (versteckter Reiter). Jetzt Stapel + Reiter wie in der Besucher-App; auf dem Handy bestätigt.
+- **SQL 29** `supabase/ops/29_event_address.sql`, in Spots-Test eingespielt (Prüfsumme gleich, Importe unverändert): Events haben Straße, Nr., PLZ; Club-Events brauchen ein Ende (NOT VALID: bestehende Zeilen unangetastet); Ort aus dem Adressbuch übernimmt auch die Adresse. Entscheidung Jacint: jedes Event hat eine eigene Adresse, Ende ist Pflicht.
+- **Adresse → Kartenposition** beim Speichern über OpenStreetMap Nominatim (strukturierte Suche, nur Deutschland, `src/features/organizer/geocode.ts`). Editor: Club-Adresse vorausgefüllt, Ende Pflicht. Eventseite zeigt die Adresse (getrennt geladen, ohne Fehler in Projekten ohne SQL 29). Hinweis Datenschutz: Event-Adressen gehen beim Speichern an Nominatim.
+- Prüfung: 192/192 Tests, Lint, Typecheck; Nominatim mit öffentlicher Adresse geprüft.
+
 ## Läuft gerade
 
 - Handy-Test durch Jacint.

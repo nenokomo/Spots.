@@ -5,7 +5,7 @@ function load(file, requireMap = {}) {
   const module = { exports: {} };
   const source = ts.transpileModule(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'),
     { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  vm.runInNewContext(source, { module, exports: module.exports, Intl, Date, Math, require: (name) => {
+  vm.runInNewContext(source, { module, exports: module.exports, Intl, Date, Math, URL, URLSearchParams, require: (name) => {
     if (name in requireMap) return requireMap[name];
     throw new Error(`unexpected import ${name}`);
   } });
@@ -80,4 +80,35 @@ test('studio: never sets is_published on organizers, events stay drafts before a
   assert.match(studioLayout, /type !== 'organizer'\) return <Redirect href="\/" \/>/, 'studio only for organizer accounts');
   const management = fs.readFileSync(path.join(__dirname, '../src/features/accounts/management.ts'), 'utf8');
   assert.ok(!management.includes("'is_published'"), 'old self-publishing path removed');
+});
+
+test('geocoding: structured German address, first hit inside Germany, nothing found is null, errors are German', async () => {
+  const { geocodeAddress, geocodeUrl } = load('src/features/organizer/geocode.ts');
+  const address = { street: 'Kaiserstraße', houseNumber: '12a', postcode: '76133', city: 'Karlsruhe' };
+  const url = new URL(geocodeUrl(address));
+  assert.equal(url.origin + url.pathname, 'https://nominatim.openstreetmap.org/search');
+  assert.equal(url.searchParams.get('street'), '12a Kaiserstraße');
+  assert.equal(url.searchParams.get('postalcode'), '76133');
+  assert.equal(url.searchParams.get('countrycodes'), 'de');
+  assert.equal(url.searchParams.get('limit'), '1');
+  const reply = (body, ok = true) => async () => ({ ok, json: async () => body });
+  assert.deepEqual({ ...(await geocodeAddress(address, reply([{ lat: '49.0094', lon: '8.3994', display_name: 'Kaiserstraße 12a, Karlsruhe' }]))) },
+    { latitude: 49.0094, longitude: 8.3994, label: 'Kaiserstraße 12a, Karlsruhe' });
+  assert.equal(await geocodeAddress(address, reply([])), null);
+  assert.equal(await geocodeAddress(address, reply([{ lat: '40.7', lon: '-74.0' }])), null, 'outside Germany');
+  await assert.rejects(geocodeAddress(address, reply(null, false)), /später erneut/);
+});
+
+test('event page address: street with number and postcode with city, nothing without street', () => {
+  const { formatEventAddress } = load('src/hooks/useEventAddress.ts', { react: {}, '../lib/supabase': {} });
+  assert.deepEqual({ ...formatEventAddress({ street: 'Kaiserstraße', house_number: '12a', postcode: '76133' }, 'Karlsruhe') },
+    { street: 'Kaiserstraße 12a', postcodeCity: '76133 Karlsruhe' });
+  assert.equal(formatEventAddress({ street: null, house_number: null, postcode: '76133' }, 'Karlsruhe'), null);
+  assert.equal(formatEventAddress(null, 'Karlsruhe'), null);
+});
+
+test('event editor: end time is required and an own address is turned into a map position', () => {
+  const editor = fs.readFileSync(path.join(__dirname, '../src/features/studio/EventEditorScreen.tsx'), 'utf8');
+  assert.match(editor, /!endTime\.trim\(\) \? 'Bitte das Ende eingeben/);
+  assert.match(editor, /await geocodeAddress\(place\)/);
 });
