@@ -25,8 +25,8 @@ function StartupContent() {
   const account = useAccountSession();
   const guest = useGuestMode();
   const accountType = useAccountType(account.session?.user.id ?? null);
-  const accountsReady = !!accountClientError || (!account.loading && guest !== null && (!account.session || accountType !== null));
-  const allowed = !!accountClientError || (account.session ? accountType !== 'organizer' : guest === true);
+  const accountsReady = !!accountClientError || (!account.loading && (!account.session || accountType !== null));
+  const allowed = !!accountClientError || (account.session ? accountType !== 'organizer' : guest);
   const [introFinished, setIntroFinished] = useState(false);
   const [started, setStarted] = useState(false);
   useEffect(() => {

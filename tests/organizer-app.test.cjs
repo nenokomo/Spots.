@@ -124,7 +124,8 @@ test('start page: first Privat/Veranstalter, then login; registering uses that c
   assert.match(start, /router\.replace\(accountType === 'organizer' \? '\/studio' : '\/'\)/, 'account type decides after login');
   const root = read('src/app/_layout.tsx');
   assert.match(root, /<Stack\.Protected guard=\{allowed\} redirectTo="\/account">\s*<Stack\.Screen name="\(tabs\)" \/>/, 'visitor tabs only with account or as guest (works on native)');
-  assert.match(root, /const allowed = !!accountClientError \|\| \(account\.session \? accountType !== 'organizer' : guest === true\);/, 'organizers never get the visitor tabs');
+  assert.ok(root.includes("const allowed = !!accountClientError || (account.session ? accountType !== 'organizer' : guest);"), 'organizers never get the visitor tabs');
+  assert.ok(!read('src/features/accounts/guestMode.ts').includes('setItem'), 'guest choice is not stored: start page on every app start');
   assert.ok(!read('src/app/(tabs)/_layout.tsx').includes('Redirect'), 'no redirect in the tabs layout (ignored on native)');
   const profile = read('src/screens/ProfileScreen.tsx');
   assert.ok(!profile.includes('Konto verwalten'), 'old login row removed');

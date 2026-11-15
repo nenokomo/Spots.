@@ -1,32 +1,24 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 
-// „Als Gast fortfahren“: Die App merkt sich die Wahl auf dem Gerät und startet danach direkt im Radar.
-// Beim Anmelden und Abmelden wird sie zurückgesetzt, damit nach dem Abmelden wieder die Startseite kommt.
-const key = 'spots.guest.v1';
-let current: boolean | null = null;
+// „Als Gast fortfahren“ gilt nur, solange die App läuft: Bei jedem App-Start kommt wieder die Startseite
+// (Entscheidung Jacint, 15.11.). Nichts davon wird gespeichert.
+let current = false;
 const listeners = new Set<(value: boolean) => void>();
-let loading: Promise<void> | null = null;
 
-function load() {
-  loading ??= AsyncStorage.getItem(key).then((value) => { current = value === '1'; }, () => { current = false; })
-    .then(() => { listeners.forEach((listener) => listener(current === true)); });
-  return loading;
-}
+// Frühere Versionen haben die Wahl auf dem Gerät gespeichert; diesen Eintrag einmal entfernen.
+void AsyncStorage.removeItem('spots.guest.v1').catch(() => {});
 
 export async function setGuestMode(value: boolean): Promise<void> {
   current = value;
   listeners.forEach((listener) => listener(value));
-  try { await (value ? AsyncStorage.setItem(key, '1') : AsyncStorage.removeItem(key)); } catch { /* nur Komfort */ }
 }
 
-/** null = wird noch gelesen. */
-export function useGuestMode(): boolean | null {
-  const [value, setValue] = useState<boolean | null>(current);
+export function useGuestMode(): boolean {
+  const [value, setValue] = useState(current);
   useEffect(() => {
     listeners.add(setValue);
-    if (current === null) void load();
     return () => { listeners.delete(setValue); };
   }, []);
-  return value ?? current;
+  return value;
 }
