@@ -113,10 +113,13 @@ test('event editor: end time is required and an own address is turned into a map
   assert.match(editor, /await geocodeAddress\(place\)/);
 });
 
-test('start page: login without account type switch, switch only when registering, guest is remembered, profile has no login form', () => {
+test('start page: first Privat/Veranstalter, then login; registering uses that choice; guest is remembered; profile has no login form', () => {
   const read = (file) => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
   const start = read('src/features/accounts/AccountScreen.tsx');
-  assert.match(start, /mode === 'register' && !team && <>\s*<View style=\{styles\.kinds\}/, 'switch Privat/Veranstalter only in register mode');
+  assert.match(start, /Wie nutzt du Spots\?/, 'step 1: choose Privat or Veranstalter');
+  assert.match(start, /const showChoice = !kind && !recovering && !session;/);
+  assert.match(start, /mode === 'register' && kind === 'organizer' && !team/, 'club fields come from the step-1 choice, no extra switch');
+  assert.ok(!start.includes('styles.kinds'), 'no Privat/Veranstalter switch on the form anymore');
   assert.match(start, /Als Gast fortfahren/);
   assert.match(start, /router\.replace\(accountType === 'organizer' \? '\/studio' : '\/'\)/, 'account type decides after login');
   const tabs = read('src/app/(tabs)/_layout.tsx');
