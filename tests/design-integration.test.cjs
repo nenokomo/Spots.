@@ -27,6 +27,7 @@ function load(file, resource = {}) {
     if (id.endsWith('/types/events')) return { isLiveEvent: () => false };
     if (id.endsWith('/useOrganizer')) return { useOrganizerSummary: () => null };
     if (id.endsWith('/useEventContent')) return { useEventContent: () => ({ snaps: [], tickets: [] }) };
+    if (id.endsWith('/services/eventStats')) return { shouldTrack: () => false, trackEvent: async () => {} };
     if (id.endsWith('/utils/eventStatus')) return { eventPhase: () => 'upcoming' };
     if (id.endsWith('/utils/eventSource')) {
       // Echte Anzeigenamen der Quellen statt Platzhalter.
