@@ -15,8 +15,12 @@ export function createAccountActions(client: SupabaseClient) {
     return { email: checkedEmail(email), password: checkedPassword(password) };
   }
   return {
-    async register(email: string, password: string, redirectTo: string) {
-      const { data, error } = await client.auth.signUp({ ...credentials(email, password), options: { emailRedirectTo: redirectTo } });
+    /** Ohne organizer: privates Konto. Mit organizer: Veranstalter-Konto; die Datenbank legt den Club an (SQL 28). */
+    async register(email: string, password: string, redirectTo: string, organizer?: Record<string, string | null>) {
+      const options = organizer
+        ? { emailRedirectTo: redirectTo, data: { account_type: 'organizer', organizer } }
+        : { emailRedirectTo: redirectTo };
+      const { data, error } = await client.auth.signUp({ ...credentials(email, password), options });
       if (error) throw new Error('Registrierung nicht möglich. Bitte Angaben, Mailzustellung und Verbindungsstatus prüfen.');
       return { requiresEmailConfirmation: !data.session };
     },

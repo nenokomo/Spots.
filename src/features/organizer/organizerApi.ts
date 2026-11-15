@@ -1,5 +1,5 @@
 import { getAccountClient } from '../accounts/client';
-import { slugFromName, slugWithSuffix } from './slug';
+import type { OrganizerSignupData } from './signup';
 
 // Veranstalter-Bereich (SQL 15, 17, 26, 27). Alle Aufrufe laufen mit der Sitzung des Kontos;
 // die Datenbank prüft Mitgliedschaft, Besitz und Freigabe selbst. Fehlertexte verraten keine Details.
@@ -12,10 +12,16 @@ export const reviewLabels: Record<ReviewStatus, string> = {
 };
 export type MyOrganizer = {
   id: string; slug: string; displayName: string; biography: string | null; city: string | null;
-  avatarUrl: string | null; websiteUrl: string | null; isPublished: boolean;
+  street: string | null; houseNumber: string | null; postcode: string | null;
+  avatarUrl: string | null; websiteUrl: string | null; socialUrl: string | null; isPublished: boolean;
   reviewStatus: ReviewStatus; reviewNote: string | null; role: 'owner' | 'editor';
 };
-export type OrganizerProfileInput = { displayName: string; biography: string | null; city: string | null; avatarUrl: string | null; websiteUrl: string | null };
+export type OrganizerProfileInput = {
+  displayName: string; biography: string | null; street: string; houseNumber: string; postcode: string; city: string;
+  avatarUrl: string | null; websiteUrl: string | null; socialUrl: string | null;
+};
+export type OrganizerContact = { contactName: string; phone: string };
+export type AccountType = 'private' | 'organizer';
 export type EventCategory = 'club' | 'concert' | 'event';
 export type OrganizerEvent = {
   id: string; title: string; description: string | null; startsAt: string; endsAt: string | null;
@@ -27,16 +33,45 @@ export type OrganizerEventInput = Omit<OrganizerEvent, 'id'>;
 export type EventStats = { eventId: string; title: string; startsAt: string; isPublished: boolean; views: number; ticketClicks: number; saves: number; snaps: number };
 export type PublicVenueChoice = { id: string; name: string; city: string | null };
 
-const organizerFields = 'id,slug,display_name,biography,city,avatar_url,website_url,is_published,review_status,review_note';
+const organizerFields = 'id,slug,display_name,biography,city,street,house_number,postcode,avatar_url,website_url,social_url,is_published,review_status,review_note';
 type OrganizerRow = {
-  id: string; slug: string; display_name: string; biography: string | null; city: string | null; avatar_url: string | null;
-  website_url: string | null; is_published: boolean; review_status: ReviewStatus; review_note: string | null;
+  id: string; slug: string; display_name: string; biography: string | null; city: string | null; street: string | null;
+  house_number: string | null; postcode: string | null; avatar_url: string | null; website_url: string | null; social_url: string | null;
+  is_published: boolean; review_status: ReviewStatus; review_note: string | null;
 };
 const toOrganizer = (row: OrganizerRow, role: 'owner' | 'editor'): MyOrganizer => ({
   id: row.id, slug: row.slug, displayName: row.display_name, biography: row.biography, city: row.city,
-  avatarUrl: row.avatar_url, websiteUrl: row.website_url, isPublished: row.is_published,
+  street: row.street, houseNumber: row.house_number, postcode: row.postcode,
+  avatarUrl: row.avatar_url, websiteUrl: row.website_url, socialUrl: row.social_url, isPublished: row.is_published,
   reviewStatus: row.review_status, reviewNote: row.review_note, role,
 });
+
+/** Welche Oberfläche? Die Kontoart steht fest seit der Registrierung (SQL 28). Ältere Konten sind privat. */
+export async function fetchAccountType(): Promise<AccountType> {
+  const { data, error } = await getAccountClient().rpc('spots_my_account_type');
+  if (error) throw failure('Laden der Kontoart');
+  return data === 'organizer' ? 'organizer' : 'private';
+}
+
+/** Nachholen, falls der Club bei der Registrierung nicht angelegt werden konnte. */
+export async function registerOrganizer(data: OrganizerSignupData): Promise<string> {
+  const { data: id, error } = await getAccountClient().rpc('spots_register_organizer', { p_data: data });
+  if (error || typeof id !== 'string') throw failure('Anlegen des Clubs');
+  return id;
+}
+
+export async function fetchOrganizerContact(organizerId: string): Promise<OrganizerContact | null> {
+  const { data, error } = await getAccountClient().rpc('spots_organizer_contact', { p_organizer_id: organizerId });
+  if (error) throw failure('Laden der Ansprechperson');
+  const row = (data ?? [])[0] as { contact_name: string; phone: string } | undefined;
+  return row ? { contactName: row.contact_name, phone: row.phone } : null;
+}
+
+export async function saveOrganizerContact(organizerId: string, contact: OrganizerContact): Promise<void> {
+  const { error } = await getAccountClient().rpc('spots_organizer_set_contact', {
+    p_organizer_id: organizerId, p_contact_name: contact.contactName.trim(), p_phone: contact.phone.trim() });
+  if (error) throw failure('Speichern der Ansprechperson');
+}
 
 async function currentUserId(): Promise<string> {
   const { data, error } = await getAccountClient().auth.getUser();
@@ -55,28 +90,11 @@ export async function fetchMyOrganizers(): Promise<MyOrganizer[]> {
   });
 }
 
-export async function fetchMyOrganizer(id: string): Promise<MyOrganizer | null> {
-  return (await fetchMyOrganizers()).find((item) => item.id === id) ?? null;
-}
-
-/** Legt einen Veranstalter an (du wirst Besitzer). Ist die Adresse vergeben, wird ein kurzer Anhang ergänzt. */
-export async function createMyOrganizer(displayName: string): Promise<string> {
-  const name = displayName.trim();
-  if (name.length < 2 || name.length > 120) throw new Error('Bitte einen Namen mit 2 bis 120 Zeichen eingeben.');
-  const first = slugFromName(name) || slugWithSuffix('');
-  for (const slug of [first, slugWithSuffix(first)]) {
-    const { data, error } = await getAccountClient().rpc('create_organizer', { p_slug: slug, p_display_name: name });
-    if (!error && typeof data === 'string') return data;
-    if (error?.message?.includes('limit')) throw new Error('Du kannst höchstens drei Veranstalter anlegen.');
-    if (error?.code !== '23505') break;
-  }
-  throw failure('Anlegen des Veranstalters');
-}
-
 export async function updateOrganizerProfile(id: string, input: OrganizerProfileInput): Promise<void> {
   const { data, error } = await getAccountClient().from('organizers').update({
-    display_name: input.displayName.trim(), biography: input.biography?.trim() || null, city: input.city?.trim() || null,
-    avatar_url: input.avatarUrl, website_url: input.websiteUrl,
+    display_name: input.displayName.trim(), biography: input.biography?.trim() || null,
+    street: input.street.trim(), house_number: input.houseNumber.trim(), postcode: input.postcode.trim(), city: input.city.trim(),
+    avatar_url: input.avatarUrl, website_url: input.websiteUrl, social_url: input.socialUrl,
   }).eq('id', id).select('id');
   if (error || data?.length !== 1) throw failure('Speichern des Profils');
 }

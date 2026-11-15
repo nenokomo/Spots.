@@ -40,7 +40,6 @@ export default function ProfileScreen() {
               ? <ListRow icon="profile" title="Konto" value="Startet bald" />
               : <ListRow icon="profile" title={email ? 'Konto verwalten' : accountClientMode === 'team' ? 'Team-Anmeldung' : 'Anmelden'} subtitle={email ? undefined : account.loading ? 'Sitzung wird geprüft …' : accountClientMode === 'team' ? 'Nur für das Spots-Team' : 'Anmelden oder Konto erstellen'} onPress={() => router.push('/account')} />}
             <ListRow icon="heart" title="Gemerkt" value={!ready ? '…' : String(ids.length)} onPress={() => router.navigate('/saved')} accessibilityLabel="Gemerkte Events öffnen" />
-            {email && accountClientMode === 'full' && <ListRow icon="calendar" title="Veranstalter-Bereich" subtitle="Eigene Events in Spots zeigen" onPress={() => router.push('/dashboard')} />}
             {isAdmin && <ListRow icon="grid" title="Spots-Team: Freigaben" subtitle="Entwürfe, Orte und Meldungen prüfen" onPress={() => router.push('/admin')} />}
           </ListGroup>
 

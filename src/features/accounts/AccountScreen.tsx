@@ -10,6 +10,12 @@ import { accountClientError, accountClientMode, getAccountClient } from './clien
 import { createAccountActions } from './auth';
 import { useAccountSession } from './useAccountSession';
 import { savePrivateProfile } from './management';
+import { emptyOrganizerSignup, validateOrganizerSignup } from '../organizer/signup';
+import { OrganizerSignupFields } from '../studio/OrganizerSignupFields';
+import { loadAccountType, useAccountType } from '../studio/useAccountType';
+
+type Kind = 'private' | 'organizer';
+const kindLabels: Record<Kind, string> = { private: 'Privat', organizer: 'Veranstalter / Club' };
 
 function PrivateProfileForm({ busy, save }: { busy: boolean; save: (name: string) => Promise<void> }) {
   const [name, setName] = useState('');
@@ -36,6 +42,14 @@ export default function AccountScreen() {
   // Nach dem Link aus der Passwort-Mail: erst neues Passwort setzen, dann normal weiter.
   const [recovering, setRecovering] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [kind, setKind] = useState<Kind>('private');
+  const [club, setClub] = useState(emptyOrganizerSignup);
+  const accountType = useAccountType(session?.user.id ?? null);
+
+  // Veranstalter-Konten haben eine eigene Oberfläche (Spots Studio).
+  useEffect(() => {
+    if (session && accountType === 'organizer' && !recovering) router.replace('/studio');
+  }, [session, accountType, recovering]);
 
   useEffect(() => {
     if (!code || accountClientError || handledCode.current === code) return;
@@ -67,9 +81,22 @@ export default function AccountScreen() {
       await actions.requestPasswordReset(email, Linking.createURL('/account', { queryParams: { reset: '1' } }));
       setMessage('Falls es zu dieser Adresse ein Konto gibt, haben wir dir einen Link zum Zurücksetzen geschickt.');
     } else if (mode === 'register' && !team) {
-      const result = await actions.register(email, password, Linking.createURL('/account'));
-      setMessage(result.requiresEmailConfirmation ? 'Bitte deine E-Mail bestätigen und danach anmelden.' : 'Registrierung erfolgreich.');
-    } else await actions.signIn(email, password);
+      let organizer: Record<string, string | null> | undefined;
+      if (kind === 'organizer') {
+        const checked = validateOrganizerSignup(club);
+        if ('error' in checked) throw new Error(checked.error);
+        organizer = checked.data;
+      }
+      const result = await actions.register(email, password, Linking.createURL('/account'), organizer);
+      if (organizer) setClub(emptyOrganizerSignup);
+      setMessage(result.requiresEmailConfirmation
+        ? organizer ? 'Bitte bestätigt eure E-Mail und meldet euch dann an. Das Spots-Team prüft euren Club.' : 'Bitte deine E-Mail bestätigen und danach anmelden.'
+        : 'Registrierung erfolgreich.');
+    } else {
+      await actions.signIn(email, password);
+      const { data } = await getAccountClient().auth.getUser();
+      if (data.user && await loadAccountType(data.user.id).catch(() => 'private') === 'organizer') router.replace('/studio');
+    }
   }
   const disabled = busy || !!accountClientError;
   const title = recovering ? 'Neues Passwort' : session ? 'Dein Konto' : titles[mode];
@@ -99,6 +126,16 @@ export default function AccountScreen() {
         <Button label="Abbrechen" variant="ghost" disabled={busy} onPress={() => setConfirmDelete(false)} />
       </View> : <Button label="Konto löschen" variant="ghost" disabled={disabled} onPress={() => { setConfirmDelete(true); setError(null); setMessage(null); }} />)}
     </View> : <View style={styles.form}>
+      {mode === 'register' && !team && <View style={styles.kinds}>
+        {(Object.keys(kindLabels) as Kind[]).map((item) => <Pressable key={item} accessibilityRole="button" accessibilityState={{ selected: kind === item }}
+          onPress={() => setKind(item)} style={[styles.kind, kind === item && styles.kindActive]}>
+          <Text style={[styles.kindLabel, kind === item && styles.kindLabelActive]}>{kindLabels[item]}</Text>
+        </Pressable>)}
+      </View>}
+      {mode === 'register' && !team && <Text style={styles.note}>{kind === 'organizer'
+        ? 'Für Clubs, Kollektive und Veranstalter: Ihr bekommt Spots Studio, eine eigene Oberfläche für eure Events und Zahlen. Das Spots-Team prüft euren Club einmal.'
+        : 'Für alle, die ausgehen wollen: Merkliste auf allen Geräten.'}</Text>}
+      {mode === 'register' && !team && kind === 'organizer' && <OrganizerSignupFields value={club} onChange={setClub} editable={!busy} />}
       <TextInput accessibilityLabel="E-Mail" placeholder="E-Mail" placeholderTextColor={colors.muted} autoCapitalize="none" autoComplete="email" keyboardType="email-address" value={email} onChangeText={setEmail} editable={!busy} style={styles.input} />
       {mode !== 'forgot' && <TextInput accessibilityLabel="Passwort" placeholder="Passwort" placeholderTextColor={colors.muted} secureTextEntry autoCapitalize="none" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} value={password} onChangeText={setPassword} editable={!busy} style={styles.input} />}
       <Button label={mode === 'forgot' ? 'Link zum Zurücksetzen senden' : mode === 'register' ? 'Registrieren' : 'Anmelden'} loading={busy} disabled={disabled} onPress={() => void action(submit)} />
@@ -112,5 +149,11 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background }, content: { padding: space.xl, gap: space.lg, maxWidth: 560, width: '100%', alignSelf: 'center' },
   back: { width: 44, height: 44, marginLeft: -space.sm, alignItems: 'center', justifyContent: 'center' },
   title: { ...type.display, color: colors.text }, note: { ...type.body, color: colors.muted },
-  form: { gap: space.md }, danger: { gap: space.md, padding: space.lg, borderRadius: radius.md, borderWidth: 1, borderColor: '#ff5a5f55' }, input: { minHeight: 50, borderWidth: 1, borderColor: '#ffffff1c', borderRadius: radius.md, paddingHorizontal: space.lg, color: colors.text, backgroundColor: '#1c1b1f', fontSize: 15 },
+  form: { gap: space.md },
+  kinds: { flexDirection: 'row', padding: 4, borderRadius: radius.md, backgroundColor: '#1c1b1f' },
+  kind: { flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md - 2 },
+  kindActive: { backgroundColor: colors.accent },
+  kindLabel: { ...type.footnote, color: colors.muted, fontWeight: '600' },
+  kindLabelActive: { color: colors.text },
+  danger: { gap: space.md, padding: space.lg, borderRadius: radius.md, borderWidth: 1, borderColor: '#ff5a5f55' }, input: { minHeight: 50, borderWidth: 1, borderColor: '#ffffff1c', borderRadius: radius.md, paddingHorizontal: space.lg, color: colors.text, backgroundColor: '#1c1b1f', fontSize: 15 },
 });

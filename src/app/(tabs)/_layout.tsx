@@ -1,10 +1,12 @@
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassBackdrop } from '../../components/GlassBackdrop';
 import { Icon, type IconName } from '../../components/Icon';
 import { floatingTabBar } from '../../constants/navigation';
 import { colors } from '../../constants/theme';
+import { useAccountSession } from '../../features/accounts/useAccountSession';
+import { useAccountType } from '../../features/studio/useAccountType';
 
 function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
   // Selected tab: white icon, no highlight.
@@ -16,6 +18,10 @@ export default function TabLayout() {
   const { width } = useWindowDimensions();
   const barWidth = Math.min(360, width - 32);
   const sideInset = (width - barWidth) / 2;
+  // Veranstalter-Konten haben eine eigene Oberfläche (Spots Studio, /studio).
+  const account = useAccountSession();
+  const accountType = useAccountType(account.session?.user.id ?? null);
+  if (accountType === 'organizer') return <Redirect href="/studio" />;
   return (
     <Tabs screenOptions={{
       headerShown: false,

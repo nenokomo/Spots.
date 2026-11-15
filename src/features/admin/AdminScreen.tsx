@@ -103,19 +103,22 @@ export default function AdminScreen() {
       </>}
 
       {data && tab === 'organizers' && <>
-        <Text style={styles.small}>Einmal prüfen: Ist der Veranstalter echt (Website, Instagram, Impressum)? Nach der Freigabe erscheinen seine Events ohne weitere Prüfung. Die Kontakt-Mail nur für Rückfragen nutzen.</Text>
+        <Text style={styles.small}>Einmal prüfen: Gibt es den Club an dieser Adresse wirklich (Website, Instagram, Impressum, kurzer Anruf)? Nach der Freigabe erscheinen seine Events ohne weitere Prüfung. Mail und Telefon nur für Rückfragen nutzen.</Text>
         {data.organizers.length === 0 && <Text style={styles.muted}>Keine Anträge.</Text>}
         {data.organizers.map((item) => <View key={item.id} style={styles.card}>
           <View style={styles.organizerHead}>
             {item.avatarUrl && <Image source={{ uri: item.avatarUrl }} accessibilityLabel={`Logo von ${item.displayName}`} style={styles.logo} />}
             <View style={styles.flex}>
               <Text style={styles.cardTitle}>{item.displayName}</Text>
-              <Text style={styles.meta}>{[organizerStatusLabels[item.status], item.city, `${item.eventCount} Events`].filter(Boolean).join(' · ')}</Text>
+              <Text style={styles.meta}>{[organizerStatusLabels[item.status], `${item.eventCount} Events`, item.emailConfirmed ? 'E-Mail bestätigt' : 'E-Mail noch nicht bestätigt'].join(' · ')}</Text>
             </View>
           </View>
+          {item.address && <Text style={styles.small}>Adresse: {item.address}</Text>}
           {item.biography && <Text style={styles.small} numberOfLines={4}>{item.biography}</Text>}
-          {item.websiteUrl && <Text style={styles.small} numberOfLines={1}>{item.websiteUrl}</Text>}
-          {item.ownerEmail && <Text style={styles.small} numberOfLines={1}>Kontakt: {item.ownerEmail}</Text>}
+          {item.websiteUrl && <Text style={styles.small} numberOfLines={1}>Website: {item.websiteUrl}</Text>}
+          {item.socialUrl && <Text style={styles.small} numberOfLines={1}>Social Media: {item.socialUrl}</Text>}
+          {(item.contactName || item.phone) && <Text style={styles.small}>Ansprechperson: {[item.contactName, item.phone].filter(Boolean).join(' · ')}</Text>}
+          {item.ownerEmail && <Text style={styles.small} numberOfLines={1}>E-Mail: {item.ownerEmail}</Text>}
           {item.submittedAt && <Text style={styles.small}>Antrag vom {when.format(new Date(item.submittedAt))}</Text>}
           {item.note && <Text style={styles.small}>Hinweis: {item.note}</Text>}
           {(item.status === 'pending' || item.status === 'approved') && <TextInput value={notes[item.id] ?? ''} onChangeText={(text) => setNotes((all) => ({ ...all, [item.id]: text }))}

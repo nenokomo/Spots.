@@ -87,6 +87,7 @@ export type OrganizerStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 export type OrganizerRequest = {
   id: string; slug: string; displayName: string; city: string | null; biography: string | null; websiteUrl: string | null;
   avatarUrl: string | null; status: OrganizerStatus; note: string | null; submittedAt: string | null; ownerEmail: string | null; eventCount: number;
+  address: string | null; socialUrl: string | null; contactName: string | null; phone: string | null; emailConfirmed: boolean;
 };
 
 /** Veranstalter-Anträge (SQL 26): offene zuerst, dann freigegebene, abgelehnte und gesperrte. */
@@ -94,10 +95,13 @@ export async function fetchOrganizerQueue(): Promise<OrganizerRequest[]> {
   const { data, error } = await getAccountClient().rpc('spots_admin_organizer_queue', { p_status: null });
   if (error) throw failure('Laden der Veranstalter');
   return ((data ?? []) as { id: string; slug: string; display_name: string; city: string | null; biography: string | null; website_url: string | null;
-    avatar_url: string | null; review_status: OrganizerStatus; review_note: string | null; submitted_at: string | null; owner_email: string | null; event_count: number }[])
+    avatar_url: string | null; review_status: OrganizerStatus; review_note: string | null; submitted_at: string | null; owner_email: string | null; event_count: number;
+    street: string | null; house_number: string | null; postcode: string | null; social_url: string | null; contact_name: string | null; phone: string | null; email_confirmed: boolean | null }[])
     .map((row) => ({ id: row.id, slug: row.slug, displayName: row.display_name, city: row.city, biography: row.biography, websiteUrl: row.website_url,
       avatarUrl: row.avatar_url, status: row.review_status, note: row.review_note, submittedAt: row.submitted_at, ownerEmail: row.owner_email,
-      eventCount: Number(row.event_count) }));
+      eventCount: Number(row.event_count),
+      address: [[row.street, row.house_number].filter(Boolean).join(' '), [row.postcode, row.city].filter(Boolean).join(' ')].filter(Boolean).join(', ') || null,
+      socialUrl: row.social_url, contactName: row.contact_name, phone: row.phone, emailConfirmed: row.email_confirmed === true }));
 }
 
 export async function reviewOrganizer(id: string, status: 'approved' | 'rejected' | 'suspended', note?: string): Promise<void> {

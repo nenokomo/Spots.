@@ -12,19 +12,37 @@ function load(file, requireMap = {}) {
   return module.exports;
 }
 
-test('slug: readable address from the name, valid for SQL 15, with a fallback suffix', () => {
-  const { slugFromName, slugWithSuffix, slugPattern } = load('src/features/organizer/slug.ts');
-  assert.equal(slugFromName('Club Eins'), 'club-eins');
-  assert.equal(slugFromName('Müller & Söhne Größenwahn'), 'mueller-soehne-groessenwahn');
-  assert.equal(slugFromName('  Café Noir!  '), 'cafe-noir');
-  assert.equal(slugFromName('!!'), '');
-  assert.equal(slugFromName('x'), '');
-  const long = slugFromName('a'.repeat(100));
-  assert.ok(slugPattern.test(long) && long.length <= 64);
-  const suffixed = slugWithSuffix('club-eins', () => 0.5);
-  assert.match(suffixed, /^club-eins-[a-z0-9]{4}$/);
-  assert.ok(slugPattern.test(slugWithSuffix('', () => 0)));
-  assert.ok(slugPattern.test(slugWithSuffix('b'.repeat(64), () => 0.99)));
+const club = (overrides = {}) => ({ name: ' Club  Eins ', street: 'Kaiserstraße', houseNumber: '12a', postcode: '76133', city: 'Karlsruhe',
+  website: 'club-eins.de', social: '@clubeins', contactName: 'Alex Beispiel', phone: '+49 721 123456', ...overrides });
+
+test('club signup: same rules as SQL 28, friendly link input, clear German errors', () => {
+  const { validateOrganizerSignup, normalizeWebsite, normalizeSocial } = load('src/features/organizer/signup.ts');
+  const ok = validateOrganizerSignup(club());
+  assert.deepEqual(JSON.parse(JSON.stringify(ok.data)), { name: 'Club Eins', street: 'Kaiserstraße', house_number: '12a', postcode: '76133', city: 'Karlsruhe',
+    website_url: 'https://club-eins.de', social_url: 'https://www.instagram.com/clubeins', contact_name: 'Alex Beispiel', phone: '+49 721 123456' });
+  const optional = validateOrganizerSignup(club({ website: '', social: '  ' }));
+  assert.equal(optional.data.website_url, null);
+  assert.equal(optional.data.social_url, null);
+  assert.equal(normalizeWebsite('http://club.de'), 'invalid', 'only https');
+  assert.equal(normalizeWebsite('https://club.de/programm'), 'https://club.de/programm');
+  assert.equal(normalizeSocial('https://www.tiktok.com/@club'), 'https://www.tiktok.com/%40club', '@ in the path is allowed, encoded');
+  assert.equal(normalizeSocial('tiktok.com/@club'), 'https://tiktok.com/%40club');
+  assert.equal(normalizeSocial('https://name:pass@evil.example/x'), 'invalid', 'credentials in links stay forbidden');
+  assert.match(normalizeSocial('https://www.tiktok.com/@club'), /^https:\/\/[^\s@]+$/, 'passes the SQL 28 check');
+  for (const [field, value, message] of [['name', 'X', /Namen/], ['street', '', /Straße/], ['houseNumber', '', /Hausnummer/], ['postcode', '7613', /Postleitzahl/],
+    ['city', ' ', /Stadt/], ['website', 'http://club.de', /Website/], ['social', 'mit leerzeichen', /Social/], ['contactName', 'A', /Ansprechperson/], ['phone', 'abc', /Telefon/]]) {
+    assert.match(validateOrganizerSignup(club({ [field]: value })).error, message, field);
+  }
+});
+
+test('registration: private accounts send no metadata, clubs send account type and club data', async () => {
+  const { createAccountActions } = load('src/features/accounts/auth.ts');
+  const calls = [];
+  const actions = createAccountActions({ auth: { signUp: async (arg) => { calls.push(arg); return { data: { session: null }, error: null }; } } });
+  await actions.register('privat@example.invalid', 'eightchars', 'meine-app://account');
+  await actions.register('club@example.invalid', 'eightchars', 'meine-app://account', { name: 'Club Eins' });
+  assert.equal('data' in calls[0].options, false);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[1].options.data)), { account_type: 'organizer', organizer: { name: 'Club Eins' } });
 });
 
 test('berlin time: formatting is the inverse of parsing, summer and winter', () => {
@@ -50,12 +68,16 @@ test('stats: only organizer events are counted, never local TEST events; device 
   assert.match(device, /^[A-Za-z0-9-]{16,64}$/, 'matches the SQL 26 check');
 });
 
-test('screens: dashboard never sets is_published on organizers and events stay drafts before approval', () => {
+test('studio: never sets is_published on organizers, events stay drafts before approval, private profile has no organizer entry', () => {
   const api = fs.readFileSync(path.join(__dirname, '../src/features/organizer/organizerApi.ts'), 'utf8');
   const updateBlock = api.slice(api.indexOf('export async function updateOrganizerProfile'), api.indexOf('export async function submitOrganizer'));
   assert.ok(!updateBlock.includes('is_published'), 'profile update must not touch is_published');
-  const sheet = fs.readFileSync(path.join(__dirname, '../src/features/organizer/OrganizerEventSheet.tsx'), 'utf8');
-  assert.match(sheet, /isPublished: status === 'scheduled' && approved && published/);
+  const editor = fs.readFileSync(path.join(__dirname, '../src/features/studio/EventEditorScreen.tsx'), 'utf8');
+  assert.match(editor, /isPublished: status === 'scheduled' && approved && live/);
+  const profile = fs.readFileSync(path.join(__dirname, '../src/screens/ProfileScreen.tsx'), 'utf8');
+  assert.ok(!profile.includes('/dashboard') && !profile.includes('Veranstalter-Bereich'), 'private accounts cannot become organizers');
+  const studioLayout = fs.readFileSync(path.join(__dirname, '../src/features/studio/StudioLayout.tsx'), 'utf8');
+  assert.match(studioLayout, /type !== 'organizer'\) return <Redirect href="\/" \/>/, 'studio only for organizer accounts');
   const management = fs.readFileSync(path.join(__dirname, '../src/features/accounts/management.ts'), 'utf8');
   assert.ok(!management.includes("'is_published'"), 'old self-publishing path removed');
 });
