@@ -15,6 +15,7 @@ import { Button, IconButton } from '../components/ui/Button';
 import { PressableScale } from '../components/ui/PressableScale';
 import { colors, gutter, radius, space, squircle, type } from '../constants/theme';
 import { useEvent } from '../hooks/useEvents';
+import { useEventAddress } from '../hooks/useEventAddress';
 import { useEventContent } from '../hooks/useEventContent';
 import { useNow } from '../hooks/useNow';
 import { useOrganizerSummary } from '../hooks/useOrganizer';
@@ -58,6 +59,8 @@ export default function EventDetailScreen() {
   // Statistik für Veranstalter (SQL 26): ein Aufruf pro Gerät und Tag, nur bei Veranstalter-Events.
   const trackedId = shouldTrack(event) ? event!.id : null;
   useEffect(() => { if (trackedId) void trackEvent(trackedId, 'view'); }, [trackedId]);
+  // Adresse von Club-Events (SQL 29); sonst bleibt die bisherige Ortszeile.
+  const address = useEventAddress(event?.id, event?.organizerId, event?.location ?? null);
 
   if (!event || remote.error) return <View style={styles.screen}><Backdrop /><View style={[styles.state, { paddingTop: insets.top + 12 }]}>
     <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} plain style={styles.stateBack} />
@@ -81,7 +84,8 @@ export default function EventDetailScreen() {
   const gallery = [...(event.imageIsPlaceholder ? [] : [event.image]), ...snaps.map((snap) => ({ uri: snap.url }))];
   const posterHeight = Math.min(height * 0.64, width * 1.35);
   const primary = !ended ? ticketUrl ?? sourceUrl : undefined;
-  const place = event.venue ? `${event.venue}, ${event.location}` : event.location;
+  const place = address ? [event.venue, address.street, address.postcodeCity].filter(Boolean).join(', ')
+    : event.venue ? `${event.venue}, ${event.location}` : event.location;
 
   async function open(url: string, ticket = false) {
     if (ticket && trackedId) void trackEvent(trackedId, 'ticket_click');

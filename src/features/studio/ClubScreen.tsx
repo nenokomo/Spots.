@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { getAccountClient } from '../accounts/client';
 import { createAccountActions } from '../accounts/auth';
+import { setGuestMode } from '../accounts/guestMode';
 import { useAccountSession } from '../accounts/useAccountSession';
 import { fetchOrganizerContact, saveOrganizerContact, updateOrganizerProfile, type MyOrganizer } from '../organizer/organizerApi';
 import { normalizeSocial, normalizeWebsite, phonePattern } from '../organizer/signup';
@@ -99,7 +100,7 @@ function AccountCard() {
   const [error, setError] = useState<string | null>(null);
   async function act(task: () => Promise<void>) {
     setBusy(true); setError(null);
-    try { await task(); router.replace('/'); }
+    try { await task(); await setGuestMode(false); router.replace('/account'); }
     catch (failure) { setError(failure instanceof Error ? failure.message : 'Hat nicht geklappt.'); setBusy(false); }
   }
   return <Card>

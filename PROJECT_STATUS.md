@@ -14,8 +14,8 @@ Neue Arbeit startet als eigener Branch von `main` (`backend/<thema>`, `design/<t
 ## Was die App kann
 
 - **Besucher-App** – vier Tabs: Radar, Entdecken, Gemerkt, Profil. Eventdetail, Veranstalterseite, Ortsseite `/venue/[id]` (noch nirgends verlinkt). Filter inkl. Hip-Hop und Konzerte. Clubs erscheinen nur mit Event (Entscheidung 13.11.).
-- **Konten** (`/account`, nur Spots-Test): Registrieren mit Auswahl **Privat** oder **Veranstalter / Club**, Anmelden, Passwort vergessen, Konto löschen, Merkliste mit Konto (lokale TEST-Events bleiben auf dem Gerät).
-- **Spots Studio** (`/studio`, nur Veranstalter-Konten): Übersicht mit Freigabe-Stand, Events anlegen/bearbeiten/absagen (Ort aus dem Adressbuch, Flyer-Upload, „Live in Spots“ erst nach Freigabe), Statistik (Aufrufe, Gemerkt, Ticket-Klicks, Snaps), Club-Profil mit Logo und privater Ansprechperson. Veranstalter sehen die Besucher-App nicht; private Konten kommen nicht ins Studio.
+- **Startseite** (`/account`): Ohne Konto startet die App mit „Wie nutzt du Spots?“ – **Privat**, **Veranstalter** oder „Als Gast fortfahren“; danach Anmelden, „Passwort vergessen?“, „Neues Konto erstellen“ / „Club registrieren“ (Kontoart aus der Auswahl). Gast gilt nur bis zum nächsten App-Start. Sperre über `Stack.Protected` in `src/app/_layout.tsx`. Profil: unten Abmelden und Konto löschen. Merkliste mit Konto (lokale TEST-Events bleiben auf dem Gerät). Produktion: nur Anmelden + Gast.
+- **Spots Studio** (`/studio`, nur Veranstalter-Konten): Übersicht mit Freigabe-Stand, Events anlegen/bearbeiten/absagen (eigene Adresse → Kartenposition über OpenStreetMap oder Ort aus dem Adressbuch, Ende Pflicht, Flyer-Upload, „Live in Spots“ erst nach Freigabe), Statistik (Aufrufe, Gemerkt, Ticket-Klicks, Snaps), Club-Profil mit Logo und privater Ansprechperson. Veranstalter sehen die Besucher-App nicht; private Konten kommen nicht ins Studio.
 - **Admin-Bereich `/admin`** (Admin-Rolle): Event-Entwürfe, Veranstalter-Anträge (freigeben, ablehnen, sperren), Orte, Meldungen.
 - **Produktion**: nur Team-Anmeldung (keine Registrierung), Admin für das Team.
 
@@ -24,23 +24,23 @@ Spots Studio hat bewusst einen eigenen Look (`src/features/studio/theme.ts`: Gra
 
 ## Daten und Backend
 
-- **Produktion** `yhnxdeypkbzyjappuzmv` (Stand 13.11.): SQL 20–24 (Ticketmaster mit Cron alle 6 h, Orte, Admin, Partner-Anfragen). Goabase-Cron alle 2 h. Adressbuch Baden-Württemberg geladen, 1 Admin. **Ohne** SQL 15, 17–19, 25–28 (Konten, Snaps, Speicher, Veranstalter). Protokoll: [docs/FORTSCHRITT-produktion.md](docs/FORTSCHRITT-produktion.md).
-- **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15–18 und 20–28 eingespielt (Prüfsummen identisch mit den Dateien). Nicht eingespielt: **SQL 19** (Galerien). Ticketmaster-Cron aktiv.
-- Neu in Etappe 1/2: **25** Konto löschen + Merkliste; **26** Antrag/Freigabe + datensparsame Statistik (Tagessummen, Hash mit Tagessalz); **27** öffentlicher Bucket `organizer-public` (Logos/Flyer) + Ort aus dem Adressbuch für Club-Events; **28** Kontoart bei der Registrierung (Trigger auf `auth.users`), Club-Adresse, Ansprechperson/Telefon privat.
+- **Produktion** `yhnxdeypkbzyjappuzmv` (Stand 13.11.): SQL 20–24 (Ticketmaster mit Cron alle 6 h, Orte, Admin, Partner-Anfragen). Goabase-Cron alle 2 h. Adressbuch Baden-Württemberg geladen, 1 Admin. **Ohne** SQL 15, 17–19, 25–29 (Konten, Snaps, Speicher, Veranstalter, Event-Adressen). Protokoll: [docs/FORTSCHRITT-produktion.md](docs/FORTSCHRITT-produktion.md).
+- **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15–18 und 20–29 eingespielt (Prüfsummen identisch mit den Dateien). Nicht eingespielt: **SQL 19** (Galerien). Ticketmaster-Cron aktiv.
+- Neu in Etappe 1/2: **25** Konto löschen + Merkliste; **26** Antrag/Freigabe + datensparsame Statistik (Tagessummen, Hash mit Tagessalz); **27** öffentlicher Bucket `organizer-public` (Logos/Flyer) + Ort aus dem Adressbuch für Club-Events; **28** Kontoart bei der Registrierung (Trigger auf `auth.users`), Club-Adresse, Ansprechperson/Telefon privat; **29** Straße/Nr./PLZ an Events, Ende Pflicht für Club-Events (bestehende Zeilen unangetastet).
 - Lokale TEST-Events und TEST-Orte nur bei `__DEV__`; abschaltbar mit `EXPO_PUBLIC_SPOTS_TEST_EVENTS=0`.
 
 ## Geprüft
 
-- **185/185 Tests** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`), Expo-Lint und Typecheck ohne Fehler.
-- Handy (15.11., iPhone, Expo Go gegen Spots-Test): Registrieren + Bestätigen, Merkliste mit Konto, Konto löschen (Konto, Profil, Merkliste weg), Club-Registrierung und Studio sichtbar.
+- **193/193 Tests** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`), Expo-Lint und Typecheck ohne Fehler.
+- Handy (15.11., iPhone, Expo Go gegen Spots-Test): Registrieren + Bestätigen, Merkliste mit Konto, Konto löschen, Club-Registrierung, Studio, Club-Event mit eigener Adresse auf Radar und Entdecken, Startseite bei jedem Start.
 
 ## Nicht geprüft / bekannte Probleme
 
 - **Passwort vergessen** auf dem Handy noch nicht zu Ende getestet (Mail-Limit).
 - Eingebauter Supabase-Mailversand: **nur 2 Mails pro Stunde** und nur an Supabase-Team-Adressen; deutsche Mailtexte erst mit eigenem Mailserver (SMTP).
 - Rücksprung aus Mails: `exp://`-Adressen müssen in Supabase **genau** eingetragen sein (`exp://**` greift nicht); ändert sich mit der WLAN-Adresse.
-- Club-Adresse hat keine Kartenposition: Club-Events nur mit Ort aus dem Adressbuch auf der Karte.
-- Studio-Abläufe (Upload, Freigabe, Live stellen, Statistik) noch nicht vollständig auf dem Handy durchgespielt; Upload (SQL 18/27) nicht mit echten Dateien getestet.
+- Kartenposition von Club-Events kommt aus OpenStreetMap (Nominatim) und kann etwas daneben liegen; die Adresse steht auf der Eventseite. Datenschutz: Event-Adressen gehen beim Speichern an Nominatim.
+- Statistik im Studio noch nicht auf dem Handy geprüft.
 - Radar zählt nur Events mit Endzeit als „live“; Ticketmaster-Konzerte haben meist keine.
 - Produktion: pro App-Start 2–3 erwartete 400-Antworten (organizer_id-Abfrage), bis SQL 15 dort eingespielt ist.
 

@@ -25,7 +25,7 @@ export type AccountType = 'private' | 'organizer';
 export type EventCategory = 'club' | 'concert' | 'event';
 export type OrganizerEvent = {
   id: string; title: string; description: string | null; startsAt: string; endsAt: string | null;
-  venueId: string | null; venueName: string | null; city: string | null; latitude: number | null; longitude: number | null;
+  venueId: string | null; venueName: string | null; street: string | null; houseNumber: string | null; postcode: string | null; city: string | null; latitude: number | null; longitude: number | null;
   imageUrl: string | null; ticketUrl: string | null; genre: string | null; category: EventCategory;
   status: 'scheduled' | 'cancelled' | 'postponed'; isPublished: boolean;
 };
@@ -109,15 +109,15 @@ export async function withdrawOrganizer(id: string): Promise<void> {
   if (error) throw failure('Antrag zurückziehen');
 }
 
-const eventFields = 'id,title,description,starts_at,ends_at,venue_id,venue_name,city,latitude,longitude,image_url,ticket_url,genre,category,status,is_published';
+const eventFields = 'id,title,description,starts_at,ends_at,venue_id,venue_name,street,house_number,postcode,city,latitude,longitude,image_url,ticket_url,genre,category,status,is_published';
 type EventRow = {
   id: string; title: string; description: string | null; starts_at: string; ends_at: string | null; venue_id: string | null;
-  venue_name: string | null; city: string | null; latitude: number | null; longitude: number | null; image_url: string | null;
+  venue_name: string | null; street: string | null; house_number: string | null; postcode: string | null; city: string | null; latitude: number | null; longitude: number | null; image_url: string | null;
   ticket_url: string | null; genre: string | null; category: string | null; status: OrganizerEvent['status']; is_published: boolean;
 };
 const toEvent = (row: EventRow): OrganizerEvent => ({
   id: row.id, title: row.title, description: row.description, startsAt: row.starts_at, endsAt: row.ends_at,
-  venueId: row.venue_id, venueName: row.venue_name, city: row.city, latitude: row.latitude, longitude: row.longitude,
+  venueId: row.venue_id, venueName: row.venue_name, street: row.street, houseNumber: row.house_number, postcode: row.postcode, city: row.city, latitude: row.latitude, longitude: row.longitude,
   imageUrl: row.image_url, ticketUrl: row.ticket_url, genre: row.genre,
   category: row.category === 'concert' || row.category === 'event' ? row.category : 'club',
   status: row.status, isPublished: row.is_published,
@@ -134,7 +134,8 @@ export async function fetchOrganizerEvents(organizerId: string): Promise<Organiz
 export async function saveOrganizerEvent(organizerId: string, input: OrganizerEventInput, id?: string): Promise<string> {
   const row = {
     title: input.title.trim(), description: input.description?.trim() || null, starts_at: input.startsAt, ends_at: input.endsAt,
-    venue_id: input.venueId, venue_name: input.venueName?.trim() || null, city: input.city?.trim() || null,
+    venue_id: input.venueId, venue_name: input.venueName?.trim() || null, street: input.street?.trim() || null,
+    house_number: input.houseNumber?.trim() || null, postcode: input.postcode?.trim() || null, city: input.city?.trim() || null,
     latitude: input.latitude, longitude: input.longitude, image_url: input.imageUrl, ticket_url: input.ticketUrl,
     genre: input.genre?.trim() || null, category: input.category, status: input.status, is_published: input.isPublished,
   };
