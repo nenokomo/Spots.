@@ -415,6 +415,11 @@ entrypoint = "./functions/import-goabase/index.ts"
 verify_jwt = false
 entrypoint = "./functions/import-ticketmaster/index.ts"
 
+# Aufräumen abgelaufener Shots (SQL 30/31). Gleiches Schutzmodell: withSupabase(auth: "secret").
+[functions.cleanup-snaps]
+verify_jwt = false
+entrypoint = "./functions/cleanup-snaps/index.ts"
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
