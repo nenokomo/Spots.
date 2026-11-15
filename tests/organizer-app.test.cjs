@@ -112,3 +112,17 @@ test('event editor: end time is required and an own address is turned into a map
   assert.match(editor, /!endTime\.trim\(\) \? 'Bitte das Ende eingeben/);
   assert.match(editor, /await geocodeAddress\(place\)/);
 });
+
+test('start page: login without account type switch, switch only when registering, guest is remembered, profile has no login form', () => {
+  const read = (file) => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+  const start = read('src/features/accounts/AccountScreen.tsx');
+  assert.match(start, /mode === 'register' && !team && <>\s*<View style=\{styles\.kinds\}/, 'switch Privat/Veranstalter only in register mode');
+  assert.match(start, /Als Gast fortfahren/);
+  assert.match(start, /router\.replace\(accountType === 'organizer' \? '\/studio' : '\/'\)/, 'account type decides after login');
+  const tabs = read('src/app/(tabs)/_layout.tsx');
+  assert.match(tabs, /if \(!account\.session && !guest\) return <Redirect href="\/account" \/>/, 'no account and no guest → start page');
+  const profile = read('src/screens/ProfileScreen.tsx');
+  assert.ok(!profile.includes('Konto verwalten'), 'old login row removed');
+  assert.match(profile, /title="Abmelden"/);
+  assert.match(profile, /title="Konto löschen" destructive/);
+});

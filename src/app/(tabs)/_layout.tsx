@@ -5,6 +5,8 @@ import { GlassBackdrop } from '../../components/GlassBackdrop';
 import { Icon, type IconName } from '../../components/Icon';
 import { floatingTabBar } from '../../constants/navigation';
 import { colors } from '../../constants/theme';
+import { accountClientError } from '../../features/accounts/client';
+import { useGuestMode } from '../../features/accounts/guestMode';
 import { useAccountSession } from '../../features/accounts/useAccountSession';
 import { useAccountType } from '../../features/studio/useAccountType';
 
@@ -21,7 +23,13 @@ export default function TabLayout() {
   // Veranstalter-Konten haben eine eigene Oberfläche (Spots Studio, /studio).
   const account = useAccountSession();
   const accountType = useAccountType(account.session?.user.id ?? null);
+  // Ohne Konto und ohne „Als Gast fortfahren“ zuerst die Startseite (/account). Ohne Kontokonfiguration gibt es keine.
+  const guest = useGuestMode();
   if (accountType === 'organizer') return <Redirect href="/studio" />;
+  if (!accountClientError) {
+    if (account.loading || guest === null) return <View style={styles.waiting} />;
+    if (!account.session && !guest) return <Redirect href="/account" />;
+  }
   return (
     <Tabs screenOptions={{
       headerShown: false,
@@ -43,6 +51,7 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  waiting: { flex: 1, backgroundColor: colors.background },
   capsule: { ...StyleSheet.absoluteFill, borderRadius: 33 },
   icon: { width: 58, height: 28, alignItems: 'center', justifyContent: 'center' },
 });
