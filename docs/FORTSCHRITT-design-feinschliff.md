@@ -22,6 +22,22 @@ Stand: 15.11.2026
 - Nur in der Entwicklung: 3 TEST-Symbolbilder pro Story. **Daten nötig von Jacint:** echte Bilder/Snaps pro Veranstalter.
 - Geprüft: Typecheck, Expo-Lint. Nicht auf dem Handy geprüft.
 
+## Eventseite neu (15.11., noch nicht committet)
+
+- Flyer läuft in die Seite aus; darauf LIVE-Abzeichen, großer Titel, eine Zeitzeile, Genre-Chips. Jede Info nur einmal.
+- Profilbild des Veranstalters oben auf dem Eventbild (über dem Titel): rosa Ring = neue Event-Story (Veranstalter-Snaps, `by_organizer`), 24 h beliebig oft ansehbar, nur auf der Eventseite. Name daneben öffnet das Profil.
+- Shots ohne Liste und ohne Zahlen: ein Button „Shots ansehen“ (öffnet alle neuen, nur ein Fortschrittsbalken), daneben während des Events „Shot posten“ → Kamera-Ansicht „Poste einen Shot“ (`ShotCamera`, **nur Design**, Kamera und Upload baut Jacint).
+- Profilbild oben 76 px mit dickem Verlaufsring, rosa Leuchten und „STORY“-Label (grau nach dem Ansehen).
+- Reihenfolge unten: Tickets (immer sichtbar, Ticketarten mit „Kaufen“ oder Hinweis + Button zum Anbieter) → Über das Event (direkt über dem Ort, mit ehrlichem Hinweis ohne Beschreibung) → Ort → Shots. Kauf läuft beim Anbieter, kein Bezahlen in der App.
+- Ort als kleine Karten-Vorschau (`PlacePreview`, Web ohne Karte), Antippen öffnet die Route; darunter die Adresse ausgeschrieben (kopierbar).
+- **Zwei Arten, nicht verwechseln:**
+  - **Event-Story** (Veranstalter): für genau dieses Event, 24 h beliebig oft ansehbar, nur auf der Eventseite (Ring am Profilbild).
+  - **Shots** (Gäste, früher „Live Snaps“): jeder mit Konto darf posten, nur solange das Event läuft; 24 h auf der Seite, aber jeder Shot nur einmal öffnen (pro Gerät gemerkt, so gewollt), damit ein schlechter Moment nicht ständig wiederholt wird. Melden direkt in der Ansicht (6 Gründe, `content_reports`, nach 3 Meldungen ausgeblendet). Nicht in der Bildergalerie.
+- Untere Leiste: ein Haupt-Button (Tickets → Infos → Route) plus Merken. Fußzeile nur „Infos von Quelle ↗“.
+- Neue Dateien: `SnapViewer`, `LiveSnaps`, `PlacePreview(.web)`, `constants/mapStyle.ts`. In der Entwicklung TEST-Bilder für TEST-Events.
+- **Daten nötig von Jacint:** SQL 17 (`live_snaps`, `content_reports`) einspielen; Upload für Event-Storys (Veranstalter) und Shots (Konto, nur während das Event läuft – serverseitig prüfen); Videos brauchen einen Player. Neue Funktion `reportShot` in `src/services/content.ts` (Jacints Bereich) bitte ansehen. Offen: Melden laut SQL 17 nur mit Konto, der DSA verlangt Melden für alle. Straße/Hausnummer/PLZ fehlen in den Eventdaten; `PlacePreview` hat dafür schon `street` (Datenschutz bei privaten Partys beachten).
+- Geprüft: Typecheck, Expo-Lint. Nicht auf dem Handy geprüft.
+
 ## Als Nächstes
 
 1. Handy-Test durch Noyan; Scan-Design je nach Ergebnis anpassen (Farbe, Tempo, Strahlbreite).

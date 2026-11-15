@@ -19,6 +19,7 @@ Auf `main`:
 - **Radar**: Vollbildkarte mit Radar-Scan, Pins mit Eventbild (läuft / startet heute später), Vorschau-Box, Panel mit Liste und Entfernung, „Alle“ → „Heute Nacht“ (`/today`). Umkreis Standard 30 km. Auf `design/feinschliff`: Start am eigenen Standort, Umkreis 10 km, Button „Filter“, neuer Kreis-Scan um den Standort-Punkt, Infokasten direkt am Pin.
 - **Entdecken**: Suche, Genre, Datum, Ort/Umkreis, Kalender, „Als Nächstes“, Story-Kacheln. „Gehypt“ nur in der Entwicklung. Auf `design/feinschliff`: Kacheln und Story-Ansicht im Snapchat-Stil (Tippen = Bilder, Story wiederholt sich, Hochwischen = nächster Veranstalter, Runterwischen = schließen); mehrere Bilder pro Story vorerst nur als TEST-Bilder in der Entwicklung (echte Bilder: Daten nötig von Jacint).
 - **Eventdetail**, **Veranstalterseite** (in Produktion noch leer), **Gemerkt** (nur lokal), **Konto** unter `/account` (nur mit Testkonfiguration).
+  Auf `design/feinschliff`: Eventseite neu – Veranstalter-Profilbild mit Event-Story (24 h, beliebig oft), Tickets-Bereich (Kauf beim Anbieter), Beschreibung, Karten-Vorschau mit Adresse, **Shots** von Gästen (jeder nur einmal, melden, keine Zahlen) und Kamera-Ansicht „Poste einen Shot“ (nur Design). Daten nötig von Jacint: SQL 17, Upload, Kamera, Adressen.
 
 Zusätzlich auf `feature/event-sources`:
 - **Filter „Hip-Hop“ und „Konzerte“**; Eventseite „Tickets bei Ticketmaster“.

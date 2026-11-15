@@ -3,20 +3,9 @@ import { Platform, StyleSheet, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { EventMapMarker } from './EventMapMarker';
 import { RadarOverlay, radarCoverSize } from './RadarOverlay';
+import { darkMapStyle as mapStyle } from '../constants/mapStyle';
 import type { LocatedEvent } from '../types/events';
 import type { RadarMapProps } from './RadarMap.types';
-
-const mapStyle = [
-  { elementType: 'geometry', stylers: [{ color: '#202023' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#8b8b90' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#202023' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#363639' }] },
-  { featureType: 'road', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111113' }] },
-  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#242426' }] },
-];
 
 export default function RadarMap({ center, radius, userCoordinate, events, onSelect, onCenterChange, onVisibleRadiusChange, scan, topInset = 0, bottomInset = 0, locked = false }: RadarMapProps) {
   const map = useRef<MapView>(null);

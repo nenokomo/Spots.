@@ -82,3 +82,28 @@ export function formatPrice(cents: number | null, currency: string) {
   if (cents === 0) return 'Kostenlos';
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(cents / 100);
 }
+
+/** Reasons accepted by public.content_reports (SQL 17). */
+export const shotReportReasons = [
+  { id: 'nudity', label: 'Nacktheit oder sexuelle Inhalte' },
+  { id: 'violence', label: 'Gewalt oder Gefahr' },
+  { id: 'harassment', label: 'Beleidigung oder Belästigung' },
+  { id: 'privacy', label: 'Zeigt mich oder andere ohne Erlaubnis' },
+  { id: 'spam', label: 'Spam oder Werbung' },
+  { id: 'other', label: 'Etwas anderes' },
+] as const;
+export type ShotReportReason = typeof shotReportReasons[number]['id'];
+
+/**
+ * Reports a visitor shot (live_snaps row). Needs a signed-in account (RLS of SQL 17);
+ * three different reports hide the shot until it is reviewed.
+ */
+export async function reportShot(snapId: string, reason: ShotReportReason, details: string) {
+  if (!uuid.test(snapId)) throw new Error('Test-Shots können nicht gemeldet werden.');
+  if (unavailable.has('content_reports')) throw new Error('Melden ist hier noch nicht eingerichtet.');
+  const { error } = await getSupabase().from('content_reports').insert({ snap_id: snapId, reason, details: details.trim().slice(0, 500) || null });
+  if (error && missingSchema(error.code)) { unavailable.add('content_reports'); throw new Error('Melden ist hier noch nicht eingerichtet.'); }
+  if (error?.code === '23505') return; // already reported by this account
+  if (error?.code === '42501') throw new Error('Zum Melden bitte zuerst anmelden.');
+  if (error) throw new Error('Die Meldung konnte nicht gesendet werden. Bitte später erneut versuchen.');
+}
