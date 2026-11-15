@@ -19,7 +19,7 @@ import { EmptyState, PageHeader, SectionHeader } from '../components/ui/Section'
 import { Sheet } from '../components/ui/Sheet';
 import { tabBarContentInset } from '../constants/navigation';
 import { colors, gutter, radius, space, squircle, type, type Category } from '../constants/theme';
-import { useUpcomingEvents } from '../hooks/useEvents';
+import { useLiveEvents, useUpcomingEvents } from '../hooks/useEvents';
 import { useLocation } from '../hooks/useLocation';
 import { useNow } from '../hooks/useNow';
 import { useToday } from '../hooks/useToday';
@@ -27,6 +27,7 @@ import { eventHref } from '../navigation/eventRoutes';
 import type { City } from '../services/cities';
 import { popularEvents } from '../services/popularity';
 import { isLocatedEvent, matchesCategory, type SpotEvent } from '../types/events';
+import { isTonight } from '../utils/eventStatus';
 import { dayKey, distanceKm, matchesEventPeriod, type Coordinate } from '../utils/events';
 
 const periods = [
@@ -49,7 +50,15 @@ export default function ExploreScreen() {
   const { width } = useWindowDimensions();
   const today = useToday();
   const now = useNow();
-  const remote = useUpcomingEvents();
+  const { events: upcomingEvents, loading: upcomingLoading, error: upcomingError, reload: reloadUpcoming } = useUpcomingEvents();
+  const { events: liveEvents, loading: liveLoading, error: liveError, reload: reloadLive } = useLiveEvents();
+  // Same events as the radar: running ones first, then everything that has not started yet (no duplicates).
+  const allEvents = useMemo(() => {
+    const ids = new Set(liveEvents.map((event) => event.id));
+    return [...liveEvents, ...upcomingEvents.filter((event) => !ids.has(event.id))];
+  }, [liveEvents, upcomingEvents]);
+  const reload = useCallback(() => { reloadUpcoming(); reloadLive(); }, [reloadUpcoming, reloadLive]);
+  const remote = { events: allEvents, loading: upcomingLoading || liveLoading, error: upcomingError ?? liveError, reload };
   const location = useLocation();
   const { locate } = location;
   const [search, setSearch] = useState('');
@@ -74,7 +83,8 @@ export default function ExploreScreen() {
   const { events, area, fellBack } = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('de');
     const base = remote.events.filter((event) => matchesCategory(event, category)
-      && (activeDate ? dayKey(new Date(event.startsAt)) === activeDate : matchesEventPeriod(event, period, today))
+      // „Heute“ = tonight like on the radar: running now, started tonight or starting later today (also after midnight).
+      && (activeDate ? dayKey(new Date(event.startsAt)) === activeDate : period === 'today' ? isTonight(event, now) : matchesEventPeriod(event, period, today))
       && `${event.title} ${event.categories.join(' ')} ${event.genres?.join(' ') ?? ''} ${event.location} ${event.venue ?? ''}`.toLocaleLowerCase('de').includes(query));
     const gps: Area | null = location.userCoordinate ? { label: 'In deiner Nähe', center: location.userCoordinate } : null;
     const wanted = choice.kind === 'city' ? choice.area : choice.kind === 'everywhere' ? null : gps;
@@ -83,7 +93,7 @@ export default function ExploreScreen() {
     // Nothing near the user and no place chosen: show everything rather than an empty page.
     if (choice.kind === 'auto' && nearby.length === 0) return { events: base, area: null, fellBack: base.length > 0 };
     return { events: nearby, area: wanted, fellBack: false };
-  }, [remote.events, category, activeDate, period, today, search, choice, location.userCoordinate, areaRadius]);
+  }, [remote.events, category, activeDate, period, today, now, search, choice, location.userCoordinate, areaRadius]);
 
   const distances = useMemo(() => new Map(area ? events.flatMap((event) => isLocatedEvent(event) ? [[event.id, distanceKm(area.center, event.coordinate)] as const] : []) : []), [events, area]);
   const featured = events.slice(0, 5);

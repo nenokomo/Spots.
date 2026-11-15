@@ -38,6 +38,15 @@ Stand: 15.11.2026
 - **Daten nötig von Jacint:** SQL 17 (`live_snaps`, `content_reports`) einspielen; Upload für Event-Storys (Veranstalter) und Shots (Konto, nur während das Event läuft – serverseitig prüfen); Videos brauchen einen Player. Neue Funktion `reportShot` in `src/services/content.ts` (Jacints Bereich) bitte ansehen. Offen: Melden laut SQL 17 nur mit Konto, der DSA verlangt Melden für alle. Straße/Hausnummer/PLZ fehlen in den Eventdaten; `PlacePreview` hat dafür schon `street` (Datenschutz bei privaten Partys beachten).
 - Geprüft: Typecheck, Expo-Lint. Nicht auf dem Handy geprüft.
 
+## Korrekturen (15.11.)
+
+- Entdecken zeigt jetzt dieselben Events wie das Radar: laufende (`useLiveEvents`) plus kommende, ohne Doppelte. „Heute“ = `isTonight` (läuft, schon begonnen oder startet heute, auch nach Mitternacht). Betrifft die Datenauswahl im Screen – Jacint bitte kurz ansehen.
+- Eventseite immer gleich: rundes Bild oben auf jedem Event (Veranstalter mit Story-Ring, sonst das Eventbild) und SHOTS immer sichtbar; Posten nur während des Events, sonst ruhiger Button mit Hinweis.
+
+- Entdecken-Storys: Wechsel wieder per Hochwischen (wie TikTok), Bilder per Tippen mit Wiederholung. Schließen jetzt durch Ziehen nach unten, links oder rechts: die Story folgt dem Finger frei und wird dabei kleiner.
+- Kein „Live“-Abzeichen mehr auf Story-Kacheln und „Als Nächstes“-Karten.
+- Offen: Stadtsuche ab 1 Buchstaben braucht eine lokale Liste deutscher Städte (Open-Meteo sucht erst ab 3 Zeichen, max. 6 Treffer) – Daten nötig, Freigabe zum Download von GeoNames ausstehend.
+
 ## Als Nächstes
 
 1. Handy-Test durch Noyan; Scan-Design je nach Ergebnis anpassen (Farbe, Tempo, Strahlbreite).

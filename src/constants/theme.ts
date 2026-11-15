@@ -12,6 +12,10 @@ export const colors = {
   accent: '#c922ab',
   /** Brighter tint of the brand colour for text and icons on black (contrast ≥ 5:1). */
   pink: '#ff4ab8',
+  /** Filled buttons („Orchidee“): berry pink into violet. Solid fill for small pills… */
+  accentDeep: '#86299a',
+  /** …and a diagonal gradient for large buttons (berry top left, violet bottom right). */
+  accentFill: ['#a62d9e', '#5d2a92'] as const,
   accentSoft: '#c922ab29',
   accentLine: '#c922ab73',
 

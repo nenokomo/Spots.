@@ -41,7 +41,8 @@ export function EventHero({ event, href, today, now, width }: CardProps & { widt
           </>}
       <LinearGradient pointerEvents="none" colors={['#000000e6', '#000000a6', '#00000000']} locations={[0, 0.5, 1]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
       <View style={styles.heroBody}>
-        {phase !== 'upcoming' ? <StatusBadge phase={phase} overlay /> : <View />}
+        {/* No „Live“ label on cards (design decision); other states like „Beendet“ stay. */}
+        {phase !== 'upcoming' && phase !== 'live' && phase !== 'started' ? <StatusBadge phase={phase} overlay /> : <View />}
         <View style={styles.heroCopy}>
           <Text numberOfLines={1} style={styles.heroWhen}>{when(event, today)} Uhr</Text>
           <Text numberOfLines={3} style={styles.heroTitle}>{event.title}</Text>

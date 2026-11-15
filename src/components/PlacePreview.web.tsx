@@ -26,6 +26,6 @@ const styles = StyleSheet.create({
   copy: { flex: 1, minWidth: 0 },
   title: { ...type.label, color: colors.text },
   detail: { ...type.footnote, color: colors.faint },
-  route: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, height: 34, borderRadius: 17, backgroundColor: colors.accent },
+  route: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, height: 34, borderRadius: 17, backgroundColor: colors.accentDeep },
   routeText: { ...type.label, fontSize: 14, color: colors.text },
 });

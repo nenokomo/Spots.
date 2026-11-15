@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Image, Modal, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, space, squircle, type } from '../constants/theme';
 import type { SnapMedia } from '../utils/stories';
+import { DiscoBall } from './DiscoBall';
 import { Icon } from './Icon';
 import { ShotCamera } from './ShotCamera';
 import { SnapViewer } from './SnapViewer';
@@ -39,9 +40,9 @@ function useSeenSnaps() {
  * event story. They stay on the event page for 24 hours, but each one can be opened only once, so a single
  * bad moment cannot be replayed again and again. Remembered on this device only; every shot can be reported.
  * Deliberately no list and no numbers: one button opens all new shots, nobody sees how many there are
- * or how many people posted. While the event runs, a camera button leads to „Poste einen Shot“.
+ * or how many people posted. Always shown, so every event page looks the same; the camera opens only while the event runs.
  */
-export function Shots({ snaps, live, now, eventTitle }: { snaps: SnapMedia[]; live: boolean; now: number; eventTitle: string }) {
+export function Shots({ snaps, live, ended, now, eventTitle }: { snaps: SnapMedia[]; live: boolean; ended: boolean; now: number; eventTitle: string }) {
   const { seen, markSeen } = useSeenSnaps();
   const [open, setOpen] = useState<SnapMedia[] | null>(null);
   const [camera, setCamera] = useState(false);
@@ -50,51 +51,66 @@ export function Shots({ snaps, live, now, eventTitle }: { snaps: SnapMedia[]; li
   const close = useCallback(() => setOpen(null), []);
   const closeCamera = useCallback(() => setCamera(false), []);
 
-  if (snaps.length === 0 && !live) return null;
   const cover = unseen[0];
   return (
     <View style={styles.block}>
-      <Text style={styles.title}>Shots</Text>
-      <Text style={styles.note}>Echte Eindrücke von Gästen. Jeden Shot siehst du nur einmal.</Text>
-      <View style={styles.actions}>
-        <PressableScale disabled={!cover} accessibilityRole="button" accessibilityState={{ disabled: !cover }}
-          accessibilityLabel={cover ? 'Neue Shots ansehen' : 'Gerade keine neuen Shots'} onPress={() => setOpen(unseen)} scaleTo={0.97}
-          style={[styles.open, !cover && styles.openEmpty]}>
-          {cover && <>
-            <Image source={cover.source} resizeMode="cover" blurRadius={18} style={StyleSheet.absoluteFill} />
-            <LinearGradient pointerEvents="none" colors={['#c922ab55', '#0a090ccc']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-          </>}
-          <View style={[styles.openIcon, !cover && styles.openIconEmpty]}><Icon name="wave" size={20} color={colors.text} /></View>
-          <Text style={styles.openTitle}>{cover ? 'Shots ansehen' : 'Keine neuen Shots'}</Text>
-          <Text style={styles.openText}>{cover ? 'Antippen und durchklicken' : live ? 'Sei der Erste von heute Nacht' : 'Schau später wieder vorbei'}</Text>
-        </PressableScale>
-        {live && <PressableScale accessibilityRole="button" accessibilityLabel="Kamera öffnen und einen Shot posten" onPress={() => setCamera(true)} scaleTo={0.97} style={styles.post}>
-          <LinearGradient pointerEvents="none" colors={[colors.pink, colors.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-          <View style={styles.postIcon}><Icon name="camera" size={22} color={colors.text} /></View>
-          <Text style={styles.openTitle}>Shot posten</Text>
-          <Text style={styles.postText}>Zeig, was gerade abgeht</Text>
-        </PressableScale>}
-      </View>
+      <Text style={styles.title}>SHOTS</Text>
+
+      {/* Always the same layout on every event page. Posting works only while the event runs; before and after,
+          the photo button stays visible but calm and says when it opens. */}
+      <PressableScale disabled={!live} accessibilityRole="button" accessibilityState={{ disabled: !live }}
+        accessibilityLabel={live ? 'Kamera öffnen und einen Shot posten' : ended ? 'Shots posten ist vorbei' : 'Shots posten geht, sobald das Event läuft'}
+        onPress={() => setCamera(true)} scaleTo={0.98} style={styles.post}>
+        <Image source={POST_IMAGE} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityIgnoresInvertColors />
+        <LinearGradient pointerEvents="none" colors={live ? ['#0a090cf2', '#0a090c99', '#c922ab73'] : ['#0a090cf7', '#0a090cd9', '#0a090cb3']} locations={[0, 0.55, 1]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
+        <View style={styles.postCopy}>
+          <Text style={styles.postTitle}>Poste einen SHOT</Text>
+          <Text style={styles.postText}>{live ? 'Zeig allen, was hier gerade abgeht.' : ended ? 'Das Event ist vorbei.' : 'Geht los, sobald das Event läuft.'}</Text>
+        </View>
+        <View style={[styles.postButton, !live && styles.postButtonOff]}><Icon name="camera" size={24} color={live ? colors.accent : colors.faint} /></View>
+      </PressableScale>
+
+      {/* Watching: a big button with a spinning, bouncing disco ball. No numbers anywhere. */}
+      <PressableScale disabled={!cover} accessibilityRole="button" accessibilityState={{ disabled: !cover }}
+        accessibilityLabel={cover ? 'Neue Shots ansehen' : 'Gerade keine neuen Shots'} onPress={() => setOpen(unseen)} scaleTo={0.98} style={[styles.view, !cover && styles.viewEmpty]}>
+        {/* Background: the first new shot, slightly blurred and faded, so you only get a hint of it. */}
+        {cover
+          ? <>
+              <Image source={cover.source} resizeMode="cover" blurRadius={8} style={StyleSheet.absoluteFill} />
+              <LinearGradient pointerEvents="none" colors={['#0a090ca6', '#0a090c8c', '#2a1222b3']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+            </>
+          : <LinearGradient pointerEvents="none" colors={['#18171b', '#141317']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />}
+        <DiscoBall size={80} dim={!cover} />
+        <View style={styles.copy}>
+          <Text numberOfLines={1} style={styles.viewTitle}>{cover ? 'SHOTS ansehen' : 'Keine neuen SHOTS'}</Text>
+          <Text numberOfLines={2} style={styles.viewText}>{cover ? 'Echte Eindrücke von Gästen.' : live ? 'Sei der Erste von heute Nacht!' : ended ? 'Für dieses Event gibt es keine neuen.' : 'Gibt es, sobald das Event läuft.'}</Text>
+          <Text style={styles.viewHint}>Jeden SHOT siehst du nur einmal</Text>
+        </View>
+      </PressableScale>
+
       <Modal visible={open !== null} animationType="none" transparent statusBarTranslucent navigationBarTranslucent onRequestClose={close}>
-        {open && <SnapViewer items={open} author={{ name: 'Shots', label: 'Von Gästen' }} now={now} onSeen={onSeen} onClose={close} reportable hideCount />}
+        {open && <SnapViewer items={open} author={{ name: 'SHOTS', label: 'Von Gästen' }} now={now} onSeen={onSeen} onClose={close} reportable hideCount />}
       </Modal>
       <ShotCamera visible={camera} eventTitle={eventTitle} onClose={closeCamera} />
     </View>
   );
 }
 
+// Decorative symbol photo (Unsplash, see assets/events/README.md); it never stands for this event.
+const POST_IMAGE = require('../../assets/events/nightlife.jpg');
 const styles = StyleSheet.create({
-  block: { marginTop: space.xxl, gap: space.xs },
+  block: { marginTop: space.xxl, gap: space.md },
   title: { ...type.title3, color: colors.text },
-  note: { ...type.footnote, color: colors.faint },
-  actions: { flexDirection: 'row', gap: space.sm, marginTop: space.sm },
-  open: { flex: 1, height: 132, padding: space.md, borderRadius: radius.lg, overflow: 'hidden', justifyContent: 'flex-end', gap: 2, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.pink, ...squircle },
-  openEmpty: { borderColor: '#ffffff1a', backgroundColor: '#ffffff0a' },
-  openIcon: { position: 'absolute', top: space.md, left: space.md, width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff26' },
-  openIconEmpty: { backgroundColor: '#ffffff12' },
-  openTitle: { ...type.headline, color: colors.text },
-  openText: { ...type.footnote, color: '#ebebf5cc' },
-  post: { flex: 1, height: 132, padding: space.md, borderRadius: radius.lg, overflow: 'hidden', justifyContent: 'flex-end', gap: 2, ...squircle },
-  postIcon: { position: 'absolute', top: space.md, left: space.md, width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff33' },
+  post: { height: 124, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.surface, ...squircle },
+  postCopy: { flex: 1, minWidth: 0, gap: 4 },
+  postTitle: { fontSize: 22, lineHeight: 27, fontWeight: '800', letterSpacing: -0.4, color: colors.text },
   postText: { ...type.footnote, color: '#ffffffd9' },
+  postButton: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.text, boxShadow: '0 0 20px 3px #ff4ab88c' },
+  postButtonOff: { backgroundColor: '#ffffff1f', boxShadow: 'none' },
+  view: { height: 124, flexDirection: 'row', alignItems: 'center', gap: space.lg, paddingHorizontal: space.lg, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.accentLine, ...squircle },
+  viewEmpty: { borderColor: '#ffffff14' },
+  copy: { flex: 1, minWidth: 0, gap: 3 },
+  viewTitle: { fontSize: 22, lineHeight: 27, fontWeight: '800', letterSpacing: -0.4, color: colors.text, textShadowColor: '#000000aa', textShadowRadius: 8 },
+  viewText: { ...type.footnote, color: '#ffffffe6', textShadowColor: '#000000aa', textShadowRadius: 6 },
+  viewHint: { ...type.footnote, fontSize: 11, fontWeight: '600', color: colors.pink },
 });

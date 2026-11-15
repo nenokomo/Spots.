@@ -2,7 +2,7 @@
 
 Diese Fotos illustrieren das Interface. Sie zeigen keine der in der App aufgeführten Veranstaltungen. Die App lädt die Bilder aus lokalen Assets.
 
-- `nightlife.jpg`: [Quelldatei auf Unsplash](https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=720&q=85&fit=crop).
+- `nightlife.jpg`: [Quelldatei auf Unsplash](https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=720&q=85&fit=crop). Auch als Deko-Hintergrund des Buttons „Poste einen Shot“ auf der Eventseite.
 - `club.jpg`: [Quelldatei auf Unsplash](https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=720&q=85&fit=crop).
 
 Quelle: Unsplash. Es gilt die [Unsplash-Lizenz](https://unsplash.com/license). Vor einer Anbindung echter Veranstaltungen durch freigegebene Eventmedien ersetzen.

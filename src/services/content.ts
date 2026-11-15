@@ -99,7 +99,7 @@ export type ShotReportReason = typeof shotReportReasons[number]['id'];
  * three different reports hide the shot until it is reviewed.
  */
 export async function reportShot(snapId: string, reason: ShotReportReason, details: string) {
-  if (!uuid.test(snapId)) throw new Error('Test-Shots können nicht gemeldet werden.');
+  if (!uuid.test(snapId)) throw new Error('Test-SHOTS können nicht gemeldet werden.');
   if (unavailable.has('content_reports')) throw new Error('Melden ist hier noch nicht eingerichtet.');
   const { error } = await getSupabase().from('content_reports').insert({ snap_id: snapId, reason, details: details.trim().slice(0, 500) || null });
   if (error && missingSchema(error.code)) { unavailable.add('content_reports'); throw new Error('Melden ist hier noch nicht eingerichtet.'); }

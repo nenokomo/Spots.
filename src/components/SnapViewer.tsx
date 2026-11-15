@@ -23,6 +23,8 @@ type Props = {
   reportable?: boolean;
   /** Shots: one progress bar for the current picture only, so nobody can count how many there are. */
   hideCount?: boolean;
+  /** Tapping picture and name top left, e.g. to open the organizer's profile. */
+  onAuthorPress?: () => void;
 };
 
 /**
@@ -30,7 +32,7 @@ type Props = {
  * Tap right/left for next/previous, hold to pause, swipe down to close. After the last picture it closes.
  * Same technique as the Explore stories: one gesture handler, all pictures pre-mounted, a fresh progress bar per picture.
  */
-export function SnapViewer({ items, startIndex = 0, author, now, onClose, onSeen, reportable = false, hideCount = false }: Props) {
+export function SnapViewer({ items, startIndex = 0, author, now, onClose, onSeen, reportable = false, hideCount = false, onAuthorPress }: Props) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const native = Platform.OS !== 'web';
@@ -154,24 +156,25 @@ export function SnapViewer({ items, startIndex = 0, author, now, onClose, onSeen
         ))}
         <LinearGradient pointerEvents="none" colors={['#000000b3', '#00000000']} style={[styles.topShade, { height: insets.top + 110 }]} />
 
-        <View pointerEvents="none" style={[styles.top, { paddingTop: insets.top + 10 }]}>
+        <View pointerEvents="box-none" style={[styles.top, { paddingTop: insets.top + 10 }]}>
           {hideCount
-            ? <View style={styles.segments}><View style={styles.segment}><Animated.View key={bar.key} style={[styles.segmentFill, { transform: [{ scaleX: bar.progress }] }]} /></View></View>
-            : <View style={styles.segments}>
+            ? <View pointerEvents="none" style={styles.segments}><View style={styles.segment}><Animated.View key={bar.key} style={[styles.segmentFill, { transform: [{ scaleX: bar.progress }] }]} /></View></View>
+            : <View pointerEvents="none" style={styles.segments}>
             {items.map((item, segment) => (
               <View key={item.id} style={styles.segment}>
                 <Animated.View key={segment === position.index ? bar.key : segment < position.index ? 'done' : 'open'} style={[styles.segmentFill, { transform: [{ scaleX: segment < position.index ? 1 : segment > position.index ? 0 : bar.progress }] }]} />
               </View>
             ))}
           </View>}
-          <View style={styles.author}>
+          <Pressable disabled={!onAuthorPress} accessibilityRole={onAuthorPress ? 'link' : undefined} accessibilityLabel={onAuthorPress ? `Profil von ${author.name} ansehen` : undefined}
+            onPress={onAuthorPress} hitSlop={6} style={({ pressed }) => [styles.author, pressed && styles.authorPressed]} pointerEvents={onAuthorPress ? 'auto' : 'none'}>
             {author.avatar}
             <View style={styles.authorCopy}>
               <Text numberOfLines={1} style={styles.authorName}>{author.name}</Text>
               <Text numberOfLines={1} style={styles.authorMeta}>{author.label} · {snapAge(current.createdAt, now)}</Text>
             </View>
-          </View>
-          {current.test && <Text style={styles.test}>TEST · Symbolbild, nur in der Entwicklung</Text>}
+          </Pressable>
+          {current.test && <Text pointerEvents="none" style={styles.test}>TEST · Symbolbild, nur in der Entwicklung</Text>}
         </View>
         {reportable && <Pressable accessibilityRole="button" accessibilityLabel="Diesen Shot melden" onPress={() => setReporting(current)} hitSlop={8} style={[styles.report, { top: insets.top + 24 }]}>
           <Text style={styles.reportText}>Melden</Text>
@@ -201,12 +204,12 @@ function ShotReportPanel({ shotId, bottomInset, onDone }: { shotId: string; bott
         {state === 'sent'
           ? <>
               <Text accessibilityRole="alert" style={styles.panelTitle}>Danke für deine Meldung</Text>
-              <Text style={styles.panelText}>Wir prüfen den Shot. Nach mehreren Meldungen wird er sofort ausgeblendet.</Text>
+              <Text style={styles.panelText}>Wir prüfen den SHOT. Nach mehreren Meldungen wird er sofort ausgeblendet.</Text>
               <Button label="Schließen" variant="secondary" onPress={onDone} />
             </>
           : <>
-              <Text style={styles.panelTitle}>Shot melden</Text>
-              <Text style={styles.panelText}>Warum soll dieser Shot weg?</Text>
+              <Text style={styles.panelTitle}>SHOT melden</Text>
+              <Text style={styles.panelText}>Warum soll dieser SHOT weg?</Text>
               <ListGroup>
                 {shotReportReasons.map((item) => (
                   <ListRow key={item.id} title={item.label} value={reason === item.id ? '✓' : undefined}
@@ -245,8 +248,9 @@ const styles = StyleSheet.create({
   segments: { flexDirection: 'row', gap: 4 },
   segment: { flex: 1, height: 3, borderRadius: 2, backgroundColor: '#ffffff40', overflow: 'hidden' },
   segmentFill: { width: '100%', height: '100%', borderRadius: 2, backgroundColor: colors.text, transformOrigin: 'left' },
-  author: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 2 },
-  authorCopy: { flex: 1, minWidth: 0 },
+  author: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 2, paddingRight: 8, alignSelf: 'flex-start', maxWidth: '75%' },
+  authorCopy: { flexShrink: 1, minWidth: 0 },
+  authorPressed: { opacity: 0.7 },
   authorName: { color: colors.text, fontSize: 15, fontWeight: '700' },
   authorMeta: { color: '#ebebf5cc', fontSize: 12 },
   test: { color: '#ebebf5cc', fontSize: 11, paddingLeft: 2 },
