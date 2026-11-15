@@ -21,9 +21,9 @@ Registrieren, Anmelden, Passwort vergessen, Konto löschen (Pflicht bei Apple/Go
 
 ## Offen
 
-- Jacint: Mailtexte im Dashboard von Spots-Test eintragen (Authentication → Emails → Templates, Betreff steht in der ersten Zeile jeder Datei).
-- Handy-Test mit einem Wegwerf-Konto: registrieren, bestätigen, Merkliste, Passwort vergessen, Konto löschen. Hinweis: Der eingebaute Supabase-Versand schickt nur an Adressen von Mitgliedern des Supabase-Teams.
-- E-Mail-Versand über eigene Domain (Entscheidung offen, siehe Fahrplan).
+- **Mailtexte warten auf SMTP** (Entscheidung 15.11.): Supabase lässt die Mailtexte nur mit eigenem Mailserver (Custom SMTP) ändern. Die deutschen Texte liegen fertig in `supabase/templates/` und werden eingetragen, sobald der Versand über die eigene Domain steht (Authentication → Emails → Templates, Betreff steht in der ersten Zeile jeder Datei). Bis dahin verschickt Spots-Test die englischen Standard-Mails.
+- Handy-Test mit einem Wegwerf-Konto (mit den englischen Standard-Mails): registrieren, bestätigen, Merkliste, Passwort vergessen, Konto löschen. Hinweis: Der eingebaute Supabase-Versand schickt nur an Adressen von Mitgliedern des Supabase-Teams.
+- E-Mail-Versand über eigene Domain (Entscheidung offen, siehe Fahrplan). Custom SMTP erst einschalten, wenn alle Felder stimmen – halb ausgefüllt kommen keine Mails mehr an.
 - Design der Kontoseite: offen für Noyan.
 
 ## Plan für 15.11. (neuer Chat)
