@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventDataState } from '../components/EventDataState';
@@ -20,6 +20,7 @@ import { useNow } from '../hooks/useNow';
 import { useOrganizerSummary } from '../hooks/useOrganizer';
 import { organizerHref } from '../navigation/eventRoutes';
 import { formatPrice } from '../services/content';
+import { shouldTrack, trackEvent } from '../services/eventStats';
 import { sourceLabel, ticketSeller } from '../utils/eventSource';
 import { eventPhase, phaseLabel } from '../utils/eventStatus';
 
@@ -54,6 +55,9 @@ export default function EventDetailScreen() {
   const [viewer, setViewer] = useState<number | null>(null);
   const [linkError, setLinkError] = useState(false);
   const back = () => router.canGoBack() ? router.back() : router.replace('/');
+  // Statistik für Veranstalter (SQL 26): ein Aufruf pro Gerät und Tag, nur bei Veranstalter-Events.
+  const trackedId = shouldTrack(event) ? event!.id : null;
+  useEffect(() => { if (trackedId) void trackEvent(trackedId, 'view'); }, [trackedId]);
 
   if (!event || remote.error) return <View style={styles.screen}><Backdrop /><View style={[styles.state, { paddingTop: insets.top + 12 }]}>
     <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} plain style={styles.stateBack} />
@@ -79,7 +83,8 @@ export default function EventDetailScreen() {
   const primary = !ended ? ticketUrl ?? sourceUrl : undefined;
   const place = event.venue ? `${event.venue}, ${event.location}` : event.location;
 
-  async function open(url: string) {
+  async function open(url: string, ticket = false) {
+    if (ticket && trackedId) void trackEvent(trackedId, 'ticket_click');
     setLinkError(false);
     try { await Linking.openURL(url); } catch { setLinkError(true); }
   }
@@ -135,7 +140,7 @@ export default function EventDetailScreen() {
         <View style={styles.rows}>
           {point && !ended && <Row icon="map" title="Route anzeigen" detail={place} onPress={route} accessibilityLabel="Route zum Veranstaltungsort anzeigen" />}
           {!point && <Row icon="pin" title={place} />}
-          <Row icon="ticket" title={ended ? 'Event beendet' : ticketUrl ? (seller ? `Tickets bei ${seller}` : 'Tickets beim Anbieter') : sourceUrl ? `Infos & Tickets bei ${source}` : 'Noch keine Ticketinformationen'} detail={ended ? undefined : primary ? 'Öffnet den Anbieter' : undefined} onPress={primary ? () => void open(primary) : undefined} />
+          <Row icon="ticket" title={ended ? 'Event beendet' : ticketUrl ? (seller ? `Tickets bei ${seller}` : 'Tickets beim Anbieter') : sourceUrl ? `Infos & Tickets bei ${source}` : 'Noch keine Ticketinformationen'} detail={ended ? undefined : primary ? 'Öffnet den Anbieter' : undefined} onPress={primary ? () => void open(primary, true) : undefined} />
           {tags.length > 2 && <Row icon="headphones" title={tags.join(' · ')} />}
         </View>
         {linkError && <Text accessibilityRole="alert" style={styles.error}>Der Link konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
@@ -143,7 +148,7 @@ export default function EventDetailScreen() {
         {content.tickets.length > 0 && !ended && <View style={styles.block}>
           <Text style={styles.blockTitle}>Ticketarten</Text>
           {content.tickets.map((ticket) => (
-            <PressableScale key={ticket.id} accessibilityRole="button" disabled={!ticket.externalUrl || ticket.soldOut} onPress={() => ticket.externalUrl && void open(ticket.externalUrl)} style={styles.ticket}>
+            <PressableScale key={ticket.id} accessibilityRole="button" disabled={!ticket.externalUrl || ticket.soldOut} onPress={() => ticket.externalUrl && void open(ticket.externalUrl, true)} style={styles.ticket}>
               <View style={styles.rowCopy}><Text style={styles.rowTitle}>{ticket.name}</Text>{ticket.description && <Text numberOfLines={1} style={styles.rowDetail}>{ticket.description}</Text>}</View>
               <Text style={[styles.price, ticket.soldOut && styles.soldOut]}>{ticket.soldOut ? 'Ausverkauft' : formatPrice(ticket.priceCents, ticket.currency)}</Text>
             </PressableScale>
@@ -173,7 +178,7 @@ export default function EventDetailScreen() {
       <GlassBackdrop radius={0} variant="panel" />
       <View style={styles.barRow}>
         {primary
-          ? <Button label={ticketUrl ? 'Tickets kaufen' : 'Infos & Tickets'} accessibilityLabel={ticketUrl ? (seller ? `Tickets bei ${seller} kaufen` : 'Tickets beim Anbieter kaufen') : `Infos und Tickets auf der Originalseite bei ${source}`} icon="ticket" onPress={() => void open(primary)} style={styles.flex} />
+          ? <Button label={ticketUrl ? 'Tickets kaufen' : 'Infos & Tickets'} accessibilityLabel={ticketUrl ? (seller ? `Tickets bei ${seller} kaufen` : 'Tickets beim Anbieter kaufen') : `Infos und Tickets auf der Originalseite bei ${source}`} icon="ticket" onPress={() => void open(primary, true)} style={styles.flex} />
           : <View style={styles.flex}><Text numberOfLines={1} style={styles.barTitle}>{ended ? 'Event beendet' : `${timeFormat.format(start)} Uhr · ${place}`}</Text></View>}
         {point && !ended && <IconButton icon="map" accessibilityLabel="Route zum Veranstaltungsort anzeigen" onPress={route} size={52} plain style={styles.barButton} />}
       </View>

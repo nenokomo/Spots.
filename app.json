@@ -32,6 +32,14 @@
         {
           "locationWhenInUsePermission": "Spots verwendet deinen Standort, um die Karte auf deine Umgebung auszurichten."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Spots braucht Zugriff auf deine Fotos, damit du Logo und Flyer für deine Events hochladen kannst.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ]
   }

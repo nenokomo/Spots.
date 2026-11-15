@@ -19,7 +19,8 @@ export async function createOrganizer(slug: string, displayName: string): Promis
   return data;
 }
 export async function updateOrganizer(id: string, input: OrganizerProfileChanges): Promise<void> {
-  const fields = { slug: 'slug', displayName: 'display_name', biography: 'biography', city: 'city', avatarUrl: 'avatar_url', websiteUrl: 'website_url', isPublished: 'is_published' } as const;
+  // Veröffentlichen geht nur noch über Antrag und Freigabe durch das Team (SQL 26), nicht per Profil-Update.
+  const fields = { slug: 'slug', displayName: 'display_name', biography: 'biography', city: 'city', avatarUrl: 'avatar_url', websiteUrl: 'website_url' } as const;
   const row = Object.fromEntries(Object.entries(input).filter(([key]) => key in fields).map(([key, value]) => [fields[key as keyof typeof fields], value]));
   const { data, error } = await getAccountClient().from('organizers').update(row).eq('id', id).select('id');
   if (error || data?.length !== 1) throw new Error('Veranstalter konnte nicht geändert werden oder Berechtigung fehlt.');

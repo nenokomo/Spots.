@@ -31,6 +31,12 @@ function toUtc(year: number, month: number, day: number, hour: number, minute: n
   return new Date(naive - berlinOffsetMs(first));
 }
 
+/** Zeitpunkt → „TT.MM.JJJJ“ und „HH:MM“ in Berliner Zeit (Gegenstück zu parseBerlinDateTime, z. B. zum Bearbeiten). */
+export function formatBerlinInput(value: string | Date): { date: string; time: string } {
+  const parts = Object.fromEntries(berlinParts.formatToParts(new Date(value)).map((part) => [part.type, part.value]));
+  return { date: `${parts.day}.${parts.month}.${parts.year}`, time: `${parts.hour}:${parts.minute}` };
+}
+
 /** „TT.MM.JJJJ“ und „HH:MM“ in Berliner Zeit → Zeitpunkt, sonst null. */
 export function parseBerlinDateTime(date: string, time: string): Date | null {
   const d = parseDate(date);

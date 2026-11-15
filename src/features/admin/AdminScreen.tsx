@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Backdrop } from '../../components/Screen';
 import { Button, IconButton } from '../../components/ui/Button';
@@ -9,14 +9,15 @@ import { colors, gutter, radius, space, squircle, type } from '../../constants/t
 import { venueKindLabels, venueReportReasons } from '../../types/venues';
 import { useAccountSession } from '../accounts/useAccountSession';
 import {
-  approveDraft, fetchOpenDrafts, fetchOpenReports, fetchPendingVenues, rejectDraft, resolveReport, setVenueStatus,
-  type AdminDraft, type OpenReport, type PendingVenue,
+  approveDraft, fetchOpenDrafts, fetchOpenReports, fetchOrganizerQueue, fetchPendingVenues, rejectDraft, resolveReport, reviewOrganizer, setVenueStatus,
+  type AdminDraft, type OpenReport, type OrganizerRequest, type OrganizerStatus, type PendingVenue,
 } from './adminApi';
 import { NewEventSheet } from './NewEventSheet';
 import { useIsAdmin } from './useIsAdmin';
 
-type Tab = 'drafts' | 'venues' | 'reports';
-type Data = { drafts: AdminDraft[]; venues: PendingVenue[]; reports: OpenReport[] };
+type Tab = 'drafts' | 'organizers' | 'venues' | 'reports';
+type Data = { drafts: AdminDraft[]; organizers: OrganizerRequest[]; venues: PendingVenue[]; reports: OpenReport[] };
+const organizerStatusLabels: Record<OrganizerStatus, string> = { pending: 'Antrag offen', approved: 'Freigegeben', rejected: 'Abgelehnt', suspended: 'Gesperrt' };
 const when = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 const reasonLabel = (id: string) => venueReportReasons.find((item) => item.id === id)?.label ?? id;
 
@@ -32,14 +33,15 @@ export default function AdminScreen() {
   const [busy, setBusy] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [revision, setRevision] = useState(0);
+  const [notes, setNotes] = useState<Record<string, string>>({});
   const back = () => router.canGoBack() ? router.back() : router.replace('/profile');
   const allowed = admin.allowed;
 
   useEffect(() => {
     if (!allowed) return;
     let active = true;
-    Promise.all([fetchOpenDrafts(), fetchPendingVenues(), fetchOpenReports()])
-      .then(([drafts, venues, reports]) => { if (active) { setData({ drafts, venues, reports }); setError(null); } })
+    Promise.all([fetchOpenDrafts(), fetchOrganizerQueue(), fetchPendingVenues(), fetchOpenReports()])
+      .then(([drafts, organizers, venues, reports]) => { if (active) { setData({ drafts, organizers, venues, reports }); setError(null); } })
       .catch((failure: unknown) => { if (active) setError(failure instanceof Error ? failure.message : 'Laden hat nicht geklappt.'); });
     return () => { active = false; };
   }, [allowed, revision]);
@@ -65,8 +67,9 @@ export default function AdminScreen() {
     </View>;
   }
 
-  const counts: Record<Tab, number> = { drafts: data?.drafts.length ?? 0, venues: data?.venues.length ?? 0, reports: data?.reports.length ?? 0 };
-  const labels: Record<Tab, string> = { drafts: 'Entwürfe', venues: 'Orte', reports: 'Meldungen' };
+  const counts: Record<Tab, number> = { drafts: data?.drafts.length ?? 0, organizers: data?.organizers.filter((item) => item.status === 'pending').length ?? 0,
+    venues: data?.venues.length ?? 0, reports: data?.reports.length ?? 0 };
+  const labels: Record<Tab, string> = { drafts: 'Entwürfe', organizers: 'Veranstalter', venues: 'Orte', reports: 'Meldungen' };
 
   return <View style={styles.screen}>
     <Backdrop />
@@ -95,6 +98,39 @@ export default function AdminScreen() {
           <View style={styles.actions}>
             <Button label="Freigeben" size="sm" onPress={() => void run(draft.id, () => approveDraft(draft.id))} loading={busy === draft.id} disabled={!draft.venue} style={styles.flex} />
             <Button label="Ablehnen" size="sm" variant="secondary" onPress={() => void run(draft.id, () => rejectDraft(draft.id))} disabled={!!busy} style={styles.flex} />
+          </View>
+        </View>)}
+      </>}
+
+      {data && tab === 'organizers' && <>
+        <Text style={styles.small}>Einmal prüfen: Gibt es den Club an dieser Adresse wirklich (Website, Instagram, Impressum, kurzer Anruf)? Nach der Freigabe erscheinen seine Events ohne weitere Prüfung. Mail und Telefon nur für Rückfragen nutzen.</Text>
+        {data.organizers.length === 0 && <Text style={styles.muted}>Keine Anträge.</Text>}
+        {data.organizers.map((item) => <View key={item.id} style={styles.card}>
+          <View style={styles.organizerHead}>
+            {item.avatarUrl && <Image source={{ uri: item.avatarUrl }} accessibilityLabel={`Logo von ${item.displayName}`} style={styles.logo} />}
+            <View style={styles.flex}>
+              <Text style={styles.cardTitle}>{item.displayName}</Text>
+              <Text style={styles.meta}>{[organizerStatusLabels[item.status], `${item.eventCount} Events`, item.emailConfirmed ? 'E-Mail bestätigt' : 'E-Mail noch nicht bestätigt'].join(' · ')}</Text>
+            </View>
+          </View>
+          {item.address && <Text style={styles.small}>Adresse: {item.address}</Text>}
+          {item.biography && <Text style={styles.small} numberOfLines={4}>{item.biography}</Text>}
+          {item.websiteUrl && <Text style={styles.small} numberOfLines={1}>Website: {item.websiteUrl}</Text>}
+          {item.socialUrl && <Text style={styles.small} numberOfLines={1}>Social Media: {item.socialUrl}</Text>}
+          {(item.contactName || item.phone) && <Text style={styles.small}>Ansprechperson: {[item.contactName, item.phone].filter(Boolean).join(' · ')}</Text>}
+          {item.ownerEmail && <Text style={styles.small} numberOfLines={1}>E-Mail: {item.ownerEmail}</Text>}
+          {item.submittedAt && <Text style={styles.small}>Antrag vom {when.format(new Date(item.submittedAt))}</Text>}
+          {item.note && <Text style={styles.small}>Hinweis: {item.note}</Text>}
+          {(item.status === 'pending' || item.status === 'approved') && <TextInput value={notes[item.id] ?? ''} onChangeText={(text) => setNotes((all) => ({ ...all, [item.id]: text }))}
+            placeholder={item.status === 'pending' ? 'Begründung bei Ablehnung (sieht der Veranstalter)' : 'Grund für die Sperre (sieht der Veranstalter)'}
+            placeholderTextColor={colors.faint} accessibilityLabel="Hinweis an den Veranstalter" maxLength={500} style={styles.note} />}
+          <View style={styles.actions}>
+            {item.status === 'pending' && <>
+              <Button label="Freigeben" size="sm" onPress={() => void run(item.id, () => reviewOrganizer(item.id, 'approved'))} loading={busy === item.id} style={styles.flex} />
+              <Button label="Ablehnen" size="sm" variant="secondary" onPress={() => void run(item.id, () => reviewOrganizer(item.id, 'rejected', notes[item.id]))} disabled={!!busy} style={styles.flex} />
+            </>}
+            {item.status === 'approved' && <Button label="Sperren" size="sm" variant="secondary" onPress={() => void run(item.id, () => reviewOrganizer(item.id, 'suspended', notes[item.id]))} loading={busy === item.id} style={styles.flex} />}
+            {item.status === 'suspended' && <Button label="Sperre aufheben" size="sm" onPress={() => void run(item.id, () => reviewOrganizer(item.id, 'approved'))} loading={busy === item.id} style={styles.flex} />}
           </View>
         </View>)}
       </>}
@@ -151,6 +187,9 @@ const styles = StyleSheet.create({
   small: { ...type.caption, color: colors.faint },
   actions: { flexDirection: 'row', gap: space.sm, marginTop: space.sm },
   flex: { flex: 1 },
+  organizerHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  logo: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.surfaceHigh },
+  note: { ...type.footnote, color: colors.text, minHeight: 40, paddingHorizontal: space.md, borderRadius: radius.md, backgroundColor: colors.surfaceHigh, marginTop: space.sm },
   muted: { ...type.body, color: colors.muted },
   error: { ...type.footnote, color: colors.danger },
 });

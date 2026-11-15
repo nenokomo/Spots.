@@ -245,6 +245,20 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# Deutsche Mailtexte (lokal). In Spots-Test und Produktion werden sie im Dashboard eingetragen:
+# Authentication → Emails → Templates (Betreff steht jeweils in der ersten Zeile der Datei).
+[auth.email.template.confirmation]
+subject = "Bitte bestätige dein Spots-Konto"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Dein neues Passwort für Spots"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Bitte bestätige deine neue E-Mail-Adresse"
+content_path = "./supabase/templates/email_change.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"
