@@ -2,6 +2,7 @@
 
 ## Aktuelle Einstiege
 
+- [Fahrplan bis zum Release](FAHRPLAN-RELEASE.md): Entscheidungen des Teams und Etappen bis zur Store-Einreichung.
 - [Account-/Veranstaltervertrag](ORGANIZER_ARCHITECTURE.md): gemeinsame Typen, private Profile, RLS, Testprojekt-Einrichtung und nächste Auth-Schritte.
 - [Veranstalter, Navigation, Inhalte und Ticketing](CONTENT_ARCHITECTURE.md): Seitentypen, zentrale Navigationsregel, Live Snaps, Beiträge, Ticketarten und Rollout-Reihenfolge.
 - [Produktvision (Kurzfassung)](VISION.md)
