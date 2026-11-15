@@ -25,3 +25,15 @@ Registrieren, Anmelden, Passwort vergessen, Konto löschen (Pflicht bei Apple/Go
 - Handy-Test mit einem Wegwerf-Konto: registrieren, bestätigen, Merkliste, Passwort vergessen, Konto löschen. Hinweis: Der eingebaute Supabase-Versand schickt nur an Adressen von Mitgliedern des Supabase-Teams.
 - E-Mail-Versand über eigene Domain (Entscheidung offen, siehe Fahrplan).
 - Design der Kontoseite: offen für Noyan.
+
+## Plan für 15.11. (neuer Chat)
+
+Stand beim Start: Branch `backend/konten` (5 Commits) und `docs/fahrplan-release` (1 Commit) nur lokal, nicht gepusht. `main` = `155c094`, seit dem 13.11. nichts Neues von Noyan. Ticketmaster-Zeitplan in Spots-Test läuft fehlerfrei (alle 6 h HTTP 200). In Spots-Test gibt es 1 Konto (Jacint).
+
+1. **Abschluss Etappe 1** (Jacint): Mailtexte im Dashboard von Spots-Test eintragen, Handy-Test mit Wegwerf-Konto (siehe Offen). Danach `backend/konten` und `docs/fahrplan-release` pushen und nach `main` mergen.
+2. **Etappe 2 beginnen – Veranstalter-Konten (Backend zuerst)**, neuer Branch `backend/veranstalter`:
+   - Neue SQL-Datei (nächste freie Nummer prüfen, voraussichtlich 26): Veranstalter dürfen ihr Profil **nicht selbst veröffentlichen** (heute kann der Besitzer `organizers.is_published` setzen); stattdessen Antrag → Freigabe durch das Spots-Team (Admin-RPC). Nach der Freigabe erscheinen Events des Veranstalters ohne weitere Prüfung (Entscheidung im Fahrplan).
+   - Statistik-Zähler pro Event: Aufrufe, Ticket-Klicks (datensparsam, nur Summen, gegen Mehrfachzählen gebremst); Gemerkt und Snaps werden aus vorhandenen Tabellen gezählt.
+   - SQL 18 (Speicher für Logo/Flyer/Snaps) prüfen und in Spots-Test einspielen.
+   - Erst lokal (PGlite), dann Spots-Test. Produktion nicht.
+3. **Danach App**: „Veranstalter werden“, Dashboard (Profil, Events anlegen/bearbeiten, Statistiken) in App und Browser, Freigabe-Reiter im Admin-Bereich. Einfache Oberfläche, Design offen für Noyan.
