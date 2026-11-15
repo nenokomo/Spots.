@@ -143,6 +143,7 @@ create function spots_stats_private.today() returns date
 language sql stable set search_path='' as $$ select (now() at time zone 'Europe/Berlin')::date $$;
 
 -- Zählt einen Aufruf oder Ticket-Klick. Antwortet nie mit Daten; unbekannte oder private Events werden still ignoriert.
+-- Räumt nebenbei auf: Salze und Hashes von vorgestern und älter verschwinden.
 create function public.spots_track_event(p_event_id uuid, p_kind text, p_device text) returns void
 language plpgsql security definer set search_path='' as $$
 declare d date := spots_stats_private.today(); s text; inserted integer;
@@ -163,7 +164,6 @@ begin
     on conflict (event_id, day) do update set
       views = spots_stats_private.event_daily.views + excluded.views,
       ticket_clicks = spots_stats_private.event_daily.ticket_clicks + excluded.ticket_clicks;
-  -- Aufräumen: Salze und Hashes von vorgestern und älter verschwinden.
   delete from spots_stats_private.recent_hits where day < d - 1;
   delete from spots_stats_private.daily_salt where day < d - 1;
 end $$;

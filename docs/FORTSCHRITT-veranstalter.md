@@ -11,10 +11,12 @@ Branch `backend/veranstalter` (abgezweigt von `backend/konten`, weil Etappe 1 no
   - Statistik: `spots_track_event(event, 'view'|'ticket_click', geraete_kennung)` für alle; zählt nur öffentliche Veranstalter-Events, pro Gerät/Event/Art/Tag einmal. Gespeichert werden nur Tagessummen und ein Hash mit täglich neuem Salz (nach einem Tag gelöscht). Snaps zählt ein Trigger beim Hochladen. `spots_organizer_event_stats(veranstalter)` liefert Summen (Aufrufe, Ticket-Klicks, Gemerkt, Snaps) nur für Mitglieder und das Team.
   - Event-Zeilen bleiben unverändert (im Test geprüft). Konto löschen (SQL 25) funktioniert weiter.
 - Tests: `tests/organizer-review.test.cjs` (PGlite). Gesamt 168/168.
+- **Spots-Test (15.11.)**: SQL 18 (zwei private Buckets `live-snaps`, `organizer-media`, 6 Storage-Regeln) und SQL 26 eingespielt. Alle 9 Funktionen mit gleicher Prüfsumme wie die Datei. Rechte geprüft: Konten können `is_published`/`review_status` nicht setzen, `anon` darf nur zählen, Statistik-Tabellen privat. Funktionstest in einer zurückgerollten Transaktion bestanden (Antrag → Freigabe → Event öffentlich → Zählen einmal pro Gerät). Events vorher/nachher gleich (601, Prüfwert `ca4c9cb0…`).
+- SQL 18 Prüfung: Dateien liegen im Ordner des hochladenden Kontos; Löschen kann nur, wer hochgeladen hat (bei Veranstalter-Teams beachten). Hochladen/Lesen mit echten Dateien noch nicht getestet (braucht App oder Test-Konten).
 
 ## Läuft gerade
 
-- SQL 18 und 26 in Spots-Test einspielen und prüfen.
+- Nichts.
 
 ## Offen
 
