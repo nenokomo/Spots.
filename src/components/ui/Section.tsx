@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle } from 'react-native';
 import { brandDotStyle, colors, gutter, space, type } from '../../constants/theme';
 import { Icon, type IconName } from '../Icon';
 import { Button } from './Button';
@@ -29,11 +29,19 @@ export function LargeHeader({ overline, title, trailing }: { overline?: string; 
 }
 
 /** Section title with an optional action on the right. */
-export function SectionHeader({ title, note, action, onAction, inset = true }: { title: string; note?: string; action?: string; onAction?: () => void; inset?: boolean }) {
+/**
+ * Section title with a pink neon glow (white letters, pink light around them, like a club sign), so section
+ * starts catch the eye instead of blending in with the white event titles. Used for every section heading.
+ */
+export function SectionTitle({ title, style }: { title: string; style?: StyleProp<TextStyle> }) {
+  return <Text accessibilityRole="header" style={[styles.sectionTitle, style, styles.neon]}>{title}</Text>;
+}
+
+export function SectionHeader({ title, note, action, onAction, inset = true, spacious = false, compact = false }: { title: string; note?: string; action?: string; onAction?: () => void; inset?: boolean; /** More room above, e.g. between the sections in Explore. */ spacious?: boolean; /** Little room above, right under filters. */ compact?: boolean }) {
   return (
-    <View style={[styles.section, inset && styles.inset]}>
+    <View style={[styles.section, inset && styles.inset, spacious && styles.spacious, compact && styles.compact]}>
       <View style={styles.headerCopy}>
-        <Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>
+        <SectionTitle title={title} />
         {note && <Text style={styles.sectionNote}>{note}</Text>}
       </View>
       {action && onAction && (
@@ -67,7 +75,10 @@ const styles = StyleSheet.create({
   largeTitle: { ...type.largeTitle, color: colors.text },
   section: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: space.md, paddingTop: space.xxl + 4, paddingBottom: space.md },
   inset: { paddingHorizontal: gutter },
-  sectionTitle: { ...type.title2, color: colors.text },
+  spacious: { paddingTop: space.xxxl + 8 },
+  compact: { paddingTop: space.lg },
+  sectionTitle: { ...type.title2, color: colors.text, flexShrink: 1 },
+  neon: { color: colors.text, textShadowColor: colors.pink, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 14 },
   sectionNote: { ...type.footnote, color: colors.faint, marginTop: 2 },
   action: { minHeight: 30, justifyContent: 'flex-end' },
   actionText: { ...type.callout, color: colors.pink },

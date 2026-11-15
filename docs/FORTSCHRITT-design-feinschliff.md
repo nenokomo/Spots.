@@ -47,6 +47,9 @@ Stand: 15.11.2026
 - Kein „Live“-Abzeichen mehr auf Story-Kacheln und „Als Nächstes“-Karten.
 - Offen: Stadtsuche ab 1 Buchstaben braucht eine lokale Liste deutscher Städte (Open-Meteo sucht erst ab 3 Zeichen, max. 6 Treffer) – Daten nötig, Freigabe zum Download von GeoNames ausstehend.
 
+- Abschnittstitel überall mit rosa Neon-Leuchten (`SectionTitle` in `ui/Section.tsx`): Entdecken, Gemerkt, Radar, Heute Nacht, Event- und Veranstalterseite.
+- Entdecken: „Als Nächstes“ direkt unter den Kategorien, mehr Abstand zwischen den übrigen Abschnitten, Kacheln mit 10 px Abstand; Suchleiste schlägt ab 3 Buchstaben Städte vor (Open-Meteo, wie Radar).
+
 ## Als Nächstes
 
 1. Handy-Test durch Noyan; Scan-Design je nach Ergebnis anpassen (Farbe, Tempo, Strahlbreite).

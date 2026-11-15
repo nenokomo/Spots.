@@ -9,6 +9,7 @@ import { Icon } from './Icon';
 import { ShotCamera } from './ShotCamera';
 import { SnapViewer } from './SnapViewer';
 import { PressableScale } from './ui/PressableScale';
+import { SectionTitle } from './ui/Section';
 
 // Device-only memory of opened shots: id → expiry. Entries disappear with the snap after 24 h.
 const storageKey = 'spots.seen-shots.v1';
@@ -54,7 +55,7 @@ export function Shots({ snaps, live, ended, now, eventTitle }: { snaps: SnapMedi
   const cover = unseen[0];
   return (
     <View style={styles.block}>
-      <Text style={styles.title}>SHOTS</Text>
+      <SectionTitle title="SHOTS" style={styles.title} />
 
       {/* Always the same layout on every event page. Posting works only while the event runs; before and after,
           the photo button stays visible but calm and says when it opens. */}

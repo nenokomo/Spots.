@@ -16,6 +16,7 @@ import { SnapViewer } from '../components/SnapViewer';
 import { Backdrop } from '../components/Screen';
 import { Button, IconButton } from '../components/ui/Button';
 import { PressableScale } from '../components/ui/PressableScale';
+import { SectionTitle } from '../components/ui/Section';
 import { colors, gutter, radius, space, squircle, type } from '../constants/theme';
 import { useEvent } from '../hooks/useEvents';
 import { useEventContent } from '../hooks/useEventContent';
@@ -152,13 +153,13 @@ export default function EventDetailScreen() {
       <View style={styles.body}>
         {/* About tonight's event, first thing under the title. */}
         <View style={styles.block}>
-          <Text style={styles.blockTitle}>Über das Event</Text>
+          <SectionTitle title="Über das Event" style={styles.blockTitle} />
           <Text style={[styles.description, !event.description && styles.descriptionEmpty]}>{event.description ?? 'Für dieses Event liegt noch keine Beschreibung vor.'}</Text>
         </View>
 
         {/* Tickets: ticket types with prices when known, and always a clear way to buy at the provider. */}
         {!ended && <View style={styles.block}>
-          <Text style={styles.blockTitle}>Tickets</Text>
+          <SectionTitle title="Tickets" style={styles.blockTitle} />
           <View style={styles.ticketCard}>
             {content.tickets.length > 0
               ? content.tickets.map((ticket) => (
@@ -180,7 +181,7 @@ export default function EventDetailScreen() {
         </View>}
 
         <View style={styles.block}>
-          <Text style={styles.blockTitle}>Ort</Text>
+          <SectionTitle title="Ort" style={styles.blockTitle} />
           {point
             ? <PlacePreview coordinate={point} title={event.venue ?? event.location} detail={event.venue ? event.location : undefined} onRoute={ended ? undefined : route} />
             : <View style={styles.placeCard}><Icon name="pin" size={18} color={colors.pink} /><Text style={styles.placeText}>{place}</Text></View>}
