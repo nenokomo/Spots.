@@ -103,7 +103,7 @@ export default function AccountScreen() {
   return <SafeAreaView style={styles.screen}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
     <Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={() => router.canGoBack() ? router.back() : router.replace('/profile')} style={styles.back}><Icon name="back" color={colors.text} /></Pressable>
     <Text accessibilityRole="header" style={styles.title}>{title}</Text>
-    <Text style={styles.note}>{team ? 'Anmeldung nur für das Spots-Team. Konten für alle starten bald.' : 'Ein Login für dich und deine Veranstalterseiten. Private Profildaten sind nicht öffentlich.'}</Text>
+    <Text style={styles.note}>{team ? 'Anmeldung nur für das Spots-Team. Konten für alle starten bald.' : 'Private Profildaten sind nicht öffentlich.'}</Text>
     {loading && <ActivityIndicator color={colors.pink} />}
     {(error || sessionError) && <Text accessibilityRole="alert" style={styles.note}>{error ?? sessionError}</Text>}
     {message && <Text accessibilityLiveRegion="polite" style={styles.note}>{message}</Text>}
