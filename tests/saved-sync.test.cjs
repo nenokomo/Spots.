@@ -7,6 +7,15 @@ const { reconcileSavedIds, createSavedEventsSync, isSyncableId } = loaded.export
 const plain = (value) => JSON.parse(JSON.stringify(value));
 const A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', C = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
+test('local TEST events never go to the account and survive a later sign-in', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../src/services/testEvents.ts'), 'utf8');
+  const ids = [...source.matchAll(/`(f0f0f0f0-[0-9a-f-]+)\$\{n\}`/g)].map((match) => match[1]);
+  assert.ok(ids.length > 0 && ids.every((prefix) => prefix.startsWith(loaded.exports.LOCAL_TEST_ID_PREFIX)), 'TEST ids use the known prefix');
+  const testEvent = 'f0f0f0f0-0000-4000-8000-000000000003';
+  assert.equal(isSyncableId(testEvent), false);
+  assert.deepEqual(plain(reconcileSavedIds([A, testEvent], [], false)), [testEvent], 'TEST event stays on the device');
+});
+
 test('first sync merges device and account; later the account wins; local test entries stay', () => {
   assert.deepEqual(plain(reconcileSavedIds([A, 'test-1'], [B], true)), [B, A, 'test-1']);
   assert.deepEqual(plain(reconcileSavedIds([A, 'test-1'], [B], false)), [B, 'test-1'], 'removed elsewhere stays removed');

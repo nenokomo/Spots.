@@ -17,7 +17,12 @@ Registrieren, Anmelden, Passwort vergessen, Konto löschen (Pflicht bei Apple/Go
 
 ## Läuft gerade
 
-- Nichts.
+- **Handy-Test (15.11., iPhone, Expo Go gegen Spots-Test)**: Registrieren und Bestätigen klappt (Konto bestätigt). Gefunden und behoben:
+  - Gemerkte **TEST-Events** verschwanden nach erneutem Anmelden: Ihre Kennungen sehen aus wie echte, die App schickte sie ans Konto, die Datenbank ließ sie weg, danach galt die leere Konto-Liste. Jetzt bleiben TEST-Events nur auf dem Gerät (`src/services/savedEventsSync.ts`, Test in `tests/saved-sync.test.cjs`). Mit echten Events noch einmal prüfen.
+  - Links in Mails führten auf `localhost:3000`: Supabase erlaubt `exp://`-Adressen nur buchstabengenau, `exp://**` greift nicht. In Spots-Test eingetragen: `exp://192.168.178.27:8081/--/account` und `…/account?reset=1` (ändert sich mit der WLAN-Adresse des PCs).
+  - Der eingebaute Mailversand schickt nur **2 Mails pro Stunde** fürs ganze Projekt. Danach „Zu viele Anfragen“.
+- Noch offen im Handy-Test: Passwort vergessen (Mail-Limit abwarten), Merkliste mit echten Events, Konto löschen.
+- Start gegen Spots-Test ohne `.env.local` zu ändern: in PowerShell `EXPO_PUBLIC_SUPABASE_URL` und `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` setzen, dann `npx expo start --clear`.
 
 ## Offen
 

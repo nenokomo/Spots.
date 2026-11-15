@@ -1,12 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export const isSyncableId = (id: string) => uuidPattern.test(id);
+/** Lokale TEST-Events (src/services/testEvents.ts) sehen aus wie UUIDs, gibt es aber in keiner Datenbank. */
+export const LOCAL_TEST_ID_PREFIX = 'f0f0f0f0-0000-4000-8000-';
+/** Nur echte Events gehen ans Konto; TEST-Events bleiben auf dem Gerät. */
+export const isSyncableId = (id: string) => uuidPattern.test(id) && !id.toLowerCase().startsWith(LOCAL_TEST_ID_PREFIX);
 
 /**
  * Merkliste nach dem Abgleich mit dem Konto.
  * Erster Abgleich auf diesem Gerät: Gerät und Konto werden zusammengeführt.
- * Danach gilt das Konto (Löschen auf einem anderen Gerät kommt hier an); lokale Testeinträge ohne UUID bleiben.
+ * Danach gilt das Konto (Löschen auf einem anderen Gerät kommt hier an); lokale TEST-Einträge bleiben.
  */
 export function reconcileSavedIds(local: string[], server: string[], firstSync: boolean): string[] {
   const kept = firstSync ? local : local.filter((id) => !isSyncableId(id));
