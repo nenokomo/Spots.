@@ -197,7 +197,7 @@ export default function EventDetailScreen() {
             : <View style={styles.placeCard}><Icon name="pin" size={18} color={colors.pink} /><Text style={styles.placeText}>{place}</Text></View>}
         </View>
 
-        <Shots snaps={snaps.visitors} live={live} now={now} eventTitle={event.title} />
+        <Shots snaps={snaps.visitors} live={live} now={now} eventId={event.id} eventTitle={event.title} />
 
         {linkError && <Text accessibilityRole="alert" style={styles.error}>Der Link konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
         {attribution && <Link href={attribution} style={styles.source}>Infos von {source} ↗</Link>}

@@ -6,17 +6,20 @@ import { Backdrop } from '../../components/Screen';
 import { Button, IconButton } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/Section';
 import { colors, gutter, radius, space, squircle, type } from '../../constants/theme';
+import { shotReportReasons } from '../../services/content';
 import { venueKindLabels, venueReportReasons } from '../../types/venues';
 import { useAccountSession } from '../accounts/useAccountSession';
 import {
-  approveDraft, fetchOpenDrafts, fetchOpenReports, fetchOrganizerQueue, fetchPendingVenues, rejectDraft, resolveReport, reviewOrganizer, setVenueStatus,
-  type AdminDraft, type OpenReport, type OrganizerRequest, type OrganizerStatus, type PendingVenue,
+  approveDraft, fetchOpenDrafts, fetchOpenReports, fetchOrganizerQueue, fetchPendingVenues, fetchSnapQueue, rejectDraft, resolveReport, reviewOrganizer, setSnapStatus, setVenueStatus,
+  type AdminDraft, type AdminSnap, type OpenReport, type OrganizerRequest, type OrganizerStatus, type PendingVenue, type SnapStatus,
 } from './adminApi';
 import { NewEventSheet } from './NewEventSheet';
 import { useIsAdmin } from './useIsAdmin';
 
-type Tab = 'drafts' | 'organizers' | 'venues' | 'reports';
-type Data = { drafts: AdminDraft[]; organizers: OrganizerRequest[]; venues: PendingVenue[]; reports: OpenReport[] };
+type Tab = 'drafts' | 'organizers' | 'shots' | 'venues' | 'reports';
+type Data = { drafts: AdminDraft[]; organizers: OrganizerRequest[]; shots: AdminSnap[]; venues: PendingVenue[]; reports: OpenReport[] };
+const snapStatusLabels: Record<SnapStatus, string> = { visible: 'Sichtbar', hidden: 'Ausgeblendet', removed: 'Entfernt' };
+const shotReasonLabel = (id: string) => shotReportReasons.find((item) => item.id === id)?.label ?? id;
 const organizerStatusLabels: Record<OrganizerStatus, string> = { pending: 'Antrag offen', approved: 'Freigegeben', rejected: 'Abgelehnt', suspended: 'Gesperrt' };
 const when = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 const reasonLabel = (id: string) => venueReportReasons.find((item) => item.id === id)?.label ?? id;
@@ -40,8 +43,8 @@ export default function AdminScreen() {
   useEffect(() => {
     if (!allowed) return;
     let active = true;
-    Promise.all([fetchOpenDrafts(), fetchOrganizerQueue(), fetchPendingVenues(), fetchOpenReports()])
-      .then(([drafts, organizers, venues, reports]) => { if (active) { setData({ drafts, organizers, venues, reports }); setError(null); } })
+    Promise.all([fetchOpenDrafts(), fetchOrganizerQueue(), fetchSnapQueue().catch(() => []), fetchPendingVenues(), fetchOpenReports()])
+      .then(([drafts, organizers, shots, venues, reports]) => { if (active) { setData({ drafts, organizers, shots, venues, reports }); setError(null); } })
       .catch((failure: unknown) => { if (active) setError(failure instanceof Error ? failure.message : 'Laden hat nicht geklappt.'); });
     return () => { active = false; };
   }, [allowed, revision]);
@@ -68,8 +71,9 @@ export default function AdminScreen() {
   }
 
   const counts: Record<Tab, number> = { drafts: data?.drafts.length ?? 0, organizers: data?.organizers.filter((item) => item.status === 'pending').length ?? 0,
+    shots: data?.shots.filter((item) => item.reportCount > 0 || item.status !== 'visible').length ?? 0,
     venues: data?.venues.length ?? 0, reports: data?.reports.length ?? 0 };
-  const labels: Record<Tab, string> = { drafts: 'Entwürfe', organizers: 'Veranstalter', venues: 'Orte', reports: 'Meldungen' };
+  const labels: Record<Tab, string> = { drafts: 'Entwürfe', organizers: 'Veranstalter', shots: 'Shots', venues: 'Orte', reports: 'Meldungen' };
 
   return <View style={styles.screen}>
     <Backdrop />
@@ -135,6 +139,26 @@ export default function AdminScreen() {
         </View>)}
       </>}
 
+      {data && tab === 'shots' && <>
+        <Text style={styles.small}>Shots der letzten 24 Stunden, gemeldete zuerst. Sie sind sofort sichtbar; nach drei Meldungen blendet Spots sie automatisch aus. Hier prüfen und entscheiden. Wer gepostet hat, siehst du nicht.</Text>
+        {data.shots.length === 0 && <Text style={styles.muted}>Gerade keine Shots.</Text>}
+        {data.shots.map((shot) => <View key={shot.id} style={styles.card}>
+          <View style={styles.organizerHead}>
+            {shot.url ? <Image source={{ uri: shot.url }} accessibilityLabel="Shot" style={styles.shot} /> : <View style={styles.shot} />}
+            <View style={styles.flex}>
+              <Text style={styles.cardTitle} numberOfLines={2}>{shot.eventTitle ?? 'Ohne Event'}</Text>
+              <Text style={styles.meta}>{[snapStatusLabels[shot.status], shot.byOrganizer ? 'vom Club' : 'von Gast', when.format(new Date(shot.createdAt))].join(' · ')}</Text>
+              {shot.reportCount > 0 && <Text style={styles.small}>{shot.reportCount} Meldung{shot.reportCount === 1 ? '' : 'en'}: {shot.reasons.map(shotReasonLabel).join(', ')}</Text>}
+            </View>
+          </View>
+          <View style={styles.actions}>
+            {shot.status !== 'visible' && <Button label="Wieder zeigen" size="sm" variant="secondary" onPress={() => void run(shot.id, () => setSnapStatus(shot.id, 'visible'))} loading={busy === shot.id} style={styles.flex} />}
+            {shot.status === 'visible' && <Button label="Ausblenden" size="sm" variant="secondary" onPress={() => void run(shot.id, () => setSnapStatus(shot.id, 'hidden'))} loading={busy === shot.id} style={styles.flex} />}
+            {shot.status !== 'removed' && <Button label="Entfernen" size="sm" onPress={() => void run(shot.id, () => setSnapStatus(shot.id, 'removed'))} disabled={!!busy} style={styles.flex} />}
+          </View>
+        </View>)}
+      </>}
+
       {data && tab === 'venues' && <>
         <Text style={styles.small}>Ungeprüfte Orte aus OpenStreetMap (z. B. Eventlocations ohne Website). Freigeben nur, wenn der Ort echt und passend ist.</Text>
         {data.venues.length === 0 && <Text style={styles.muted}>Keine Orte zu prüfen.</Text>}
@@ -188,6 +212,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: space.sm, marginTop: space.sm },
   flex: { flex: 1 },
   organizerHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  shot: { width: 64, height: 86, borderRadius: radius.md, backgroundColor: colors.surfaceHigh },
   logo: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.surfaceHigh },
   note: { ...type.footnote, color: colors.text, minHeight: 40, paddingHorizontal: space.md, borderRadius: radius.md, backgroundColor: colors.surfaceHigh, marginTop: space.sm },
   muted: { ...type.body, color: colors.muted },

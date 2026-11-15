@@ -27,14 +27,15 @@ Spots Studio hat bewusst einen eigenen Look (`src/features/studio/theme.ts`: Gra
 
 ## Daten und Backend
 
-- **Produktion** `yhnxdeypkbzyjappuzmv` (Stand 13.11.): SQL 20–24 (Ticketmaster mit Cron alle 6 h, Orte, Admin, Partner-Anfragen). Goabase-Cron alle 2 h. Adressbuch Baden-Württemberg geladen, 1 Admin. **Ohne** SQL 15, 17–19, 25–29 (Konten, Snaps, Speicher, Veranstalter, Event-Adressen). Protokoll: [docs/FORTSCHRITT-produktion.md](docs/FORTSCHRITT-produktion.md).
-- **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15–18 und 20–29 eingespielt (Prüfsummen identisch mit den Dateien). Nicht eingespielt: **SQL 19** (Galerien). Ticketmaster-Cron aktiv.
+- **Produktion** `yhnxdeypkbzyjappuzmv` (Stand 13.11.): SQL 20–24 (Ticketmaster mit Cron alle 6 h, Orte, Admin, Partner-Anfragen). Goabase-Cron alle 2 h. Adressbuch Baden-Württemberg geladen, 1 Admin. **Ohne** SQL 15, 17–19, 25–31 (Konten, Snaps, Speicher, Veranstalter, Event-Adressen, Shots) und ohne Function `cleanup-snaps`. Protokoll: [docs/FORTSCHRITT-produktion.md](docs/FORTSCHRITT-produktion.md).
+- **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15–31 eingespielt (Prüfsummen identisch mit den Dateien). Ticketmaster-Cron aktiv; Function `cleanup-snaps` + stündlicher Aufräum-Job (SQL 31).
 - Neu in Etappe 1/2: **25** Konto löschen + Merkliste; **26** Antrag/Freigabe + datensparsame Statistik (Tagessummen, Hash mit Tagessalz); **27** öffentlicher Bucket `organizer-public` (Logos/Flyer) + Ort aus dem Adressbuch für Club-Events; **28** Kontoart bei der Registrierung (Trigger auf `auth.users`), Club-Adresse, Ansprechperson/Telefon privat; **29** Straße/Nr./PLZ an Events, Ende Pflicht für Club-Events (bestehende Zeilen unangetastet).
+- Etappe 3 (Shots, [docs/FORTSCHRITT-shots.md](docs/FORTSCHRITT-shots.md)): **19** Galerien; **30** Gäste-Shots sofort sichtbar, Team-Moderation, Aufräumen nur durch den Server; **31** stündlicher Aufräum-Job. App: „Shot posten“ mit Handy-Kamera (nur mit Konto), Melden über das Konto, Admin-Reiter „Shots“.
 - Lokale TEST-Events und TEST-Orte nur bei `__DEV__`; abschaltbar mit `EXPO_PUBLIC_SPOTS_TEST_EVENTS=0`.
 
 ## Geprüft
 
-- **193/193 Tests** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`), Expo-Lint und Typecheck ohne Fehler.
+- **203/203 Tests** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`), Expo-Lint und Typecheck ohne Fehler.
 - Handy (15.11., iPhone, Expo Go gegen Spots-Test): Registrieren + Bestätigen, Merkliste mit Konto, Konto löschen, Club-Registrierung, Studio, Club-Event mit eigener Adresse auf Radar und Entdecken, Startseite bei jedem Start.
 
 ## Nicht geprüft / bekannte Probleme
@@ -51,7 +52,7 @@ Spots Studio hat bewusst einen eigenen Look (`src/features/studio/theme.ts`: Gra
 
 - Eigener Mailserver (Domain, SMTP), deutsche Mailtexte eintragen.
 - Studio: Team-Mitglieder einladen, mehrere Clubs pro Konto, Ticketarten, Beiträge/Galerien (SQL 19), alte Bilder aufräumen.
-- Live Snaps (Etappe 3, Development Build).
+- Shots: Event-Story für Clubs (im Studio posten), Shots im Studio moderieren, Live-Kamera und Videos (Development Build).
 - Konten und Veranstalter in Produktion (eigene Runde, jeder Schritt mit Freigabe von Jacint und Noyan).
 - Rechtliches: Entwürfe in [docs/entwuerfe/](docs/entwuerfe/README.md) prüfen lassen; Datenschutz um Club-Angaben und anonyme Zählung ergänzen.
 - Release-Grundlagen (`eas.json`, Bundle-ID, Schema `spots`, Icons, Maps-Key), Englisch als zweite Sprache.

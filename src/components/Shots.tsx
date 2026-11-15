@@ -41,7 +41,7 @@ function useSeenSnaps() {
  * Deliberately no list and no numbers: one button opens all new shots, nobody sees how many there are
  * or how many people posted. While the event runs, a camera button leads to „Poste einen Shot“.
  */
-export function Shots({ snaps, live, now, eventTitle }: { snaps: SnapMedia[]; live: boolean; now: number; eventTitle: string }) {
+export function Shots({ snaps, live, now, eventId, eventTitle }: { snaps: SnapMedia[]; live: boolean; now: number; eventId: string; eventTitle: string }) {
   const { seen, markSeen } = useSeenSnaps();
   const [open, setOpen] = useState<SnapMedia[] | null>(null);
   const [camera, setCamera] = useState(false);
@@ -78,7 +78,7 @@ export function Shots({ snaps, live, now, eventTitle }: { snaps: SnapMedia[]; li
       <Modal visible={open !== null} animationType="none" transparent statusBarTranslucent navigationBarTranslucent onRequestClose={close}>
         {open && <SnapViewer items={open} author={{ name: 'Shots', label: 'Von Gästen' }} now={now} onSeen={onSeen} onClose={close} reportable hideCount />}
       </Modal>
-      <ShotCamera visible={camera} eventTitle={eventTitle} onClose={closeCamera} />
+      <ShotCamera visible={camera} eventId={eventId} eventTitle={eventTitle} onClose={closeCamera} />
     </View>
   );
 }

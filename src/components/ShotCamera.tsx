@@ -1,20 +1,54 @@
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, space, type } from '../constants/theme';
+import { useAccountSession } from '../features/accounts/useAccountSession';
+import { postShot } from '../services/content';
 import { Icon } from './Icon';
 
-type Props = { visible: boolean; eventTitle: string; onClose: () => void };
+type Props = { visible: boolean; eventId: string; eventTitle: string; onClose: () => void };
+type Notice = { title: string; text: string; signIn?: boolean } | null;
 
 /**
- * „Poste einen Shot“: camera screen for guests at a running event.
- * DESIGN ONLY: there is no camera preview or upload yet. Jacint builds the real camera (expo-camera,
- * development build), the account check and the upload; until then the shutter says so honestly.
+ * „Poste einen Shot“: camera screen for guests at a running event (design: Noyan).
+ * Shutter (Jacint): opens the phone camera (expo-image-picker, works in Expo Go), uploads the photo and posts it
+ * right away (SQL 17/30). Only with an account. A live preview inside this frame needs expo-camera and a
+ * development build later.
  */
-export function ShotCamera({ visible, eventTitle, onClose }: Props) {
-  const [notice, setNotice] = useState(false);
-  const close = () => { setNotice(false); onClose(); };
+export function ShotCamera({ visible, eventId, eventTitle, onClose }: Props) {
+  const { session } = useAccountSession();
+  const [notice, setNotice] = useState<Notice>(null);
+  const [busy, setBusy] = useState(false);
+  const close = () => { setNotice(null); onClose(); };
+
+  async function shoot() {
+    if (busy) return;
+    if (!session) {
+      setNotice({ title: 'Bitte anmelden', text: 'Shots posten geht nur mit Konto. Ansehen kannst du sie auch als Gast.', signIn: true });
+      return;
+    }
+    setNotice(null);
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      setNotice({ title: 'Kein Kamerazugriff', text: 'Erlaube Spots in den Einstellungen den Zugriff auf die Kamera.' });
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.7 });
+    if (result.canceled || !result.assets[0]) return;
+    setBusy(true);
+    try {
+      await postShot(eventId, result.assets[0]);
+      setNotice({ title: 'Dein Shot ist live', text: 'Er ist jetzt 24 Stunden auf der Eventseite zu sehen.' });
+      setTimeout(close, 1400);
+    } catch (failure) {
+      setNotice({ title: 'Hat nicht geklappt', text: failure instanceof Error ? failure.message : 'Bitte erneut versuchen.' });
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <Modal visible={visible} animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={close}>
       <View style={styles.screen}>
@@ -34,15 +68,19 @@ export function ShotCamera({ visible, eventTitle, onClose }: Props) {
           </View>
 
           <View style={styles.center}>
+            {busy && <ActivityIndicator color={colors.text} />}
             {notice && <View accessibilityRole="alert" style={styles.notice}>
-              <Text style={styles.noticeTitle}>Kamera kommt bald</Text>
-              <Text style={styles.noticeText}>Hier kannst du bald direkt von der Party einen Shot posten.</Text>
+              <Text style={styles.noticeTitle}>{notice.title}</Text>
+              <Text style={styles.noticeText}>{notice.text}</Text>
+              {notice.signIn && <Pressable accessibilityRole="button" onPress={() => { close(); router.push('/account'); }} hitSlop={8}>
+                <Text style={styles.noticeLink}>Anmelden oder registrieren</Text>
+              </Pressable>}
             </View>}
           </View>
 
           <View style={styles.bottom}>
             <Text style={styles.rules}>Nur während des Events · 24 Std. sichtbar · jeder sieht ihn nur einmal</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Foto aufnehmen" onPress={() => setNotice(true)} style={({ pressed }) => [styles.shutter, pressed && styles.shutterPressed]}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Foto aufnehmen" accessibilityState={{ busy }} disabled={busy} onPress={() => void shoot()} style={({ pressed }) => [styles.shutter, pressed && styles.shutterPressed]}>
               <View style={styles.shutterCore} />
             </Pressable>
           </View>
@@ -71,6 +109,7 @@ const styles = StyleSheet.create({
   notice: { alignItems: 'center', gap: space.xs, padding: space.lg, borderRadius: 18, backgroundColor: '#1c1b1fe6' },
   noticeTitle: { ...type.headline, color: colors.text },
   noticeText: { ...type.footnote, color: colors.muted, textAlign: 'center' },
+  noticeLink: { ...type.label, color: colors.pink, marginTop: space.xs },
   bottom: { alignItems: 'center', gap: space.lg, paddingBottom: space.xl },
   rules: { ...type.footnote, color: '#ebebf5b3', textAlign: 'center', paddingHorizontal: space.xl },
   shutter: { width: 82, height: 82, borderRadius: 41, borderWidth: 5, borderColor: colors.text, alignItems: 'center', justifyContent: 'center' },
