@@ -122,8 +122,10 @@ test('start page: first Privat/Veranstalter, then login; registering uses that c
   assert.ok(!start.includes('styles.kinds'), 'no Privat/Veranstalter switch on the form anymore');
   assert.match(start, /Als Gast fortfahren/);
   assert.match(start, /router\.replace\(accountType === 'organizer' \? '\/studio' : '\/'\)/, 'account type decides after login');
-  const tabs = read('src/app/(tabs)/_layout.tsx');
-  assert.match(tabs, /if \(!account\.session && !guest\) return <Redirect href="\/account" \/>/, 'no account and no guest → start page');
+  const root = read('src/app/_layout.tsx');
+  assert.match(root, /<Stack\.Protected guard=\{allowed\} redirectTo="\/account">\s*<Stack\.Screen name="\(tabs\)" \/>/, 'visitor tabs only with account or as guest (works on native)');
+  assert.match(root, /const allowed = !!accountClientError \|\| \(account\.session \? accountType !== 'organizer' : guest === true\);/, 'organizers never get the visitor tabs');
+  assert.ok(!read('src/app/(tabs)/_layout.tsx').includes('Redirect'), 'no redirect in the tabs layout (ignored on native)');
   const profile = read('src/screens/ProfileScreen.tsx');
   assert.ok(!profile.includes('Konto verwalten'), 'old login row removed');
   assert.match(profile, /title="Abmelden"/);

@@ -13,7 +13,7 @@ import { OrganizerSignupFields } from '../studio/OrganizerSignupFields';
 import { useAccountType } from '../studio/useAccountType';
 import { createAccountActions } from './auth';
 import { accountClientError, accountClientMode, getAccountClient } from './client';
-import { setGuestMode } from './guestMode';
+import { setGuestMode, useGuestMode } from './guestMode';
 import { useAccountSession } from './useAccountSession';
 
 type Kind = 'private' | 'organizer';
@@ -141,9 +141,18 @@ export default function AccountScreen() {
     }
   }
 
-  function continueAsGuest() {
-    void setGuestMode(true);
+  // „Als Gast fortfahren“: erst weiter, wenn die Gast-Wahl gespeichert ist und die Sperre im Hauptlayout sie kennt.
+  const guest = useGuestMode();
+  const leavingAsGuest = useRef(false);
+  useEffect(() => {
+    if (!guest || !leavingAsGuest.current) return;
+    leavingAsGuest.current = false;
     if (router.canGoBack()) router.back(); else router.replace('/');
+  }, [guest]);
+  function continueAsGuest() {
+    if (guest) { if (router.canGoBack()) router.back(); else router.replace('/'); return; }
+    leavingAsGuest.current = true;
+    void setGuestMode(true);
   }
 
   const disabled = busy || !!accountClientError;
