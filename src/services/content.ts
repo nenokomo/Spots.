@@ -1,5 +1,59 @@
+import { accountClientError, getAccountClient } from '../features/accounts/client';
 import { getSupabase } from '../lib/supabase';
 import { safeExternalUrl } from './eventAdapter';
+import { LOCAL_TEST_ID_PREFIX } from './savedEventsSync';
+
+/** Client mit der Sitzung des angemeldeten Kontos; ohne Anmeldung eine verständliche Meldung. */
+async function signedInClient(message: string) {
+  if (accountClientError) throw new Error(message);
+  const client = getAccountClient();
+  const { data } = await client.auth.getSession();
+  if (!data.session) throw new Error(message);
+  return client;
+}
+
+/** Zum Lesen: mit Sitzung, wenn angemeldet; sonst der öffentliche Client. */
+async function readClient() {
+  if (accountClientError) return getSupabase();
+  const client = getAccountClient();
+  const { data } = await client.auth.getSession().catch(() => ({ data: { session: null } }));
+  return data.session ? client : getSupabase();
+}
+
+// Nach einem neuen Shot laden offene Eventseiten ihre Shots neu.
+const snapListeners = new Set<(eventId: string) => void>();
+export function onSnapsChanged(listener: (eventId: string) => void) {
+  snapListeners.add(listener);
+  return () => { snapListeners.delete(listener); };
+}
+
+const shotTypes: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic' };
+
+/**
+ * Postet einen Shot (Foto) zu einem laufenden Event (SQL 17/30): Datei in den privaten Bucket live-snaps
+ * (Ordner = eigenes Konto), dann die Zeile. Sofort sichtbar; Melden und Moderation greifen danach.
+ */
+export async function postShot(eventId: string, image: { uri: string; mimeType?: string | null }): Promise<void> {
+  if (!uuid.test(eventId) || eventId.toLowerCase().startsWith(LOCAL_TEST_ID_PREFIX)) throw new Error('Für Test-Events können keine Shots gepostet werden.');
+  const client = await signedInClient('Zum Posten bitte zuerst anmelden.');
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) throw new Error('Zum Posten bitte zuerst anmelden.');
+  const mimeType = image.mimeType && shotTypes[image.mimeType] ? image.mimeType : 'image/jpeg';
+  const body = await fetch(image.uri).then((response) => response.arrayBuffer());
+  if (body.byteLength > 20 * 1024 * 1024) throw new Error('Das Foto ist zu groß (höchstens 20 MB).');
+  const path = `${user.id}/${Date.now().toString(36)}-${Math.floor(Math.random() * 36 ** 6).toString(36)}.${shotTypes[mimeType]}`;
+  const bucket = client.storage.from(SNAP_BUCKET);
+  const uploaded = await bucket.upload(path, body, { contentType: mimeType, upsert: false });
+  if (uploaded.error) throw new Error('Der Shot konnte nicht hochgeladen werden. Bitte erneut versuchen.');
+  const { error } = await client.from('live_snaps').insert({ event_id: eventId, media_type: 'image', storage_path: path });
+  if (error) {
+    await bucket.remove([path]).catch(() => {});
+    if (error.message?.includes('limit')) throw new Error('Du hast gerade sehr viele Shots gepostet. Bitte später erneut versuchen.');
+    if (error.code === '42501') throw new Error('Shots gehen nur, während das Event läuft.');
+    throw new Error('Der Shot konnte nicht gespeichert werden. Bitte erneut versuchen.');
+  }
+  snapListeners.forEach((listener) => listener(eventId));
+}
 
 /**
  * Read side of Live Snaps and ticket types (supabase/ops/17_content_tickets.sql).
@@ -42,7 +96,8 @@ type TicketRow = { id: string; event_id: string; name: string; description: stri
 /** Visible, unexpired snaps of an event. Expiry is enforced by RLS and re-checked here. */
 export async function fetchEventSnaps(eventId: string, now = Date.now()): Promise<LiveSnap[]> {
   if (!uuid.test(eventId) || unavailable.has('live_snaps')) return [];
-  const client = getSupabase();
+  // Gäste-Shots gibt es nur mit Konto (SQL 32): angemeldet mit der Sitzung lesen, sonst öffentlich (nur Club-Story).
+  const client = await readClient();
   const { data, error } = await client.from('live_snaps')
     .select('id,event_id,organizer_id,media_type,storage_path,caption,created_at,expires_at,by_organizer')
     .eq('event_id', eventId).eq('moderation_status', 'visible').gt('expires_at', new Date(now).toISOString())
@@ -101,7 +156,9 @@ export type ShotReportReason = typeof shotReportReasons[number]['id'];
 export async function reportShot(snapId: string, reason: ShotReportReason, details: string) {
   if (!uuid.test(snapId)) throw new Error('Test-SHOTS können nicht gemeldet werden.');
   if (unavailable.has('content_reports')) throw new Error('Melden ist hier noch nicht eingerichtet.');
-  const { error } = await getSupabase().from('content_reports').insert({ snap_id: snapId, reason, details: details.trim().slice(0, 500) || null });
+  // Melden braucht die Sitzung des Kontos (der öffentliche Client hat keine).
+  const client = await signedInClient('Zum Melden bitte zuerst anmelden.');
+  const { error } = await client.from('content_reports').insert({ snap_id: snapId, reason, details: details.trim().slice(0, 500) || null });
   if (error && missingSchema(error.code)) { unavailable.add('content_reports'); throw new Error('Melden ist hier noch nicht eingerichtet.'); }
   if (error?.code === '23505') return; // already reported by this account
   if (error?.code === '42501') throw new Error('Zum Melden bitte zuerst anmelden.');

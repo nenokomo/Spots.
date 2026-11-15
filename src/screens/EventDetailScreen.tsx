@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Image, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventDataState } from '../components/EventDataState';
@@ -19,11 +19,13 @@ import { PressableScale } from '../components/ui/PressableScale';
 import { SectionTitle } from '../components/ui/Section';
 import { colors, gutter, radius, space, squircle, type } from '../constants/theme';
 import { useEvent } from '../hooks/useEvents';
+import { useEventAddress } from '../hooks/useEventAddress';
 import { useEventContent } from '../hooks/useEventContent';
 import { useNow } from '../hooks/useNow';
 import { useOrganizerSummary } from '../hooks/useOrganizer';
 import { organizerHref } from '../navigation/eventRoutes';
 import { formatPrice } from '../services/content';
+import { shouldTrack, trackEvent } from '../services/eventStats';
 import { sourceLabel, ticketSeller } from '../utils/eventSource';
 import { eventPhase } from '../utils/eventStatus';
 import { eventSnaps } from '../utils/stories';
@@ -70,6 +72,11 @@ export default function EventDetailScreen() {
   const [linkError, setLinkError] = useState(false);
   const closeStory = useCallback(() => { setStory(false); setStoryWatched(true); }, []);
   const back = () => router.canGoBack() ? router.back() : router.replace('/');
+  // Statistik für Veranstalter (SQL 26): ein Aufruf pro Gerät und Tag, nur bei Veranstalter-Events.
+  const trackedId = shouldTrack(event) ? event!.id : null;
+  useEffect(() => { if (trackedId) void trackEvent(trackedId, 'view'); }, [trackedId]);
+  // Adresse von Club-Events (SQL 29); sonst bleibt die bisherige Ortszeile.
+  const address = useEventAddress(event?.id, event?.organizerId, event?.location ?? null);
 
   if (!event || remote.error) return <View style={styles.screen}><Backdrop /><View style={[styles.state, { paddingTop: insets.top + 12 }]}>
     <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} plain style={styles.stateBack} />
@@ -91,11 +98,15 @@ export default function EventDetailScreen() {
   const tags = [...new Set([...(event.genres ?? []), ...event.categories])];
   const snaps = eventSnaps(event, content.snaps, now);
   const posterHeight = Math.min(height * 0.6, width * 1.3);
-  const place = event.venue ? `${event.venue}, ${event.location}` : event.location;
+  // Mit Adresse (Club-Events, SQL 29) steht die volle Anschrift da, sonst Ort und Stadt.
+  const place = address ? [event.venue, address.street, address.postcodeCity].filter(Boolean).join(', ')
+    : event.venue ? `${event.venue}, ${event.location}` : event.location;
+  const placeDetail = address ? `${address.street}, ${address.postcodeCity}` : event.venue ? event.location : undefined;
   const when = `${shortDay.format(start)} · ${timeFormat.format(start)}${end ? `–${timeFormat.format(end)}` : ''} Uhr`;
   const attribution = event.sourceName?.toLowerCase() === 'goabase' ? sourceUrl ?? 'https://www.goabase.net/' : sourceUrl;
 
-  async function open(url: string) {
+  async function open(url: string, ticket = false) {
+    if (ticket && trackedId) void trackEvent(trackedId, 'ticket_click');
     setLinkError(false);
     try { await Linking.openURL(url); } catch { setLinkError(true); }
   }
@@ -109,8 +120,8 @@ export default function EventDetailScreen() {
   }
   // One clear main action: tickets, otherwise the source page, otherwise the route.
   const main = ended ? null
-    : ticketUrl ? { label: 'Tickets kaufen', icon: 'ticket' as const, a11y: seller ? `Tickets bei ${seller} kaufen` : 'Tickets beim Anbieter kaufen', run: () => void open(ticketUrl) }
-    : sourceUrl ? { label: 'Infos & Tickets', icon: 'ticket' as const, a11y: `Infos und Tickets auf der Originalseite bei ${source}`, run: () => void open(sourceUrl) }
+    : ticketUrl ? { label: 'Tickets kaufen', icon: 'ticket' as const, a11y: seller ? `Tickets bei ${seller} kaufen` : 'Tickets beim Anbieter kaufen', run: () => void open(ticketUrl, true) }
+    : sourceUrl ? { label: 'Infos & Tickets', icon: 'ticket' as const, a11y: `Infos und Tickets auf der Originalseite bei ${source}`, run: () => void open(sourceUrl, true) }
     : point ? { label: 'Route anzeigen', icon: 'map' as const, a11y: 'Route zum Veranstaltungsort anzeigen', run: route }
     : null;
 
@@ -164,7 +175,7 @@ export default function EventDetailScreen() {
             {content.tickets.length > 0
               ? content.tickets.map((ticket) => (
                   <PressableScale key={ticket.id} accessibilityRole="button" accessibilityLabel={`${ticket.name}, ${ticket.soldOut ? 'ausverkauft' : formatPrice(ticket.priceCents, ticket.currency)}${ticket.externalUrl && !ticket.soldOut ? ', kaufen' : ''}`}
-                    disabled={!ticket.externalUrl || ticket.soldOut} onPress={() => ticket.externalUrl && void open(ticket.externalUrl)} scaleTo={0.98} style={styles.ticket}>
+                    disabled={!ticket.externalUrl || ticket.soldOut} onPress={() => ticket.externalUrl && void open(ticket.externalUrl, true)} scaleTo={0.98} style={styles.ticket}>
                     <View style={styles.flex}><Text style={styles.ticketName}>{ticket.name}</Text>{ticket.description && <Text numberOfLines={1} style={styles.ticketDetail}>{ticket.description}</Text>}</View>
                     <Text style={[styles.price, ticket.soldOut && styles.soldOut]}>{ticket.soldOut ? 'Ausverkauft' : formatPrice(ticket.priceCents, ticket.currency)}</Text>
                     {ticket.externalUrl && !ticket.soldOut && <View style={styles.buyPill}><Text style={styles.buyPillText}>Kaufen</Text></View>}
@@ -176,18 +187,18 @@ export default function EventDetailScreen() {
                 </View>}
             {(ticketUrl ?? sourceUrl) && <Button label={ticketUrl ? 'Tickets kaufen' : 'Zu den Tickets'} icon="ticket"
               accessibilityLabel={ticketUrl ? (seller ? `Tickets bei ${seller} kaufen` : 'Tickets beim Anbieter kaufen') : `Tickets und Infos bei ${source}`}
-              onPress={() => void open((ticketUrl ?? sourceUrl)!)} />}
+              onPress={() => void open((ticketUrl ?? sourceUrl)!, true)} />}
           </View>
         </View>}
 
         <View style={styles.block}>
           <SectionTitle title="Ort" style={styles.blockTitle} />
           {point
-            ? <PlacePreview coordinate={point} title={event.venue ?? event.location} detail={event.venue ? event.location : undefined} onRoute={ended ? undefined : route} />
+            ? <PlacePreview coordinate={point} title={event.venue ?? event.location} street={address?.street} detail={address ? address.postcodeCity : placeDetail} onRoute={ended ? undefined : route} />
             : <View style={styles.placeCard}><Icon name="pin" size={18} color={colors.pink} /><Text style={styles.placeText}>{place}</Text></View>}
         </View>
 
-        <Shots snaps={snaps.visitors} live={live} ended={ended} now={now} eventTitle={event.title} />
+        <Shots snaps={snaps.visitors} live={live} ended={ended} now={now} eventId={event.id} eventTitle={event.title} />
 
         {linkError && <Text accessibilityRole="alert" style={styles.error}>Der Link konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
         {attribution && <Link href={attribution} style={styles.source}>Infos von {source} ↗</Link>}

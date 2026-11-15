@@ -8,11 +8,20 @@ function load(file,dependencies={}){
  return module.exports;
 }
 const {createAccountActions}=load('src/features/accounts/auth.ts');
-const {accountConfigurationError}=load('src/features/accounts/configuration.ts');
-test('account configuration rejects production, lookalike domains, missing configuration and secret-shaped keys',()=>{
- for(const url of [undefined,'https://yhnxdeypkbzyjappuzmv.supabase.co','https://nfomkdvotqtlyymomksb.supabase.co.evil.example','http://nfomkdvotqtlyymomksb.supabase.co'])assert(accountConfigurationError(url,'sb_publishable_fixture'));
+const {accountConfigurationError,accountMode,accountProject}=load('src/features/accounts/configuration.ts');
+test('account configuration rejects lookalike domains, missing configuration and secret-shaped keys',()=>{
+ for(const url of [undefined,'https://example.supabase.co','https://nfomkdvotqtlyymomksb.supabase.co.evil.example','http://nfomkdvotqtlyymomksb.supabase.co','https://yhnxdeypkbzyjappuzmv.supabase.co.evil.example'])assert(accountConfigurationError(url,'sb_publishable_fixture'));
  assert(accountConfigurationError('https://nfomkdvotqtlyymomksb.supabase.co','service-role-placeholder'));
+ assert(accountConfigurationError('https://yhnxdeypkbzyjappuzmv.supabase.co','sb_secret_placeholder'));
  assert.equal(accountConfigurationError('https://nfomkdvotqtlyymomksb.supabase.co','sb_publishable_fixture'),null);
+});
+test('Spots-Test has full accounts; production only the team login; sessions are kept per project',()=>{
+ assert.equal(accountMode('https://nfomkdvotqtlyymomksb.supabase.co'),'full');
+ assert.equal(accountMode('https://yhnxdeypkbzyjappuzmv.supabase.co'),'team');
+ assert.equal(accountMode('https://example.supabase.co'),null);
+ assert.equal(accountConfigurationError('https://yhnxdeypkbzyjappuzmv.supabase.co','sb_publishable_fixture'),null);
+ assert.equal(accountProject(' https://yhnxdeypkbzyjappuzmv.supabase.co '),'yhnxdeypkbzyjappuzmv');
+ assert.notEqual(accountProject('https://yhnxdeypkbzyjappuzmv.supabase.co'),accountProject('https://nfomkdvotqtlyymomksb.supabase.co'));
 });
 test('one Auth SDK handles signup, email-confirmation state, password login, PKCE and local logout without organizer metadata',async()=>{
  const calls=[];
@@ -37,6 +46,31 @@ test('invalid credentials stop before SDK calls; upstream errors are not exposed
  await assert.rejects(actions.signIn('user@example.invalid','eightchars'),error=>!error.message.includes('sensitive'));
  await assert.rejects(actions.register('user@example.invalid','eightchars','meine-app://account'),/Registrierung nicht möglich/);
  await assert.rejects(actions.confirm('bad-code'),/ungültig/);await assert.rejects(actions.signOut(),/Abmeldung fehlgeschlagen/);
+});
+test('password reset never reveals accounts, new passwords need eight characters, deleting removes the account then the local session',async()=>{
+ const calls=[];
+ const record=(name,result={error:null})=>async(...args)=>{calls.push({name,args});return result;};
+ const auth={resetPasswordForEmail:record('reset'),updateUser:record('update',{data:{},error:null}),signOut:record('signOut')};
+ const actions=createAccountActions({auth,rpc:record('rpc')});
+ await actions.requestPasswordReset(' user@example.invalid ','meine-app://account?reset=1');
+ const plain=v=>JSON.parse(JSON.stringify(v));
+ assert.deepEqual(plain(calls[0].args),['user@example.invalid',{redirectTo:'meine-app://account?reset=1'}]);
+ await assert.rejects(actions.requestPasswordReset('kein-mail','meine-app://account'),/gültige E-Mail/);
+ await assert.rejects(actions.updatePassword('short'),/acht Zeichen/);
+ await actions.updatePassword('eightchars');
+ assert.deepEqual(plain(calls[1].args),[{password:'eightchars'}]);
+ await actions.deleteAccount();
+ assert.deepEqual(calls.slice(2).map(c=>c.name),['rpc','signOut']);
+ assert.equal(calls[2].args[0],'spots_delete_my_account');
+ assert.deepEqual(plain(calls[3].args),[{scope:'local'}]);
+ assert.equal(calls.length,4,'invalid input made no SDK calls');
+ // Fehler: Rate-Limit verständlich, sonst neutral; misslungenes Löschen meldet nichts als erledigt und meldet nicht ab.
+ const limited=createAccountActions({auth:{resetPasswordForEmail:async()=>({error:{status:429,message:'secret upstream'}})}});
+ await assert.rejects(limited.requestPasswordReset('user@example.invalid','x'),error=>/Zu viele/.test(error.message)&&!error.message.includes('secret'));
+ let signedOut=false;
+ const failing=createAccountActions({auth:{signOut:async()=>{signedOut=true;return {error:null};}},rpc:async()=>({error:{message:'secret'}})});
+ await assert.rejects(failing.deleteAccount(),/nicht gelöscht/);
+ assert.equal(signedOut,false);
 });
 test('public organizer reader projects no private identity and explicitly filters published Spots-owned data',async()=>{
  const calls=[];

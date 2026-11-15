@@ -16,6 +16,7 @@ export default function TabLayout() {
   const { width } = useWindowDimensions();
   const barWidth = Math.min(360, width - 32);
   const sideInset = (width - barWidth) / 2;
+  // Wer hierher darf (Konto privat oder Gast), regelt Stack.Protected in src/app/_layout.tsx.
   return (
     <Tabs screenOptions={{
       headerShown: false,

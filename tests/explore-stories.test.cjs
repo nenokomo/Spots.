@@ -14,6 +14,8 @@ require.extensions['.ts'] = (module, filename) => {
   });
   module._compile(result.outputText, filename);
 };
+// Wie in der fertigen App (Release): keine TEST-Bilder aus der Entwicklung.
+globalThis.__DEV__ = false;
 const { eventDayLabel, eventTimeLabel } = require('../src/utils/events.ts');
 const { eventStoryMedia, remoteImageUri } = require('../src/utils/stories.ts');
 

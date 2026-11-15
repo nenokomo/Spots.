@@ -1,70 +1,66 @@
 # Projektstatus – Spots
 
-Stand: 11.11.2026 (abends). Diese Datei beschreibt nur den **aktuellen** Stand. Arbeitsprotokoll der laufenden Runde: [docs/FORTSCHRITT.md](docs/FORTSCHRITT.md). Frühere Runden: [Redesign-Runden bis 11.11.](docs/history/PROJECT_STATUS_REDESIGN_2026-11.md) · [ältere Geschichte](docs/history/PROJECT_STATUS_HISTORY.md) · [Dokumentationsindex](docs/README.md)
+Stand: 15.11.2026 (abends). Diese Datei beschreibt nur den **aktuellen** Stand. Fahrplan bis zum Release: [docs/FAHRPLAN-RELEASE.md](docs/FAHRPLAN-RELEASE.md). Arbeitsprotokolle: [Konten](docs/FORTSCHRITT-konten.md) · [Veranstalter](docs/FORTSCHRITT-veranstalter.md) · [Produktion](docs/FORTSCHRITT-produktion.md). Frühere Runden: [Redesign bis 11.11.](docs/history/PROJECT_STATUS_REDESIGN_2026-11.md) · [ältere Geschichte](docs/history/PROJECT_STATUS_HISTORY.md) · [Dokumentationsindex](docs/README.md)
 
 ## Branches
 
 | Branch | Inhalt | Zustand |
 |---|---|---|
-| `main` | Gemeinsamer Stand des Teams: Designsystem, Veranstalterseiten, Inhalts-Backend vorbereitet, Redesign als Grunddesign (mit Noyan abgestimmt) | gepusht |
-| `feature/event-sources` | **Neu:** Ticketmaster-Import, Club-Verzeichnis (OpenStreetMap), Admin-Bereich, Doku-Entwürfe | lokal, **nicht gepusht**, nicht gemergt |
-| `feature/design-refresh`, `feature/organizer-auth` | ältere Zweige, in `main` enthalten | gepusht |
+| `main` | Gemeinsamer Stand: Redesign, Ticketmaster, Adressbuch, Admin-Bereich, Team-Anmeldung in Produktion, **Etappe 1 (Konten für alle)** und **Etappe 2 (Veranstalter, Spots Studio)** | gepusht |
+| `backend/konten`, `backend/veranstalter`, `docs/fahrplan-release` | in `main` enthalten (15.11.) | gepusht |
 
-Neue Arbeit startet als eigener Branch von `main`. Stand vor dem Redesign: Commit `489ac06`.
+Neue Arbeit startet als eigener Branch von `main` (`backend/<thema>`, `design/<thema>`).
 
 ## Was die App kann
 
-Auf `main`:
-- **Vier Tabs**: Radar, Entdecken, Gemerkt, Profil.
-- **Radar**: Vollbildkarte mit Radar-Scan, Pins mit Eventbild (läuft / startet heute später), Vorschau-Box, Panel mit Liste und Entfernung, „Alle“ → „Heute Nacht“ (`/today`). Umkreis Standard 30 km. Auf `design/feinschliff`: Start am eigenen Standort, Umkreis 10 km, Button „Filter“, neuer Kreis-Scan um den Standort-Punkt, Infokasten direkt am Pin.
-- **Entdecken**: Suche, Genre, Datum, Ort/Umkreis, Kalender, „Als Nächstes“, Story-Kacheln. „Gehypt“ nur in der Entwicklung. Auf `design/feinschliff`: Kacheln und Story-Ansicht im Snapchat-Stil (Tippen = Bilder, Story wiederholt sich, Hochwischen = nächster Veranstalter, Ziehen nach unten/links/rechts = schließen, Story wird dabei kleiner); „Heute“ zeigt dieselben Events wie das Radar (auch laufende); kein „Live“-Abzeichen auf Kacheln; mehrere Bilder pro Story vorerst nur als TEST-Bilder in der Entwicklung (echte Bilder: Daten nötig von Jacint).
-- **Eventdetail**, **Veranstalterseite** (in Produktion noch leer), **Gemerkt** (nur lokal), **Konto** unter `/account` (nur mit Testkonfiguration).
-  Auf `design/feinschliff`: Eventseite neu und bei jedem Event gleich aufgebaut – rundes Bild oben (Veranstalter mit Event-Story, 24 h beliebig oft; sonst Eventbild), Beschreibung, Tickets (Kauf beim Anbieter), Karten-Vorschau mit Adresse, **SHOTS** von Gästen (jeder nur einmal, melden, keine Zahlen, Discokugel-Button) und Kamera-Ansicht „Poste einen SHOT“ (nur Design, Posten nur während des Events). Gefüllte Buttons im Verlauf „Orchidee“ (Beere → Violett). Daten nötig von Jacint: SQL 17, Upload, Kamera, Adressen.
-
-Zusätzlich auf `feature/event-sources`:
-- **Filter „Hip-Hop“ und „Konzerte“**; Eventseite „Tickets bei Ticketmaster“.
-- **Orte (Clubs)**: Entscheidung Jacint + Noyan (13.11.): **keine Clubs ohne Event** – keine Club-Punkte auf dem Radar, kein Clubs-Bereich in Entdecken, keine Liste `/clubs` (Branch `backend/clubs-nur-mit-event`). Die Ortsdaten bleiben als Adressbuch für den Admin-Bereich. Ortsseite `/venue/[id]` (Events des Ortes, „Fehler melden“) bleibt, ist aber noch nirgends verlinkt.
-- **Admin-Bereich `/admin`** (nur Konto mit Admin-Rolle): Events von Hand anlegen (immer mit Ort und Herkunft), Entwürfe freigeben/ablehnen, ungeprüfte Orte freigeben/ausblenden, Meldungen bearbeiten.
-- Ohne die neuen Tabellen (Produktion) bleiben Clubs und Admin unsichtbar; nichts bricht.
+- **Besucher-App** – vier Tabs: Radar, Entdecken, Gemerkt, Profil. Eventdetail, Veranstalterseite, Ortsseite `/venue/[id]` (noch nirgends verlinkt). Filter inkl. Hip-Hop und Konzerte. Clubs erscheinen nur mit Event (Entscheidung 13.11.).
+- **Radar** (Design Noyan, 15.11.): Start am eigenen Standort, Umkreis 10 km, Button „Filter“, Kreis-Scan um den Standort-Punkt, Infokasten direkt am Pin.
+- **Design allgemein** (Noyan, 16.11.): Abschnittstitel mit rosa Neon-Leuchten (`SectionTitle`), gefüllte Buttons im Verlauf „Orchidee“ (Beere → Violett).
+- **Entdecken** (Design Noyan): Story-Kacheln und Story-Ansicht im Snapchat-Stil (Tippen = Bilder, nach dem letzten von vorn; Hochwischen = nächster Veranstalter; Ziehen nach unten/links/rechts = schließen, die Story wird dabei kleiner); „Heute“ zeigt dieselben Events wie das Radar (auch laufende); Suchleiste schlägt ab 3 Buchstaben Städte vor; mehrere Bilder pro Story vorerst nur als TEST-Bilder (echte Bilder: Daten nötig von Jacint).
+- **Eventseite** (Design Noyan): bei jedem Event gleich aufgebaut – rundes Bild oben (Veranstalter mit Event-Story 24 h, sonst Eventbild), Beschreibung, Tickets, Karten-Vorschau mit Adresse (SQL 29), **SHOTS** von Gästen (Bild-Button „Poste einen SHOT“, Discokugel-Button, melden, keine Zahlen) und Kamera-Ansicht mit Runterziehen (Kamera und Upload: Jacint). Zählt Aufrufe und Ticket-Klicks für die Studio-Statistik.
+- **Startseite** (`/account`): Ohne Konto startet die App mit „Wie nutzt du Spots?“ – **Privat**, **Veranstalter** oder „Als Gast fortfahren“; danach Anmelden, „Passwort vergessen?“, „Neues Konto erstellen“ / „Club registrieren“ (Kontoart aus der Auswahl). Gast gilt nur bis zum nächsten App-Start. Sperre über `Stack.Protected` in `src/app/_layout.tsx`. Profil: unten Abmelden und Konto löschen. Merkliste mit Konto (lokale TEST-Events bleiben auf dem Gerät). Produktion: nur Anmelden + Gast.
+- **Spots Studio** (`/studio`, nur Veranstalter-Konten): Übersicht mit Freigabe-Stand, Events anlegen/bearbeiten/absagen (eigene Adresse → Kartenposition über OpenStreetMap oder Ort aus dem Adressbuch, Ende Pflicht, Flyer-Upload, „Live in Spots“ erst nach Freigabe), Statistik (Aufrufe, Gemerkt, Ticket-Klicks, Snaps), Club-Profil mit Logo und privater Ansprechperson. Veranstalter sehen die Besucher-App nicht; private Konten kommen nicht ins Studio.
+- **Admin-Bereich `/admin`** (Admin-Rolle): Event-Entwürfe, Veranstalter-Anträge (freigeben, ablehnen, sperren), Orte, Meldungen.
+- **Produktion**: nur Team-Anmeldung (keine Registrierung), Admin für das Team.
 
 **Design** (`src/constants/theme.ts`): fast schwarzer Hintergrund mit Pflaumen-Verlauf, iOS-artige Grauflächen, Akzent `#c922ab`. Neue Seiten nutzen die vorhandenen Bausteine; Feinschliff ist Noyans Bereich.
+Spots Studio hat bewusst einen eigenen Look (`src/features/studio/theme.ts`: Graphit, Neon-Lime, Pink nur als Marke) – Vorschlag von Jacint, Gestaltung offen für Noyan.
 
 ## Daten und Backend
 
-- **Produktion** `yhnxdeypkbzyjappuzmv`: unverändert. Events nur aus dem Goabase-Import (Cron alle 2 h), rund 30 veröffentlicht.
-- **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15/16 (Konten), **neu 20** (Ticketmaster-Backend), **21** (Orte + Meldungen; 56 echte Orte um Karlsruhe geladen), **22** (Admin, Entwürfe, `events.venue_id`). Prüfsummen aller neuen Funktionen identisch mit den Dateien; bestehende Events unverändert. Ein Admin-Konto (Jacint) eingetragen, Anmeldung klappt. **Ticketmaster-Import läuft** (Function bereitgestellt, 506 Events, 475 sichtbar; auf dem Handy bestätigt), aber noch ohne Zeitplan.
-- SQL 17 (Live Snaps, Meldungen, Ticketarten), 18, 19: **nirgends ausgeführt**.
-- Ticketmaster-Import (`supabase/functions/import-ticketmaster/`): lokal Ende-zu-Ende geprüft (506 Musik-Events in Deutschland, 30 Tage). Details: [docs/TICKETMASTER_IMPORT.md](docs/TICKETMASTER_IMPORT.md).
-- Club-Verzeichnis: nur noch Adressbuch für Events (siehe oben). Deutschlandweiter OSM-Import gestoppt; Abrufe liegen nur lokal in `supabase/.temp/osm/`.
+- **Produktion** `yhnxdeypkbzyjappuzmv` (Stand 13.11.): SQL 20–24 (Ticketmaster mit Cron alle 6 h, Orte, Admin, Partner-Anfragen). Goabase-Cron alle 2 h. Adressbuch Baden-Württemberg geladen, 1 Admin. **Ohne** SQL 15, 17–19, 25–32 (Konten, Snaps, Speicher, Veranstalter, Event-Adressen, Shots) und ohne Function `cleanup-snaps`. Protokoll: [docs/FORTSCHRITT-produktion.md](docs/FORTSCHRITT-produktion.md).
+- **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15–32 eingespielt (Prüfsummen identisch mit den Dateien). Ticketmaster-Cron aktiv; Function `cleanup-snaps` + stündlicher Aufräum-Job (SQL 31).
+- Neu in Etappe 1/2: **25** Konto löschen + Merkliste; **26** Antrag/Freigabe + datensparsame Statistik (Tagessummen, Hash mit Tagessalz); **27** öffentlicher Bucket `organizer-public` (Logos/Flyer) + Ort aus dem Adressbuch für Club-Events; **28** Kontoart bei der Registrierung (Trigger auf `auth.users`), Club-Adresse, Ansprechperson/Telefon privat; **29** Straße/Nr./PLZ an Events, Ende Pflicht für Club-Events (bestehende Zeilen unangetastet).
+- Etappe 3 (Shots, [docs/FORTSCHRITT-shots.md](docs/FORTSCHRITT-shots.md)): **19** Galerien; **30** Gäste-Shots sofort sichtbar, Team-Moderation, Aufräumen nur durch den Server; **31** stündlicher Aufräum-Job; **32** Gäste-Shots nur mit Konto sichtbar (Club-Story für alle). App: „Shot posten“ mit Handy-Kamera (nur mit Konto), Gäste sehen einen Hinweis mit Anmelde-Link, Melden über das Konto, Admin-Reiter „Shots“.
 - Lokale TEST-Events und TEST-Orte nur bei `__DEV__`; abschaltbar mit `EXPO_PUBLIC_SPOTS_TEST_EVENTS=0`.
 
 ## Geprüft
 
-- `feature/event-sources`: **139/139 Tests** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`), Expo-Lint und Typecheck ohne Fehler. Web-Vorschau 375 × 812: neue Filter, Clubliste, Ortsseite, Melden-Sheet (Test-Ort), Admin-Sperrseite.
-- Handy-Test durch den Nutzer (11.11.) nur für den Redesign-Stand auf `main`, nicht für die neuen Funktionen.
+- **208/208 Tests** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`), Expo-Lint und Typecheck ohne Fehler.
+- Handy (15.11., iPhone, Expo Go gegen Spots-Test): Registrieren + Bestätigen, Merkliste mit Konto, Konto löschen, Club-Registrierung, Studio, Club-Event mit eigener Adresse auf Radar und Entdecken, Startseite bei jedem Start.
 
 ## Nicht geprüft / bekannte Probleme
 
-- **Freigabe-Ablauf mit echtem Admin-Konto** nicht durchgespielt; neue Seiten nicht auf iOS/Android getestet.
-- Radar zählt nur Events mit Endzeit als „live“; Ticketmaster-Konzerte haben meist keine (Produktentscheidung offen).
-- Erotik-Filter für Orte greift nur bei eindeutigen Merkmalen; Stichproben nötig.
+- **Passwort vergessen** auf dem Handy noch nicht zu Ende getestet (Mail-Limit).
+- Eingebauter Supabase-Mailversand: **nur 2 Mails pro Stunde** und nur an Supabase-Team-Adressen; deutsche Mailtexte erst mit eigenem Mailserver (SMTP).
+- Rücksprung aus Mails: `exp://`-Adressen müssen in Supabase **genau** eingetragen sein (`exp://**` greift nicht); ändert sich mit der WLAN-Adresse.
+- Kartenposition von Club-Events kommt aus OpenStreetMap (Nominatim) und kann etwas daneben liegen; die Adresse steht auf der Eventseite. Datenschutz: Event-Adressen gehen beim Speichern an Nominatim.
+- Statistik im Studio noch nicht auf dem Handy geprüft.
+- Radar zählt nur Events mit Endzeit als „live“; Ticketmaster-Konzerte haben meist keine.
 - Produktion: pro App-Start 2–3 erwartete 400-Antworten (organizer_id-Abfrage), bis SQL 15 dort eingespielt ist.
-- Goabase liefert Flyer auch in `medium/large/full` (Import nutzt `small`) und **kein Genre-Feld** (nur Freitext → kein Genre ohne Raten). Umstellung der Bildgröße wäre ein neuer Release des eingefrorenen Imports (Jacint).
-- Aus den Doku-Entwürfen: Konto löschen fehlt (Apple/Google-Pflicht); Melden laut SQL 17 nur mit Konto (DSA verlangt Melden für alle); `live_snaps.author_id` wäre laut SQL 17 öffentlich lesbar; Ortssuche schickt Suchtext an Open-Meteo; keine Links zu Datenschutz/Impressum in der App.
 
 ## Fehlt noch
 
-- Ticketmaster: Zeitplan in Produktion (SQL 24 auf `backend/produktion-start`).
-- Events in Karlsruhe ohne Veranstalter-Konten: redaktionell über den Admin-Bereich, Clubs anschreiben, später Formular „Event einreichen“ ohne Konto.
-- Automatische Event-Entwürfe aus Club-Websites (Claude-API, nur mit Zustimmung der Clubs).
-- Upload-UI für Live Snaps und Beiträge (Development Build, SQL 17–19).
-- Merkliste mit Konto synchronisieren; Passwortreset, Kontolöschung.
-- Veranstalter-Dashboard (Statistiken), Englisch als zweite Sprache, Release-Grundlagen (`eas.json`, Bundle-ID, Icons, Maps-Key).
-- Rechtliches: Entwürfe in [docs/entwuerfe/](docs/entwuerfe/README.md) prüfen lassen und Lücken füllen.
+- Eigener Mailserver (Domain, SMTP), deutsche Mailtexte eintragen.
+- Studio: Team-Mitglieder einladen, mehrere Clubs pro Konto, Ticketarten, Beiträge/Galerien (SQL 19), alte Bilder aufräumen.
+- Shots: Event-Story für Clubs (im Studio posten), Shots im Studio moderieren, Live-Kamera und Videos (Development Build).
+- Konten und Veranstalter in Produktion (eigene Runde, jeder Schritt mit Freigabe von Jacint und Noyan).
+- Rechtliches: Entwürfe in [docs/entwuerfe/](docs/entwuerfe/README.md) prüfen lassen; Datenschutz um Club-Angaben und anonyme Zählung ergänzen.
+- Release-Grundlagen (`eas.json`, Bundle-ID, Schema `spots`, Icons, Maps-Key), Englisch als zweite Sprache.
 
 ## Nächste empfohlene Schritte
 
-1. `feature/event-sources` ansehen (Jacint: SQL 20–22, Edge Function; Noyan: neue Seiten), dann pushen und PR gegen `main`.
-2. Freigabe-Ablauf mit dem Admin-Konto auf dem Handy testen; Site-URL für Auth-Mails in Spots-Test setzen (leitet noch auf localhost).
-3. Zeitplan (Cron) für den Ticketmaster-Import in Spots-Test einrichten und einige Tage beobachten.
-4. Offene Rechtsfragen P1 klären, bevor Clubs angeschrieben werden.
+1. Passwort vergessen auf dem Handy fertig testen (neues privates Testkonto, nur den neuesten Link öffnen).
+2. Noyan: Design von Spots Studio und der Registrieren-Seite.
+3. Studio-Ablauf komplett durchspielen: Club → Freigabe → Event live → Statistik.
+4. Mailserver und Domain klären, dann Produktions-Runde für Konten und Veranstalter planen.

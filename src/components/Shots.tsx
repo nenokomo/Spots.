@@ -1,8 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Image, Modal, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, space, squircle, type } from '../constants/theme';
+import { accountClientError } from '../features/accounts/client';
+import { useAccountSession } from '../features/accounts/useAccountSession';
 import type { SnapMedia } from '../utils/stories';
 import { DiscoBall } from './DiscoBall';
 import { Icon } from './Icon';
@@ -43,10 +46,14 @@ function useSeenSnaps() {
  * Deliberately no list and no numbers: one button opens all new shots, nobody sees how many there are
  * or how many people posted. Always shown, so every event page looks the same; the camera opens only while the event runs.
  */
-export function Shots({ snaps, live, ended, now, eventTitle }: { snaps: SnapMedia[]; live: boolean; ended: boolean; now: number; eventTitle: string }) {
+export function Shots({ snaps, live, ended, now, eventId, eventTitle }: { snaps: SnapMedia[]; live: boolean; ended: boolean; now: number; eventId: string; eventTitle: string }) {
   const { seen, markSeen } = useSeenSnaps();
   const [open, setOpen] = useState<SnapMedia[] | null>(null);
   const [camera, setCamera] = useState(false);
+  // Shots von Gästen sehen nur angemeldete Konten (SQL 32). Gäste bekommen einen Hinweis mit Link zur Anmeldung.
+  const { session, loading } = useAccountSession();
+  const guest = !session && !loading && !accountClientError;
+  const [signInHint, setSignInHint] = useState(false);
   const unseen = snaps.filter((snap) => !seen[snap.id]);
   const onSeen = useCallback((id: string) => { const snap = snaps.find((item) => item.id === id); if (snap) markSeen(snap); }, [snaps, markSeen]);
   const close = useCallback(() => setOpen(null), []);
@@ -72,8 +79,9 @@ export function Shots({ snaps, live, ended, now, eventTitle }: { snaps: SnapMedi
       </PressableScale>
 
       {/* Watching: a big button with a spinning, bouncing disco ball. No numbers anywhere. */}
-      <PressableScale disabled={!cover} accessibilityRole="button" accessibilityState={{ disabled: !cover }}
-        accessibilityLabel={cover ? 'Neue Shots ansehen' : 'Gerade keine neuen Shots'} onPress={() => setOpen(unseen)} scaleTo={0.98} style={[styles.view, !cover && styles.viewEmpty]}>
+      {/* Guests without an account cannot see guest shots (SQL 32): the button shows a sign-in hint instead. */}
+      <PressableScale disabled={!cover && !guest} accessibilityRole="button" accessibilityState={{ disabled: !cover && !guest }}
+        accessibilityLabel={guest ? 'Shots ansehen, nur mit Konto' : cover ? 'Neue Shots ansehen' : 'Gerade keine neuen Shots'} onPress={() => guest ? setSignInHint(true) : setOpen(unseen)} scaleTo={0.98} style={[styles.view, !cover && !guest && styles.viewEmpty]}>
         {/* Background: the first new shot, slightly blurred and faded, so you only get a hint of it. */}
         {cover
           ? <>
@@ -81,18 +89,25 @@ export function Shots({ snaps, live, ended, now, eventTitle }: { snaps: SnapMedi
               <LinearGradient pointerEvents="none" colors={['#0a090ca6', '#0a090c8c', '#2a1222b3']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
             </>
           : <LinearGradient pointerEvents="none" colors={['#18171b', '#141317']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />}
-        <DiscoBall size={80} dim={!cover} />
+        <DiscoBall size={80} dim={!cover && !guest} />
         <View style={styles.copy}>
-          <Text numberOfLines={1} style={styles.viewTitle}>{cover ? 'SHOTS ansehen' : 'Keine neuen SHOTS'}</Text>
-          <Text numberOfLines={2} style={styles.viewText}>{cover ? 'Echte Eindrücke von Gästen.' : live ? 'Sei der Erste von heute Nacht!' : ended ? 'Für dieses Event gibt es keine neuen.' : 'Gibt es, sobald das Event läuft.'}</Text>
+          <Text numberOfLines={1} style={styles.viewTitle}>{guest || cover ? 'SHOTS ansehen' : 'Keine neuen SHOTS'}</Text>
+          <Text numberOfLines={2} style={styles.viewText}>{guest ? 'Nur mit Konto sichtbar.' : cover ? 'Echte Eindrücke von Gästen.' : live ? 'Sei der Erste von heute Nacht!' : ended ? 'Für dieses Event gibt es keine neuen.' : 'Gibt es, sobald das Event läuft.'}</Text>
           <Text style={styles.viewHint}>Jeden SHOT siehst du nur einmal</Text>
         </View>
       </PressableScale>
+      {guest && signInHint && <View accessibilityRole="alert" style={styles.hint}>
+        <Text style={styles.hintTitle}>SHOTS siehst du nur mit Konto</Text>
+        <Text style={styles.hintText}>Die Fotos von Gästen sind nur für angemeldete Nutzer sichtbar.</Text>
+        <Pressable accessibilityRole="link" onPress={() => router.push('/account')} hitSlop={8}>
+          <Text style={styles.hintLink}>Melde dich hier an, um sie zu sehen ›</Text>
+        </Pressable>
+      </View>}
 
       <Modal visible={open !== null} animationType="none" transparent statusBarTranslucent navigationBarTranslucent onRequestClose={close}>
         {open && <SnapViewer items={open} author={{ name: 'SHOTS', label: 'Von Gästen' }} now={now} onSeen={onSeen} onClose={close} reportable hideCount />}
       </Modal>
-      <ShotCamera visible={camera} eventTitle={eventTitle} onClose={closeCamera} />
+      <ShotCamera visible={camera} eventId={eventId} eventTitle={eventTitle} onClose={closeCamera} />
     </View>
   );
 }
@@ -114,4 +129,8 @@ const styles = StyleSheet.create({
   viewTitle: { fontSize: 22, lineHeight: 27, fontWeight: '800', letterSpacing: -0.4, color: colors.text, textShadowColor: '#000000aa', textShadowRadius: 8 },
   viewText: { ...type.footnote, color: '#ffffffe6', textShadowColor: '#000000aa', textShadowRadius: 6 },
   viewHint: { ...type.footnote, fontSize: 11, fontWeight: '600', color: colors.pink },
+  hint: { marginTop: space.md, gap: space.xs, padding: space.lg, borderRadius: radius.lg, backgroundColor: '#ffffff0a', borderWidth: 1, borderColor: colors.accentLine, ...squircle },
+  hintTitle: { ...type.headline, color: colors.text },
+  hintLink: { ...type.label, color: colors.pink, marginTop: space.xs },
+  hintText: { ...type.footnote, color: colors.faint },
 });
