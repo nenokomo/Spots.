@@ -154,7 +154,7 @@ export type ShotReportReason = typeof shotReportReasons[number]['id'];
  * three different reports hide the shot until it is reviewed.
  */
 export async function reportShot(snapId: string, reason: ShotReportReason, details: string) {
-  if (!uuid.test(snapId)) throw new Error('Test-Shots können nicht gemeldet werden.');
+  if (!uuid.test(snapId)) throw new Error('Test-SHOTS können nicht gemeldet werden.');
   if (unavailable.has('content_reports')) throw new Error('Melden ist hier noch nicht eingerichtet.');
   // Melden braucht die Sitzung des Kontos (der öffentliche Client hat keine).
   const client = await signedInClient('Zum Melden bitte zuerst anmelden.');

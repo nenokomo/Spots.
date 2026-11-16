@@ -50,6 +50,6 @@ const styles = StyleSheet.create({
   copy: { flex: 1, minWidth: 0, gap: 2 },
   title: { ...type.headline, color: colors.text },
   line: { ...type.callout, color: colors.muted },
-  route: { position: 'absolute', right: space.md, bottom: space.md, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, height: 34, borderRadius: 17, backgroundColor: colors.accent, boxShadow: '0 4px 14px #0000008c' },
+  route: { position: 'absolute', right: space.md, bottom: space.md, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, height: 34, borderRadius: 17, backgroundColor: colors.accentDeep, boxShadow: '0 4px 14px #0000008c' },
   routeText: { ...type.label, fontSize: 14, color: colors.text },
 });

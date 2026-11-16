@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { ActivityIndicator, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { colors, radius, space, squircle, type } from '../../constants/theme';
 import { GlassBackdrop } from '../GlassBackdrop';
@@ -29,6 +30,8 @@ export function Button({ label, onPress, variant = 'primary', size = 'md', icon,
       onPress={onPress}
       style={[styles.base, size === 'sm' ? styles.sm : styles.md, styles[variant], disabled && styles.disabled, style]}
     >
+      {/* Primary: berry-to-violet gradient with a fine light edge, so it feels less flat. */}
+      {variant === 'primary' && <LinearGradient pointerEvents="none" colors={colors.accentFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />}
       {loading ? <ActivityIndicator color={tint} /> : icon && <Icon name={icon} size={size === 'sm' ? 16 : 19} color={tint} />}
       <Text numberOfLines={1} style={[size === 'sm' ? styles.smLabel : styles.label, { color: tint }]}>{label}</Text>
       {trailingIcon && <Icon name={trailingIcon} size={15} color={tint} />}
@@ -53,7 +56,7 @@ const styles = StyleSheet.create({
   base: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm, overflow: 'hidden', borderRadius: radius.md, ...squircle },
   md: { minHeight: 52, paddingHorizontal: space.xl },
   sm: { minHeight: 38, paddingHorizontal: space.lg, borderRadius: radius.pill },
-  primary: { backgroundColor: colors.accent },
+  primary: { backgroundColor: colors.accentDeep, borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff2e', boxShadow: '0 6px 18px #5d2a9259' },
   secondary: { backgroundColor: colors.surfaceHigh },
   ghost: { backgroundColor: 'transparent' },
   disabled: { opacity: 0.45 },

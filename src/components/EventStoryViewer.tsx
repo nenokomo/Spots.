@@ -26,7 +26,8 @@ type Props = {
  * Full-screen story of an event (its organizer).
  * - Tap right/left: next/previous picture of this story. After the last picture the story starts again.
  * - Swipe up: next organizer's story. It is already rendered below and moves with your finger, like a feed.
- * - Swipe down: close; the story shrinks away and the page underneath shows through while dragging.
+ * - Drag down, left or right: close. The story follows your finger in any of these directions and shrinks;
+ *   the page underneath shows through while dragging.
  * - Hold: pause.
  * One gesture handler decides between tap, hold and swipe, so they never compete.
  * It never replaces the event detail page.
@@ -40,8 +41,10 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
   const [reduceMotion, setReduceMotion] = useState(false);
   // Feed position: -index × height. Never reset, so switching stories causes no jump.
   const [feed] = useState(() => new Animated.Value(-Math.max(0, events.findIndex((item) => item.id === initialId)) * height));
-  // Downward pull of the current story (closing).
+  // Closing drag of the current story: free offset (down, left or right) and its length, which drives shrinking.
   const [pull] = useState(() => new Animated.Value(0));
+  const [pullX] = useState(() => new Animated.Value(0));
+  const [pullAmount] = useState(() => new Animated.Value(0));
   const [appear] = useState(() => new Animated.Value(0));
   const busy = useRef(false);
   // How much of a slide was shown before a pause, tied to that slide only.
@@ -57,9 +60,14 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
   const bar = useMemo(() => ({ key: slideKey, progress: new Animated.Value(0) }), [slideKey]);
   // Animated styles only change with the story, so the waiting next story does not re-render on every tap.
   const currentStyle = useMemo(() => ({
-    opacity: pull.interpolate({ inputRange: [0, height * 0.6, height], outputRange: [1, 1, 0], extrapolate: 'clamp' }),
-    transform: [{ translateY: Animated.add(feed, index * height) }, { translateY: pull }, { scale: pull.interpolate({ inputRange: [0, height], outputRange: [1, 0.7], extrapolate: 'clamp' }) }],
-  }), [feed, pull, index, height]);
+    opacity: pullAmount.interpolate({ inputRange: [0, height * 0.6, height], outputRange: [1, 1, 0], extrapolate: 'clamp' }),
+    transform: [
+      { translateY: Animated.add(feed, index * height) },
+      { translateX: pullX },
+      { translateY: pull },
+      { scale: pullAmount.interpolate({ inputRange: [0, height * 0.5], outputRange: [1, 0.65], extrapolate: 'clamp' }) },
+    ],
+  }), [feed, pull, pullX, pullAmount, index, height]);
   const upcomingStyle = useMemo(() => ({ transform: [{ translateY: Animated.add(feed, (index + 1) * height) }] }), [feed, index, height]);
 
   function showSlide(target: number) { setPosition((value) => ({ ...value, slide: target, run: value.run + 1 })); }
@@ -69,7 +77,7 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
   function settle() {
     Animated.parallel([
       Animated.spring(feed, { toValue: -index * height, damping: 24, stiffness: 300, mass: 0.8, useNativeDriver: native }),
-      Animated.spring(pull, { toValue: 0, damping: 22, stiffness: 320, mass: 0.8, useNativeDriver: native }),
+      ...[pull, pullX, pullAmount].map((value) => Animated.spring(value, { toValue: 0, damping: 22, stiffness: 320, mass: 0.8, useNativeDriver: native })),
     ]).start();
   }
   function nextStory(velocity = 0) {
@@ -83,25 +91,33 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
       if (finished) setPosition((value) => ({ id: target.id, slide: 0, run: value.run + 1 }));
     });
   }
-  function dismiss() {
+  /** Closes the story: it keeps flying in the direction it was dragged (down by default) while shrinking. */
+  function dismiss(dx = 0, dy = 1) {
     if (busy.current) return;
     busy.current = true;
-    Animated.timing(pull, { toValue: height, duration: reduceMotion ? 0 : 170, easing: Easing.out(Easing.quad), useNativeDriver: native, isInteraction: false }).start(() => onClose());
+    const length = Math.hypot(dx, dy) || 1;
+    const timing = (value: Animated.Value, toValue: number) => Animated.timing(value, { toValue, duration: reduceMotion ? 0 : 190, easing: Easing.out(Easing.quad), useNativeDriver: native, isInteraction: false });
+    Animated.parallel([
+      timing(pullX, (dx / length) * height),
+      timing(pull, (dy / length) * height),
+      timing(pullAmount, height),
+    ]).start(() => onClose());
   }
-  function track(dy: number) {
-    if (dy < 0) {
-      pull.setValue(0);
-      // At the last organizer the story only gives a little (rubber band).
-      feed.setValue(-index * height + (upcoming ? dy : dy * 0.25));
-    } else {
-      feed.setValue(-index * height);
-      pull.setValue(dy);
-    }
+  /** Swipe up: the next organizer's story follows the finger. */
+  function trackFeed(dy: number) {
+    // At the last organizer the story only gives a little (rubber band).
+    feed.setValue(-index * height + (upcoming ? dy : dy * 0.25));
+  }
+  /** Drag to close: the story follows the finger freely and shrinks with the distance. */
+  function trackPull(dx: number, dy: number) {
+    pullX.setValue(dx);
+    pull.setValue(dy);
+    pullAmount.setValue(Math.hypot(dx, dy));
   }
 
   // Gesture and timer callbacks always use the handlers of the latest render.
-  const actions = useRef({ next, previous, nextStory, dismiss, settle, track });
-  useEffect(() => { actions.current = { next, previous, nextStory, dismiss, settle, track }; });
+  const actions = useRef({ next, previous, nextStory, dismiss, settle, trackFeed, trackPull });
+  useEffect(() => { actions.current = { next, previous, nextStory, dismiss, settle, trackFeed, trackPull }; });
 
   // Keep the feed aligned if the list changes underneath (for example a filter update) or the screen rotates.
   useLayoutEffect(() => { if (index >= 0 && !busy.current) feed.setValue(-index * height); }, [feed, index, height]);
@@ -152,31 +168,43 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
   // variables below are therefore safe. The React compiler rules cannot see that, hence this narrow exception.
   /* eslint-disable react-hooks/refs, react-hooks/immutability */
   const gesture = useMemo(() => {
-    let dragging = false;
+    // 'feed': swiping up to the next organizer; 'pull': dragging down, left or right to close.
+    let dragging: 'feed' | 'pull' | null = null;
     let held = false;
     let holdTimer: ReturnType<typeof setTimeout> | undefined;
     const endHold = () => { if (holdTimer) clearTimeout(holdTimer); holdTimer = undefined; };
     return PanResponder.create({
       // Bubbling: the buttons at the bottom keep their own taps; everywhere else this handler decides.
       onStartShouldSetPanResponder: () => !busy.current,
-      onMoveShouldSetPanResponderCapture: (_, { dx, dy }) => !busy.current && Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx) * 1.3,
+      onMoveShouldSetPanResponderCapture: (_, { dx, dy }) => !busy.current && Math.max(Math.abs(dx), Math.abs(dy)) > 10,
       onPanResponderGrant: () => {
-        dragging = false;
+        dragging = null;
         held = false;
         endHold();
         holdTimer = setTimeout(() => { held = true; setPaused(true); }, 260);
       },
       onPanResponderMove: (_, { dx, dy }) => {
-        if (!dragging && Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { dragging = true; endHold(); setPaused(true); }
-        if (dragging) actions.current.track(dy);
+        if (!dragging && Math.max(Math.abs(dx), Math.abs(dy)) > 10) {
+          dragging = dy < 0 && Math.abs(dy) > Math.abs(dx) ? 'feed' : 'pull';
+          endHold();
+          setPaused(true);
+        }
+        if (dragging === 'feed') actions.current.trackFeed(Math.min(0, dy));
+        else if (dragging === 'pull') actions.current.trackPull(dx, dy);
       },
       onPanResponderTerminationRequest: () => false,
-      onPanResponderRelease: (_, { dx, dy, vy, x0 }) => {
+      onPanResponderRelease: (_, { dx, dy, vx, vy, x0 }) => {
         endHold();
-        if (dragging) {
+        if (dragging === 'feed') {
           setPaused(false);
           if (dy < -70 || (dy < -20 && vy < -0.4)) actions.current.nextStory(vy);
-          else if (dy > 80 || (dy > 20 && vy > 0.5)) actions.current.dismiss();
+          else actions.current.settle();
+          return;
+        }
+        if (dragging === 'pull') {
+          setPaused(false);
+          const distance = Math.hypot(dx, dy);
+          if (distance > 90 || (distance > 25 && Math.hypot(vx, vy) > 0.5)) actions.current.dismiss(dx, dy);
           else actions.current.settle();
           return;
         }
@@ -197,7 +225,7 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
       accessibilityActions={[{ name: 'activate', label: 'Nächstes Bild' }, { name: 'increment', label: 'Nächster Veranstalter' }, { name: 'escape', label: 'Story schließen' }]}
       onAccessibilityAction={({ nativeEvent }) => { if (nativeEvent.actionName === 'activate') next(); else if (nativeEvent.actionName === 'increment') nextStory(); else onClose(); }}>
       {/* Clears quickly while pulling down, so the page underneath shows through (the modal is transparent). */}
-      <Animated.View pointerEvents="none" style={[styles.cover, styles.backdrop, { opacity: Animated.multiply(appear, pull.interpolate({ inputRange: [0, 240], outputRange: [1, 0], extrapolate: 'clamp' })) }]} />
+      <Animated.View pointerEvents="none" style={[styles.cover, styles.backdrop, { opacity: Animated.multiply(appear, pullAmount.interpolate({ inputRange: [0, 240], outputRange: [1, 0], extrapolate: 'clamp' })) }]} />
       <Animated.View {...gesture.panHandlers} style={[styles.fill, { opacity: appear, transform: [{ scale: appear.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) }] }]}>
         {/* Keyed by event: when the next story becomes the current one, it keeps its already decoded images. */}
         <StoryCard key={event.id} event={event} today={today} insets={insets} slide={slide} bar={bar} actionLabel={actionLabel} onOpenEvent={onOpenEvent}
@@ -263,7 +291,7 @@ const StoryCard = memo(function StoryCard({ event, today, insets, slide, bar, ac
         {tags.length > 0 && <View style={styles.tags}>{tags.slice(0, 4).map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}</View>}
         <View style={styles.actions}>
           <Pressable accessibilityRole="button" accessibilityLabel={`${event.title}, ${label}`} onPress={() => onOpenEvent(event)} style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
-            <LinearGradient pointerEvents="none" colors={[colors.accent, '#a01b88']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cover} />
+            <LinearGradient pointerEvents="none" colors={colors.accentFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cover} />
             <Text style={styles.ctaText}>{label}</Text>
             <Icon name="chevron" size={17} color={colors.text} />
           </Pressable>
@@ -300,7 +328,7 @@ const styles = StyleSheet.create({
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   tag: { color: colors.text, fontSize: 11, fontWeight: '600', backgroundColor: '#ffffff1c', borderRadius: 12, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 4 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
-  cta: { flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.accent },
+  cta: { flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.accentDeep, borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff2e' },
   ctaText: { color: colors.text, fontSize: 15, fontWeight: '700' },
   pressed: { opacity: 0.8 },
 });

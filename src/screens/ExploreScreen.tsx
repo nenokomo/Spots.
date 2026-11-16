@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CategoryFilters } from '../components/CategoryFilters';
 import { CitySearch } from '../components/CitySearch';
@@ -19,14 +19,15 @@ import { EmptyState, PageHeader, SectionHeader } from '../components/ui/Section'
 import { Sheet } from '../components/ui/Sheet';
 import { tabBarContentInset } from '../constants/navigation';
 import { colors, gutter, radius, space, squircle, type, type Category } from '../constants/theme';
-import { useUpcomingEvents } from '../hooks/useEvents';
+import { useLiveEvents, useUpcomingEvents } from '../hooks/useEvents';
 import { useLocation } from '../hooks/useLocation';
 import { useNow } from '../hooks/useNow';
 import { useToday } from '../hooks/useToday';
 import { eventHref } from '../navigation/eventRoutes';
-import type { City } from '../services/cities';
+import { searchCities, type City } from '../services/cities';
 import { popularEvents } from '../services/popularity';
 import { isLocatedEvent, matchesCategory, type SpotEvent } from '../types/events';
+import { isTonight } from '../utils/eventStatus';
 import { dayKey, distanceKm, matchesEventPeriod, type Coordinate } from '../utils/events';
 
 const periods = [
@@ -44,15 +45,40 @@ type AreaChoice = { kind: 'auto' } | { kind: 'everywhere' } | { kind: 'gps' } | 
 const HERO_GAP = 12;
 const shortDay = new Intl.DateTimeFormat('de-DE', { timeZone: 'UTC', day: 'numeric', month: 'long' });
 
+/** City suggestions for the Explore search bar: same source and rule as the radar (from 3 letters, Germany). */
+function useCitySuggestions(query: string) {
+  const term = query.trim();
+  const [response, setResponse] = useState<{ term: string; cities: City[] }>({ term: '', cities: [] });
+  useEffect(() => {
+    if (term.length < 3) return;
+    let active = true;
+    const controller = new AbortController();
+    const debounce = setTimeout(() => {
+      void searchCities(term, controller.signal).then((cities) => { if (active) setResponse({ term, cities }); }).catch(() => { if (active) setResponse({ term, cities: [] }); });
+    }, 350);
+    return () => { active = false; clearTimeout(debounce); controller.abort(); };
+  }, [term]);
+  return term.length >= 3 && response.term === term ? response.cities : [];
+}
+
 export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const today = useToday();
   const now = useNow();
-  const remote = useUpcomingEvents();
+  const { events: upcomingEvents, loading: upcomingLoading, error: upcomingError, reload: reloadUpcoming } = useUpcomingEvents();
+  const { events: liveEvents, loading: liveLoading, error: liveError, reload: reloadLive } = useLiveEvents();
+  // Same events as the radar: running ones first, then everything that has not started yet (no duplicates).
+  const allEvents = useMemo(() => {
+    const ids = new Set(liveEvents.map((event) => event.id));
+    return [...liveEvents, ...upcomingEvents.filter((event) => !ids.has(event.id))];
+  }, [liveEvents, upcomingEvents]);
+  const reload = useCallback(() => { reloadUpcoming(); reloadLive(); }, [reloadUpcoming, reloadLive]);
+  const remote = { events: allEvents, loading: upcomingLoading || liveLoading, error: upcomingError ?? liveError, reload };
   const location = useLocation();
   const { locate } = location;
   const [search, setSearch] = useState('');
+  const citySuggestions = useCitySuggestions(search);
   const [category, setCategory] = useState<Category>('Alle');
   const [period, setPeriod] = useState<Period>('all');
   const [datesOpen, setDatesOpen] = useState(false);
@@ -74,7 +100,8 @@ export default function ExploreScreen() {
   const { events, area, fellBack } = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('de');
     const base = remote.events.filter((event) => matchesCategory(event, category)
-      && (activeDate ? dayKey(new Date(event.startsAt)) === activeDate : matchesEventPeriod(event, period, today))
+      // „Heute“ = tonight like on the radar: running now, started tonight or starting later today (also after midnight).
+      && (activeDate ? dayKey(new Date(event.startsAt)) === activeDate : period === 'today' ? isTonight(event, now) : matchesEventPeriod(event, period, today))
       && `${event.title} ${event.categories.join(' ')} ${event.genres?.join(' ') ?? ''} ${event.location} ${event.venue ?? ''}`.toLocaleLowerCase('de').includes(query));
     const gps: Area | null = location.userCoordinate ? { label: 'In deiner Nähe', center: location.userCoordinate } : null;
     const wanted = choice.kind === 'city' ? choice.area : choice.kind === 'everywhere' ? null : gps;
@@ -83,7 +110,7 @@ export default function ExploreScreen() {
     // Nothing near the user and no place chosen: show everything rather than an empty page.
     if (choice.kind === 'auto' && nearby.length === 0) return { events: base, area: null, fellBack: base.length > 0 };
     return { events: nearby, area: wanted, fellBack: false };
-  }, [remote.events, category, activeDate, period, today, search, choice, location.userCoordinate, areaRadius]);
+  }, [remote.events, category, activeDate, period, today, now, search, choice, location.userCoordinate, areaRadius]);
 
   const distances = useMemo(() => new Map(area ? events.flatMap((event) => isLocatedEvent(event) ? [[event.id, distanceKm(area.center, event.coordinate)] as const] : []) : []), [events, area]);
   const featured = events.slice(0, 5);
@@ -123,6 +150,18 @@ export default function ExploreScreen() {
           <TextInput accessibilityLabel="Events nach Name, Ort oder Genre suchen" value={search} onChangeText={setSearch} placeholder="Event, Stadt oder Genre" placeholderTextColor={colors.faint} style={styles.input} returnKeyType="search" autoCorrect={false} />
           {search.length > 0 && <Pressable accessibilityRole="button" accessibilityLabel="Suche löschen" onPress={() => setSearch('')} hitSlop={10} style={styles.clear}><Icon name="close" size={16} color={colors.muted} /></Pressable>}
         </View>
+        {/* Cities matching the search (from 3 letters, like the radar): tapping one shows events around it. */}
+        {citySuggestions.length > 0 && <View style={styles.cities}>
+          {citySuggestions.map((city) => (
+            <Pressable key={city.id} accessibilityRole="button" accessibilityLabel={`${city.name}${city.admin1 ? `, ${city.admin1}` : ''}: Events in der Nähe zeigen`}
+              onPress={() => { chooseCity(city); setSearch(''); Keyboard.dismiss(); }} style={({ pressed }) => [styles.cityRow, pressed && styles.cityPressed]}>
+              <Icon name="pin" size={17} color={colors.pink} />
+              <View style={styles.cityCopy}><Text style={styles.cityName}>{city.name}</Text>{city.admin1 && <Text style={styles.cityRegion}>{city.admin1}</Text>}</View>
+              <Icon name="chevron" size={13} color={colors.faint} />
+            </Pressable>
+          ))}
+          <Text style={styles.citySource}>Ortssuche: Open-Meteo / GeoNames</Text>
+        </View>}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled">
           <Chip icon="sliders" label={category === 'Alle' ? 'Genre' : category} selected={category !== 'Alle' || genresOpen} onPress={() => setGenresOpen((value) => !value)} accessibilityLabel={`Genre filtern, aktuell ${category}`} />
           <Chip icon="calendar" label={dateLabel ?? 'Datum'} selected={!!activeDate} onPress={() => setDatesOpen(true)} accessibilityLabel="Datum auswählen" />
@@ -137,7 +176,7 @@ export default function ExploreScreen() {
         </ScrollView>
 
         {featured.length > 0 && <>
-          <SectionHeader title="Als Nächstes" />
+          <SectionHeader compact title="Als Nächstes" />
           <FlatList
             horizontal
             data={featured}
@@ -152,11 +191,11 @@ export default function ExploreScreen() {
         </>}
 
         {!filtersActive && popular.ranked.length > 0 && <>
-          <SectionHeader title={`Gehypt in ${popular.city ?? 'deiner Nähe'}`} />
+          <SectionHeader spacious title={`Gehypt in ${popular.city ?? 'deiner Nähe'}`} />
           <HypeChart ranked={popular.ranked} today={today} hrefFor={destination} />
         </>}
 
-        <SectionHeader title={area ? `Alle Events · ${area.label}` : 'Alle Events'} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
+        <SectionHeader spacious title={area ? `Alle Events · ${area.label}` : 'Alle Events'} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
         {fellBack && <Text style={styles.fallback}>In deiner Nähe ist gerade nichts geplant. Das sind alle Events in Deutschland.</Text>}
         <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
       </View>}
@@ -217,7 +256,7 @@ const styles = StyleSheet.create({
   shelf: { paddingHorizontal: gutter },
   heroGap: { width: HERO_GAP },
   fallback: { ...type.footnote, color: colors.muted, paddingHorizontal: gutter, paddingBottom: space.md },
-  gridRow: { gap: space.xs, paddingHorizontal: gutter, paddingBottom: space.xs },
+  gridRow: { gap: 10, paddingHorizontal: gutter, paddingBottom: 10 },
   cell: { flex: 1, maxWidth: '50%' },
   dateModal: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#000000b3' },
   dateSheet: { borderTopLeftRadius: 26, borderTopRightRadius: 26 },
@@ -227,6 +266,13 @@ const styles = StyleSheet.create({
   dateReset: { minHeight: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 15, borderRadius: 12, borderWidth: 1, borderColor: '#c922ab88', backgroundColor: '#c922ab22', marginTop: 4 },
   dateResetText: { color: '#ffd6f2', fontSize: 12, fontWeight: '700' },
   citySearch: { minHeight: 48, zIndex: 10 },
+  cities: { marginHorizontal: gutter, marginTop: space.sm, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: '#c922ab45', ...squircle },
+  cityRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.md, minHeight: 54, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.separator },
+  cityPressed: { backgroundColor: '#ffffff0a' },
+  cityCopy: { flex: 1, minWidth: 0 },
+  cityName: { ...type.label, color: colors.text },
+  cityRegion: { ...type.footnote, fontSize: 11, color: colors.faint },
+  citySource: { ...type.footnote, fontSize: 10, color: colors.faint, paddingHorizontal: space.md, paddingVertical: space.sm },
   group: { gap: space.md },
   label: { ...type.headline, color: colors.text },
   radii: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },

@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Image, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventDataState } from '../components/EventDataState';
@@ -16,6 +16,7 @@ import { SnapViewer } from '../components/SnapViewer';
 import { Backdrop } from '../components/Screen';
 import { Button, IconButton } from '../components/ui/Button';
 import { PressableScale } from '../components/ui/PressableScale';
+import { SectionTitle } from '../components/ui/Section';
 import { colors, gutter, radius, space, squircle, type } from '../constants/theme';
 import { useEvent } from '../hooks/useEvents';
 import { useEventAddress } from '../hooks/useEventAddress';
@@ -25,7 +26,6 @@ import { useOrganizerSummary } from '../hooks/useOrganizer';
 import { organizerHref } from '../navigation/eventRoutes';
 import { formatPrice } from '../services/content';
 import { shouldTrack, trackEvent } from '../services/eventStats';
-import type { PublicOrganizer } from '../types/accounts';
 import { sourceLabel, ticketSeller } from '../utils/eventSource';
 import { eventPhase } from '../utils/eventStatus';
 import { eventSnaps } from '../utils/stories';
@@ -35,19 +35,18 @@ const shortDay = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', w
 const timeFormat = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
 
 /**
- * Organizer picture with a Snapchat-style ring. With an event story: thick brand-gradient ring, pink glow and a
- * „STORY“ label (grey once watched). Without a story: plain picture, tapping opens the profile.
+ * Organizer picture with a Snapchat-style ring. With an event story: thick brand-gradient ring and pink glow
+ * (grey once watched), tapping opens the story. Without a story: plain picture, tapping opens the profile.
  */
-function StoryRing({ organizer, story, watched, onPress, size = 76 }: { organizer: PublicOrganizer; story: boolean; watched: boolean; onPress: () => void; size?: number }) {
+function StoryRing({ picture, label, story, watched, onPress, size = 76 }: { picture: ReactNode; label: string; story: boolean; watched: boolean; onPress?: () => void; size?: number }) {
   const outer = { width: size + 14, height: size + 14, borderRadius: (size + 14) / 2 };
-  const avatar = <View style={[styles.ringGap, { borderRadius: (size + 8) / 2 }]}><OrganizerAvatar organizer={organizer} size={size} /></View>;
+  const avatar = <View style={[styles.ringGap, { borderRadius: (size + 8) / 2 }]}>{picture}</View>;
   const ring = story && !watched
     ? <LinearGradient colors={[colors.pink, colors.accent, '#7a2bd6', colors.pink]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.ring, styles.ringGlow, outer]}>{avatar}</LinearGradient>
     : <View style={[styles.ring, outer, story ? styles.ringSeen : styles.ringPlain]}>{avatar}</View>;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={story ? `Event-Story von ${organizer.displayName} ansehen` : `Profil von ${organizer.displayName} ansehen`} onPress={onPress} hitSlop={6} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable disabled={!onPress} accessibilityRole={onPress ? 'button' : 'image'} accessibilityLabel={label} onPress={onPress} hitSlop={6} style={({ pressed }) => pressed && styles.pressed}>
       {ring}
-      {story && <View style={[styles.storyPill, watched && styles.storyPillSeen]}><Text style={styles.storyPillText}>STORY</Text></View>}
     </Pressable>
   );
 }
@@ -132,7 +131,7 @@ export default function EventDetailScreen() {
       {/* Poster: blurred fill behind, the complete flyer in front, fading into the page. */}
       <View style={[styles.poster, { height: posterHeight }]}>
         <Image source={event.image} resizeMode="cover" blurRadius={event.imageIsPlaceholder ? 0 : 40} style={StyleSheet.absoluteFill} />
-        {!event.imageIsPlaceholder && <Pressable accessibilityRole="button" accessibilityLabel="Eventbild groß anzeigen" onPress={() => setViewer(true)} style={[StyleSheet.absoluteFill, { top: insets.top + 56, bottom: organizer ? 154 : 76 }]}><Image source={event.image} resizeMode="contain" style={StyleSheet.absoluteFill} accessibilityLabel={`Eventbild: ${event.title}`} /></Pressable>}
+        {!event.imageIsPlaceholder && <Pressable accessibilityRole="button" accessibilityLabel="Eventbild groß anzeigen" onPress={() => setViewer(true)} style={[StyleSheet.absoluteFill, { top: insets.top + 56, bottom: 154 }]}><Image source={event.image} resizeMode="contain" style={StyleSheet.absoluteFill} accessibilityLabel={`Eventbild: ${event.title}`} /></Pressable>}
         <LinearGradient pointerEvents="none" colors={['#0a090cb3', '#0a090c00', '#0a090c00', '#0a090ccc', colors.background]} locations={[0, 0.2, 0.55, 0.85, 1]} style={StyleSheet.absoluteFill} />
         <View style={[styles.toolbar, { paddingTop: insets.top + space.sm }]}>
           <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} />
@@ -140,18 +139,20 @@ export default function EventDetailScreen() {
         </View>
       </View>
 
-      {/* Title block on the flyer's lower edge: status, title, one line for the time, genres. */}
-      <View style={[styles.head, { marginTop: organizer ? -150 : -72 }]}>
-        {/* Organizer on the flyer: the ring opens the 24-hour event story, the name leads to the profile. */}
-        {organizer && <View style={styles.organizer}>
-          <StoryRing organizer={organizer} story={snaps.organizer.length > 0} watched={storyWatched} onPress={snaps.organizer.length > 0 ? () => setStory(true) : () => router.push(organizerHref(organizer.id))} />
-          <Link href={organizerHref(organizer.id)} asChild><Pressable accessibilityRole="link" accessibilityLabel={`Profil von ${organizer.displayName} ansehen`} hitSlop={8} style={styles.organizerCopy}>
-            <Text numberOfLines={1} style={styles.organizerName}>{organizer.displayName}</Text>
-            <Text numberOfLines={1} style={styles.organizerLabel}>{snaps.organizer.length > 0 ? (storyWatched ? 'Story nochmal ansehen' : 'Neue Story · Bild antippen') : 'Profil ansehen ›'}</Text>
-          </Pressable></Link>
-        </View>}
+      {/* Title block on the flyer's lower edge: organizer picture, title, one line for the time, genres. */}
+      <View style={[styles.head, { marginTop: -150 }]}>
+        {/* Organizer picture on the flyer: the ring opens the 24-hour event story (or the profile without one). */}
+        {/* Always a round picture, so every event page looks the same: the organizer (story ring / profile),
+            or for events without an organizer profile the event picture itself (opens the flyer). */}
+        <View style={styles.organizer}>
+          {organizer
+            ? <StoryRing picture={<OrganizerAvatar organizer={organizer} size={76} />} story={snaps.organizer.length > 0} watched={storyWatched}
+                label={snaps.organizer.length > 0 ? `Event-Story von ${organizer.displayName} ansehen` : `Profil von ${organizer.displayName} ansehen`}
+                onPress={snaps.organizer.length > 0 ? () => setStory(true) : () => router.push(organizerHref(organizer.id))} />
+            : <StoryRing picture={<Image source={event.image} resizeMode="cover" style={styles.eventAvatar} />} story={false} watched={false}
+                label={`Eventbild: ${event.title}`} onPress={event.imageIsPlaceholder ? undefined : () => setViewer(true)} />}
+        </View>
         <View style={styles.badges}>
-          {live && <View style={styles.liveBadge}><View style={styles.liveDot} /><Text style={styles.liveText}>LIVE</Text></View>}
           {ended && <View style={styles.endedBadge}><Text style={styles.endedText}>Beendet</Text></View>}
           {event.imageIsPlaceholder && <Text style={styles.placeholderNote}>Symbolbild</Text>}
         </View>
@@ -161,9 +162,15 @@ export default function EventDetailScreen() {
       </View>
 
       <View style={styles.body}>
+        {/* About tonight's event, first thing under the title. */}
+        <View style={styles.block}>
+          <SectionTitle title="Über das Event" style={styles.blockTitle} />
+          <Text style={[styles.description, !event.description && styles.descriptionEmpty]}>{event.description ?? 'Für dieses Event liegt noch keine Beschreibung vor.'}</Text>
+        </View>
+
         {/* Tickets: ticket types with prices when known, and always a clear way to buy at the provider. */}
         {!ended && <View style={styles.block}>
-          <Text style={styles.blockTitle}>Tickets</Text>
+          <SectionTitle title="Tickets" style={styles.blockTitle} />
           <View style={styles.ticketCard}>
             {content.tickets.length > 0
               ? content.tickets.map((ticket) => (
@@ -184,20 +191,14 @@ export default function EventDetailScreen() {
           </View>
         </View>}
 
-        {/* About tonight's event, right above the place. */}
         <View style={styles.block}>
-          <Text style={styles.blockTitle}>Über das Event</Text>
-          <Text style={[styles.description, !event.description && styles.descriptionEmpty]}>{event.description ?? 'Für dieses Event liegt noch keine Beschreibung vor.'}</Text>
-        </View>
-
-        <View style={styles.block}>
-          <Text style={styles.blockTitle}>Ort</Text>
+          <SectionTitle title="Ort" style={styles.blockTitle} />
           {point
-            ? <PlacePreview coordinate={point} title={event.venue ?? event.location} detail={placeDetail} onRoute={ended ? undefined : route} />
+            ? <PlacePreview coordinate={point} title={event.venue ?? event.location} street={address?.street} detail={address ? address.postcodeCity : placeDetail} onRoute={ended ? undefined : route} />
             : <View style={styles.placeCard}><Icon name="pin" size={18} color={colors.pink} /><Text style={styles.placeText}>{place}</Text></View>}
         </View>
 
-        <Shots snaps={snaps.visitors} live={live} now={now} eventId={event.id} eventTitle={event.title} />
+        <Shots snaps={snaps.visitors} live={live} ended={ended} now={now} eventId={event.id} eventTitle={event.title} />
 
         {linkError && <Text accessibilityRole="alert" style={styles.error}>Der Link konnte nicht geöffnet werden. Bitte erneut versuchen.</Text>}
         {attribution && <Link href={attribution} style={styles.source}>Infos von {source} ↗</Link>}
@@ -216,7 +217,8 @@ export default function EventDetailScreen() {
 
     <Modal visible={viewer} animationType="fade" onRequestClose={() => setViewer(false)}>{viewer && <EventPhotoViewer images={[event.image]} initialIndex={0} onClose={() => setViewer(false)} />}</Modal>
     {organizer && <Modal visible={story} animationType="none" transparent statusBarTranslucent navigationBarTranslucent onRequestClose={closeStory}>
-      {story && <SnapViewer items={snaps.organizer} author={{ name: organizer.displayName, avatar: <OrganizerAvatar organizer={organizer} size={34} />, label: 'Event-Story' }} now={now} onClose={closeStory} />}
+      {story && <SnapViewer items={snaps.organizer} author={{ name: organizer.displayName, avatar: <OrganizerAvatar organizer={organizer} size={34} />, label: 'Event-Story' }} now={now} onClose={closeStory}
+        onAuthorPress={() => { closeStory(); router.push(organizerHref(organizer.id)); }} />}
     </Modal>}
   </View>;
 }
@@ -230,9 +232,6 @@ const styles = StyleSheet.create({
   toolbar: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: space.lg },
   head: { paddingHorizontal: gutter, gap: space.sm },
   badges: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 4 },
-  liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, height: 26, borderRadius: 13, backgroundColor: colors.accent, boxShadow: '0 0 16px 2px #ff4ab866' },
-  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.text },
-  liveText: { color: colors.text, fontSize: 12, fontWeight: '800', letterSpacing: 1 },
   endedBadge: { paddingHorizontal: 10, height: 26, borderRadius: 13, justifyContent: 'center', backgroundColor: colors.surfaceHigh },
   endedText: { color: colors.muted, fontSize: 12, fontWeight: '700' },
   placeholderNote: { ...type.footnote, fontSize: 11, color: colors.faint },
@@ -247,13 +246,8 @@ const styles = StyleSheet.create({
   ringSeen: { borderWidth: 3, borderColor: '#ffffff4d', backgroundColor: '#0a090c66' },
   ringPlain: { borderWidth: 2, borderColor: '#ffffff26', backgroundColor: '#0a090c66' },
   ringGap: { padding: 4, backgroundColor: colors.background },
-  storyPill: { position: 'absolute', bottom: -6, alignSelf: 'center', paddingHorizontal: 9, height: 20, borderRadius: 10, justifyContent: 'center', backgroundColor: colors.accent, borderWidth: 2, borderColor: colors.background },
-  storyPillSeen: { backgroundColor: colors.surfaceHigh },
-  storyPillText: { color: colors.text, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  eventAvatar: { width: 76, height: 76, borderRadius: 38, backgroundColor: colors.surface },
   pressed: { opacity: 0.85 },
-  organizerCopy: { flex: 1, minWidth: 0 },
-  organizerName: { ...type.title3, fontWeight: '700', color: colors.text, textShadowColor: '#000000aa', textShadowRadius: 8 },
-  organizerLabel: { ...type.footnote, color: colors.pink, fontWeight: '600' },
   block: { marginTop: space.xxl, gap: space.md },
   blockTitle: { ...type.title3, color: colors.text },
   ticketCard: { gap: space.md, padding: space.md, borderRadius: radius.lg, backgroundColor: '#ffffff0a', borderWidth: 1, borderColor: colors.accentLine, ...squircle },
@@ -261,7 +255,7 @@ const styles = StyleSheet.create({
   ticketInfo: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   ticketIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentSoft },
   ticketInfoText: { ...type.callout, color: colors.muted, flex: 1 },
-  buyPill: { paddingHorizontal: space.md, height: 30, borderRadius: 15, justifyContent: 'center', backgroundColor: colors.accent },
+  buyPill: { paddingHorizontal: space.md, height: 30, borderRadius: 15, justifyContent: 'center', backgroundColor: colors.accentDeep },
   buyPillText: { ...type.label, fontSize: 13, color: colors.text },
   ticketName: { ...type.label, color: colors.text },
   ticketDetail: { ...type.footnote, color: colors.muted, marginTop: 1 },

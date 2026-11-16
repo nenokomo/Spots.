@@ -15,6 +15,7 @@ import { RadiusSlider } from '../components/RadiusSlider';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Button, IconButton } from '../components/ui/Button';
 import { PressableScale } from '../components/ui/PressableScale';
+import { SectionTitle } from '../components/ui/Section';
 import { Sheet } from '../components/ui/Sheet';
 import { tabBarContentInset } from '../constants/navigation';
 import { colors, gutter, radius as corner, space, squircle, type, type Category } from '../constants/theme';
@@ -170,7 +171,7 @@ export default function RadarScreen() {
         <LinearGradient pointerEvents="none" colors={colors.panelGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
         <View style={styles.panelHeader}>
           <View style={styles.panelCopy}>
-            <Text accessibilityRole="header" style={styles.headline}>{headline}</Text>
+            <SectionTitle title={headline} style={styles.headline} />
             <Text numberOfLines={1} style={styles.summary}>{noFix ? `Kein Standort · ${location.label} als Mitte` : summary}</Text>
           </View>
           <PressableScale accessibilityRole="button" accessibilityLabel="Alle Events des Radars ansehen" onPress={() => router.push({ pathname: '/today', params: { category, radius: String(radius), latitude: String(searchCenter.latitude), longitude: String(searchCenter.longitude) } })} hitSlop={8} style={styles.more}>

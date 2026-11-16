@@ -12,7 +12,7 @@ import { Backdrop } from '../components/Screen';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Button, IconButton } from '../components/ui/Button';
 import { PressableScale } from '../components/ui/PressableScale';
-import { EmptyState } from '../components/ui/Section';
+import { EmptyState, SectionTitle } from '../components/ui/Section';
 import { Sheet } from '../components/ui/Sheet';
 import { categories, colors, gutter, radius as corner, space, squircle, type, type Category } from '../constants/theme';
 import { useLiveEvents, useUpcomingEvents } from '../hooks/useEvents';
@@ -92,7 +92,7 @@ export default function TodayEventsScreen() {
         data={rows}
         keyExtractor={(row, index) => row.kind === 'heading' ? `h-${index}` : row.event.id}
         renderItem={({ item }) => item.kind === 'heading'
-          ? <View style={styles.heading}><Text accessibilityRole="header" style={styles.headingTitle}>{item.title}</Text>{item.note && <Text style={styles.headingNote}>{item.note}</Text>}</View>
+          ? <View style={styles.heading}><SectionTitle title={item.title} style={styles.headingTitle} />{item.note && <Text style={styles.headingNote}>{item.note}</Text>}</View>
           : item.kind === 'live'
             ? <View style={styles.inset}><LiveCard event={item.event} distance={distances.get(item.event.id) ?? 0} today={today} now={now} /></View>
             : <View style={styles.inset}><View style={styles.laterCard}><GlassBackdrop radius={corner.lg} variant="card" /><EventRow event={item.event} href={eventHref(item.event, 'radar', now)} now={now} today={today} showDay={false} distanceKm={distances.get(item.event.id)} large trailing={<SaveEventButton id={item.event.id} title={item.event.title} size={38} />} /></View></View>}

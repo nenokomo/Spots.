@@ -13,7 +13,7 @@ import { Icon } from '../components/Icon';
 import { SaveEventButton } from '../components/SaveEventButton';
 import { Backdrop } from '../components/Screen';
 import { Button, IconButton } from '../components/ui/Button';
-import { EmptyState } from '../components/ui/Section';
+import { EmptyState, SectionTitle } from '../components/ui/Section';
 import { colors, gutter, radius, space, squircle, type } from '../constants/theme';
 import { useNow } from '../hooks/useNow';
 import { useOrganizerPage } from '../hooks/useOrganizer';
@@ -31,7 +31,7 @@ function Stat({ value, label }: { value: number; label: string }) {
 function EventList({ events, now, today, title }: { events: SpotEvent[]; now: number; today: string; title: string }) {
   if (events.length === 0) return null;
   return <View style={styles.block}>
-    <Text style={styles.blockTitle}>{title}</Text>
+    <SectionTitle title={title} style={styles.blockTitle} />
     <View style={styles.list}>{events.map((event) => (
       <View key={event.id} style={styles.card}><GlassBackdrop radius={radius.lg} variant="card" /><EventRow event={event} href={eventDetailHref(event.id)} now={now} today={today} large trailing={eventPhase(event, now) === 'ended' ? undefined : <SaveEventButton id={event.id} title={event.title} size={38} />} /></View>
     ))}</View>
