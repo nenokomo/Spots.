@@ -43,7 +43,7 @@ Spots Studio hat bewusst einen eigenen Look (`src/features/studio/theme.ts`: Gra
 
 - **Passwort vergessen** auf dem Handy noch nicht zu Ende getestet (Mail-Limit).
 - Eingebauter Supabase-Mailversand: **nur 2 Mails pro Stunde** und nur an Supabase-Team-Adressen; deutsche Mailtexte erst mit eigenem Mailserver (SMTP).
-- Rücksprung aus Mails: `exp://`-Adressen müssen in Supabase **genau** eingetragen sein (`exp://**` greift nicht); ändert sich mit der WLAN-Adresse.
+- Rücksprung aus Mails in **Expo Go**: Supabase lehnt Adressen mit IP (`exp://192.168…`) immer ab (Quellcode Supabase Auth, Erlaubt-Liste wird gar nicht geprüft) und nimmt dann `localhost:3000`. Zum Testen Expo mit `--tunnel` starten (`exp://….exp.direct` passt zu `exp://**`). Die echte App (`meine-app://`, später `spots://`) ist nicht betroffen.
 - Kartenposition von Club-Events kommt aus OpenStreetMap (Nominatim) und kann etwas daneben liegen; die Adresse steht auf der Eventseite. Datenschutz: Event-Adressen gehen beim Speichern an Nominatim.
 - Statistik im Studio noch nicht auf dem Handy geprüft.
 - Radar zählt nur Events mit Endzeit als „live“; Ticketmaster-Konzerte haben meist keine.
