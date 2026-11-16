@@ -50,6 +50,9 @@ Stand: 15.11.2026
 - Abschnittstitel überall mit rosa Neon-Leuchten (`SectionTitle` in `ui/Section.tsx`): Entdecken, Gemerkt, Radar, Heute Nacht, Event- und Veranstalterseite.
 - Entdecken: „Als Nächstes“ direkt unter den Kategorien, mehr Abstand zwischen den übrigen Abschnitten, Kacheln mit 10 px Abstand; Suchleiste schlägt ab 3 Buchstaben Städte vor (Open-Meteo, wie Radar).
 
+- Eventseite: feste Veranstalter-Karte unter dem Titel („Profil ›“), auch ohne Story.
+- Veranstalterseite neu: Titelbild aus dem nächsten Flyer, großes Profilbild mittig mit Story-Ring (kommende Events als Storys), Name und Stadt, Zahlenleiste, Bio mittig, „Als Nächstes“/„Dein Event“, Pill-Umschalter Events (Standard) / Beiträge.
+
 ## Als Nächstes
 
 1. Handy-Test durch Noyan; Scan-Design je nach Ergebnis anpassen (Farbe, Tempo, Strahlbreite).
