@@ -1,9 +1,40 @@
 import type { ImageSourcePropType } from 'react-native';
 import type { LiveSnap } from '../services/content';
+import type { ExploreOrganizer } from '../services/organizerStories';
 import type { SpotEvent } from '../types/events';
+import { eventDayLabel, eventTimeLabel } from './events';
 
 /** test: local symbol photo added only in development so stories can be tried with several slides. */
-export type StoryMedia = { kind: 'image'; source: ImageSourcePropType; placeholder: boolean; test?: boolean };
+export type StoryMedia = {
+  kind: 'image'; source: ImageSourcePropType; placeholder: boolean; test?: boolean;
+  /** Text zu diesem einen Bild (Veranstalter-Story), z. B. „So war's letzten Samstag“. */
+  caption?: string | null;
+  /** Verknüpftes Event dieses Bilds, z. B. „Sa., 21.11. · Techno Night“. */
+  detail?: string | null;
+};
+
+/**
+ * One page of the full-screen story viewer: an event (Explore results, organizer page) or an organizer (Explore directory).
+ * Pages share gestures and layout; only their media and texts differ.
+ */
+export type StoryPage = {
+  id: string;
+  media: StoryMedia[];
+  /** Small pink line above the title, e.g. „HEUTE · 22:00 UHR“ or „VERANSTALTER“. */
+  overline: string;
+  title: string;
+  /** Line with a pin icon: venue and city. */
+  place: string | null;
+  /** Extra line under the place, e.g. the next event of an organizer. */
+  subtitle?: string | null;
+  tags: string[];
+  actionLabel: string;
+  /** Only events can be saved from the story. */
+  saveEvent?: { id: string; title: string } | null;
+  /** Shown for a symbol photo that is not a TEST picture. */
+  placeholderNote: string;
+  imageLabel: string;
+};
 
 // Development only (never in a release build): extra symbol photos per story, clearly labelled as test images.
 const DEV_STORY_IMAGES: ImageSourcePropType[] = __DEV__ ? [
@@ -22,6 +53,45 @@ const DEV_STORY_IMAGES: ImageSourcePropType[] = __DEV__ ? [
 export function eventStoryMedia(event: SpotEvent): StoryMedia[] {
   const own: StoryMedia = { kind: 'image', source: event.image, placeholder: !!event.imageIsPlaceholder };
   return [own, ...DEV_STORY_IMAGES.map((source): StoryMedia => ({ kind: 'image', source, placeholder: true, test: true }))];
+}
+
+/** Story page of one event. */
+export function eventStoryPage(event: SpotEvent, today: string, actionLabel = 'Event ansehen'): StoryPage {
+  return {
+    id: event.id, media: eventStoryMedia(event),
+    overline: `${eventDayLabel(event.startsAt, today).toLocaleUpperCase('de')} · ${eventTimeLabel(event.startsAt)} UHR`,
+    title: event.title, place: [event.venue, event.location].filter(Boolean).join(' · ') || null,
+    tags: (event.genres?.length ? event.genres : event.categories).slice(0, 4), actionLabel,
+    saveEvent: { id: event.id, title: event.title },
+    placeholderNote: 'Symbolbild · für dieses Event liegt noch kein Bild vor', imageLabel: `Eventbild: ${event.title}`,
+  };
+}
+
+// Loaded on first use: only organizers without logo and story need it.
+const organizerFallback = (): ImageSourcePropType => require('../../assets/events/club.jpg');
+
+/** Cover of an organizer tile: newest story picture, else the logo, else null (tile shows the name only). */
+export function organizerCover(organizer: Pick<ExploreOrganizer, 'story' | 'avatarUrl'>): { uri: string; logo: boolean } | null {
+  if (organizer.story[0]) return { uri: organizer.story[0].url, logo: false };
+  return organizer.avatarUrl ? { uri: organizer.avatarUrl, logo: true } : null;
+}
+
+/**
+ * Story page of one organizer for the Explore directory. Only pictures the organizer posted (newest first).
+ * Without a story: the logo, else a labelled symbol photo – never pictures of somebody else.
+ */
+export function organizerStoryPage(organizer: ExploreOrganizer, today: string): StoryPage {
+  const media: StoryMedia[] = organizer.story.length > 0
+    ? organizer.story.map((item) => ({ kind: 'image', source: { uri: item.url }, placeholder: false, caption: item.caption,
+        detail: item.event ? `${eventDayLabel(item.event.startsAt, today)} · ${item.event.title}` : null }))
+    : [{ kind: 'image', source: organizer.avatarUrl ? { uri: organizer.avatarUrl } : organizerFallback(), placeholder: !organizer.avatarUrl }];
+  const next = organizer.nextEvent;
+  return {
+    id: organizer.id, media, overline: 'VERANSTALTER', title: organizer.displayName, place: organizer.city,
+    subtitle: next ? `Nächstes Event: ${eventDayLabel(next.startsAt, today)}, ${eventTimeLabel(next.startsAt)} Uhr · ${next.title}` : null,
+    tags: [], actionLabel: 'Zum Profil', saveEvent: null,
+    placeholderNote: 'Symbolbild · dieser Veranstalter hat noch keine Story', imageLabel: `Story von ${organizer.displayName}`,
+  };
 }
 
 export function remoteImageUri(source: ImageSourcePropType) {

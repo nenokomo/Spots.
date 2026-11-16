@@ -45,6 +45,13 @@ export function toStoryItems(client: SupabaseClient, organizerId: string, rows: 
   });
 }
 
+/** Same rule as the database (SQL 33): equal, or one starts with the other plus a space. */
+export function sameCity(a: string | null, b: string | null) {
+  const x = a?.trim().toLocaleLowerCase('de'), y = b?.trim().toLocaleLowerCase('de');
+  if (!x || !y) return false;
+  return x === y || x.startsWith(`${y} `) || y.startsWith(`${x} `);
+}
+
 // SQL 33 fehlt in dieser Umgebung (z. B. Produktion vor dem Einspielen): einmal merken, keine Fehlerseite.
 let unavailable = false;
 const missing = (error: { code?: string }) => error.code === 'PGRST202' || error.code === '42883' || error.code === 'PGRST205';

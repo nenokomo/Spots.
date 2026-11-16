@@ -4,8 +4,7 @@ import { AccessibilityInfo, Animated, Easing, Image, PanResponder, Platform, Pre
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 import { colors, squircle } from '../constants/theme';
 import type { SpotEvent } from '../types/events';
-import { eventDayLabel, eventTimeLabel } from '../utils/events';
-import { eventStoryMedia, remoteImageUri } from '../utils/stories';
+import { eventStoryPage, remoteImageUri, type StoryPage } from '../utils/stories';
 import { Icon } from './Icon';
 import { SaveEventButton } from './SaveEventButton';
 
@@ -22,8 +21,24 @@ type Props = {
   actionLabel?: (event: SpotEvent) => string;
 };
 
+/** Stories of events (Explore results, organizer page). */
+export function EventStoryViewer({ events, today, actionLabel, onOpenEvent, ...rest }: Props) {
+  const pages = useMemo(() => events.map((event) => eventStoryPage(event, today, actionLabel?.(event))), [events, today, actionLabel]);
+  const byId = useMemo(() => new Map(events.map((event) => [event.id, event])), [events]);
+  return <StoryViewer {...rest} pages={pages} onAction={(page) => { const event = byId.get(page.id); if (event) onOpenEvent(event); }} />;
+}
+
+type ViewerProps = {
+  pages: StoryPage[];
+  initialId: string;
+  onClose: () => void;
+  /** Main button of a page (open the event or the organizer profile). */
+  onAction: (page: StoryPage) => void;
+  onSeen?: (id: string) => void;
+};
+
 /**
- * Full-screen story of an event (its organizer).
+ * Full-screen stories: of events or of organizers (Explore directory).
  * - Tap right/left: next/previous picture of this story. After the last picture the story starts again.
  * - Swipe up: next organizer's story. It is already rendered below and moves with your finger, like a feed.
  * - Drag down, left or right: close. The story follows your finger in any of these directions and shrinks;
@@ -32,7 +47,7 @@ type Props = {
  * One gesture handler decides between tap, hold and swipe, so they never compete.
  * It never replaces the event detail page.
  */
-export function EventStoryViewer({ events, initialId, today, onClose, onOpenEvent, onSeen, actionLabel }: Props) {
+export function StoryViewer({ pages: events, initialId, onClose, onAction, onSeen }: ViewerProps) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const native = Platform.OS !== 'web';
@@ -53,7 +68,7 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
   const index = events.findIndex((item) => item.id === position.id);
   const event = index >= 0 ? events[index] : undefined;
   const upcoming = index >= 0 ? events[index + 1] : undefined;
-  const media = useMemo(() => event ? eventStoryMedia(event) : [], [event]);
+  const media = useMemo(() => event?.media ?? [], [event]);
   const slide = Math.min(position.slide, Math.max(0, media.length - 1));
   // A fresh progress value per slide: never reset while a native animation is still running on it.
   const slideKey = `${position.id}:${slide}:${position.run}`;
@@ -125,7 +140,9 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
   // The event disappeared from the filtered list, for example because it started.
   useEffect(() => { if (!event) onClose(); }, [event, onClose]);
 
-  useEffect(() => { if (event) onSeen?.(event.id); }, [event, onSeen]);
+  // Ids, not objects: pages may be rebuilt while the story is open (e.g. a new minute) without restarting anything.
+  const eventId = event?.id ?? null;
+  useEffect(() => { if (eventId) onSeen?.(eventId); }, [eventId, onSeen]);
 
   useEffect(() => {
     let active = true;
@@ -143,7 +160,7 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
 
   // Auto-advance on the native thread. With reduced motion the user moves on manually.
   useEffect(() => {
-    if (!event) return;
+    if (!eventId) return;
     if (reduceMotion) { bar.progress.setValue(1); return; }
     if (paused) return;
     let active = true;
@@ -158,10 +175,10 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
       animation.stop();
       elapsed.current = { key: bar.key, share: Math.min(1, base + (Date.now() - startedAt) / STORY_SLIDE_MS) };
     };
-  }, [event, bar, paused, reduceMotion, native]);
+  }, [eventId, bar, paused, reduceMotion, native]);
 
   // The story after the next one: start loading its image early.
-  const laterUri = index >= 0 && events[index + 2] ? remoteImageUri(events[index + 2].image) : null;
+  const laterUri = index >= 0 && events[index + 2]?.media[0] ? remoteImageUri(events[index + 2].media[0].source) : null;
   useEffect(() => { if (laterUri) void Image.prefetch(laterUri).catch(() => {}); }, [laterUri]);
 
   // PanResponder callbacks run only on touch events, never during render; the refs and the per-gesture
@@ -228,34 +245,28 @@ export function EventStoryViewer({ events, initialId, today, onClose, onOpenEven
       <Animated.View pointerEvents="none" style={[styles.cover, styles.backdrop, { opacity: Animated.multiply(appear, pullAmount.interpolate({ inputRange: [0, 240], outputRange: [1, 0], extrapolate: 'clamp' })) }]} />
       <Animated.View {...gesture.panHandlers} style={[styles.fill, { opacity: appear, transform: [{ scale: appear.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) }] }]}>
         {/* Keyed by event: when the next story becomes the current one, it keeps its already decoded images. */}
-        <StoryCard key={event.id} event={event} today={today} insets={insets} slide={slide} bar={bar} actionLabel={actionLabel} onOpenEvent={onOpenEvent}
-          style={currentStyle} />
-        {upcoming && <StoryCard key={upcoming.id} event={upcoming} today={today} insets={insets} slide={0} bar={null} actionLabel={actionLabel} onOpenEvent={onOpenEvent}
-          style={upcomingStyle} />}
+        <StoryCard key={event.id} page={event} insets={insets} slide={slide} bar={bar} onAction={onAction} style={currentStyle} />
+        {upcoming && <StoryCard key={upcoming.id} page={upcoming} insets={insets} slide={0} bar={null} onAction={onAction} style={upcomingStyle} />}
       </Animated.View>
     </View>
   );
 }
 
 type CardProps = {
-  event: SpotEvent;
-  today: string;
+  page: StoryPage;
   insets: EdgeInsets;
   slide: number;
   /** Progress of the visible slide; null for the waiting next story (bars empty, buttons inactive). */
   bar: { key: string; progress: Animated.Value } | null;
-  actionLabel?: (event: SpotEvent) => string;
-  onOpenEvent: (event: SpotEvent) => void;
+  onAction: (page: StoryPage) => void;
   style: Animated.WithAnimatedValue<object>;
 };
 
-/** One organizer's story page. All its pictures stay mounted and decoded; only the visible one changes. */
-const StoryCard = memo(function StoryCard({ event, today, insets, slide, bar, actionLabel, onOpenEvent, style }: CardProps) {
-  const media = useMemo(() => eventStoryMedia(event), [event]);
+/** One story page. All its pictures stay mounted and decoded; only the visible one changes. */
+const StoryCard = memo(function StoryCard({ page, insets, slide, bar, onAction, style }: CardProps) {
+  const media = page.media;
   const current = media[Math.min(slide, media.length - 1)];
-  const tags = event.genres?.length ? event.genres : event.categories;
-  const place = [event.venue, event.location].filter(Boolean).join(' · ');
-  const label = actionLabel?.(event) ?? 'Event ansehen';
+  const label = page.actionLabel;
   return (
     <Animated.View pointerEvents={bar ? 'box-none' : 'none'} style={[styles.card, style]}>
       {media.map((item, itemIndex) => (
@@ -264,7 +275,7 @@ const StoryCard = memo(function StoryCard({ event, today, insets, slide, bar, ac
           <View style={[styles.cover, item.placeholder ? styles.placeholderTint : styles.tint]} />
           {!item.placeholder && (
             <View style={[styles.media, { top: insets.top + 74, bottom: insets.bottom + 236 }]}>
-              <Image source={item.source} resizeMode="contain" fadeDuration={0} style={styles.mediaImage} accessibilityLabel={`Eventbild: ${event.title}`} />
+              <Image source={item.source} resizeMode="contain" fadeDuration={0} style={styles.mediaImage} accessibilityLabel={page.imageLabel} />
             </View>
           )}
         </View>
@@ -284,18 +295,21 @@ const StoryCard = memo(function StoryCard({ event, today, insets, slide, bar, ac
       </View>
 
       <View pointerEvents="box-none" style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 14) + 12 }]}>
-        {current?.placeholder && <Text style={styles.symbol}>{current.test ? 'TEST · Symbolbild, nur in der Entwicklung' : 'Symbolbild · für dieses Event liegt noch kein Bild vor'}</Text>}
-        <Text style={styles.when}>{eventDayLabel(event.startsAt, today).toLocaleUpperCase('de')} · {eventTimeLabel(event.startsAt)} UHR</Text>
-        <Text numberOfLines={3} accessibilityRole="header" style={styles.title}>{event.title}</Text>
-        <View style={styles.meta}><Icon name="pin" size={15} color="#ebebf5cc" /><Text numberOfLines={1} style={styles.metaText}>{place}</Text></View>
-        {tags.length > 0 && <View style={styles.tags}>{tags.slice(0, 4).map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}</View>}
+        {current?.placeholder && <Text style={styles.symbol}>{current.test ? 'TEST · Symbolbild, nur in der Entwicklung' : page.placeholderNote}</Text>}
+        {current?.caption && <Text numberOfLines={3} style={styles.caption}>{current.caption}</Text>}
+        {current?.detail && <Text numberOfLines={1} style={styles.detail}>{current.detail}</Text>}
+        <Text style={styles.when}>{page.overline}</Text>
+        <Text numberOfLines={3} accessibilityRole="header" style={styles.title}>{page.title}</Text>
+        {page.place && <View style={styles.meta}><Icon name="pin" size={15} color="#ebebf5cc" /><Text numberOfLines={1} style={styles.metaText}>{page.place}</Text></View>}
+        {page.subtitle && <Text numberOfLines={2} style={styles.metaText}>{page.subtitle}</Text>}
+        {page.tags.length > 0 && <View style={styles.tags}>{page.tags.map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}</View>}
         <View style={styles.actions}>
-          <Pressable accessibilityRole="button" accessibilityLabel={`${event.title}, ${label}`} onPress={() => onOpenEvent(event)} style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`${page.title}, ${label}`} onPress={() => onAction(page)} style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
             <LinearGradient pointerEvents="none" colors={colors.accentFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cover} />
             <Text style={styles.ctaText}>{label}</Text>
             <Icon name="chevron" size={17} color={colors.text} />
           </Pressable>
-          <SaveEventButton id={event.id} title={event.title} />
+          {page.saveEvent && <SaveEventButton id={page.saveEvent.id} title={page.saveEvent.title} />}
         </View>
       </View>
     </Animated.View>
@@ -321,6 +335,8 @@ const styles = StyleSheet.create({
   segmentFill: { width: '100%', height: '100%', borderRadius: 2, backgroundColor: colors.text, transformOrigin: 'left' },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 18, gap: 8 },
   symbol: { color: '#ebebf5cc', fontSize: 11 },
+  caption: { color: colors.text, fontSize: 16, lineHeight: 21, fontWeight: '600' },
+  detail: { color: '#ebebf5cc', fontSize: 12, fontWeight: '600' },
   when: { color: colors.pink, fontSize: 12, fontWeight: '800', letterSpacing: 1.1 },
   title: { color: colors.text, fontSize: 26, lineHeight: 31, fontWeight: '800', letterSpacing: -0.6 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 7 },
