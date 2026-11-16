@@ -162,6 +162,19 @@ export default function EventDetailScreen() {
       </View>
 
       <View style={styles.body}>
+        {/* Always a clear way to the organizer's page, whether or not there is a story (the round picture
+            above opens the story when there is one). Events without an organizer profile have no such page. */}
+        {organizer && <Link href={organizerHref(organizer.id)} asChild>
+          <PressableScale accessibilityRole="link" accessibilityLabel={`Veranstalter ${organizer.displayName}: Profil ansehen`} scaleTo={0.98} style={styles.organizerCard}>
+            <OrganizerAvatar organizer={organizer} size={44} />
+            <View style={styles.organizerCopy}>
+              <Text style={styles.organizerLabel}>Veranstalter</Text>
+              <Text numberOfLines={1} style={styles.organizerName}>{organizer.displayName}</Text>
+            </View>
+            <View style={styles.profileButton}><Text style={styles.profileText}>Profil</Text><Icon name="chevron" size={13} color={colors.text} /></View>
+          </PressableScale>
+        </Link>}
+
         {/* About tonight's event, first thing under the title. */}
         <View style={styles.block}>
           <SectionTitle title="Über das Event" style={styles.blockTitle} />
@@ -240,6 +253,12 @@ const styles = StyleSheet.create({
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
   tag: { color: colors.text, fontSize: 12, fontWeight: '600', backgroundColor: '#ffffff14', borderRadius: 13, overflow: 'hidden', paddingHorizontal: 11, paddingVertical: 5 },
   body: { paddingHorizontal: gutter, paddingTop: space.xl },
+  organizerCard: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.lg, backgroundColor: '#ffffff0a', borderWidth: 1, borderColor: '#ffffff12', ...squircle },
+  organizerCopy: { flex: 1, minWidth: 0 },
+  organizerLabel: { ...type.footnote, fontSize: 11, color: colors.faint },
+  organizerName: { ...type.headline, color: colors.text },
+  profileButton: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: space.md, paddingRight: space.sm, height: 34, borderRadius: 17, backgroundColor: colors.accentDeep },
+  profileText: { ...type.label, fontSize: 14, color: colors.text },
   organizer: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.xs },
   ring: { alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 18px #00000080' },
   ringGlow: { boxShadow: '0 0 22px 4px #ff4ab88c' },
