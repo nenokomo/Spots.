@@ -32,8 +32,9 @@ const shotTypes: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'p
 /**
  * Postet einen Shot (Foto) zu einem laufenden Event (SQL 17/30): Datei in den privaten Bucket live-snaps
  * (Ordner = eigenes Konto), dann die Zeile. Sofort sichtbar; Melden und Moderation greifen danach.
+ * Für Club-Mitglieder ist das die Event-Story (SQL 33: ab dem Anlegen bis zwei Stunden nach dem Ende).
  */
-export async function postShot(eventId: string, image: { uri: string; mimeType?: string | null }): Promise<void> {
+export async function postShot(eventId: string, image: { uri: string; mimeType?: string | null }, options: { eventStory?: boolean } = {}): Promise<void> {
   if (!uuid.test(eventId) || eventId.toLowerCase().startsWith(LOCAL_TEST_ID_PREFIX)) throw new Error('Für Test-Events können keine Shots gepostet werden.');
   const client = await signedInClient('Zum Posten bitte zuerst anmelden.');
   const { data: { user } } = await client.auth.getUser();
@@ -49,7 +50,7 @@ export async function postShot(eventId: string, image: { uri: string; mimeType?:
   if (error) {
     await bucket.remove([path]).catch(() => {});
     if (error.message?.includes('limit')) throw new Error('Du hast gerade sehr viele Shots gepostet. Bitte später erneut versuchen.');
-    if (error.code === '42501') throw new Error('Shots gehen nur, während das Event läuft.');
+    if (error.code === '42501') throw new Error(options.eventStory ? 'Die Event-Story geht nur bis zwei Stunden nach dem Ende.' : 'Shots gehen nur, während das Event läuft.');
     throw new Error('Der Shot konnte nicht gespeichert werden. Bitte erneut versuchen.');
   }
   snapListeners.forEach((listener) => listener(eventId));
