@@ -37,6 +37,23 @@ export function StudioPage({ title, subtitle, trailing, children, bottomInset = 
   </View>;
 }
 
+/**
+ * Shows which part of Spots a page edits and where it appears for guests, with an optional preview.
+ * Keeps the three areas apart: Eventseite · Entdecken-Story · Veranstalterseite.
+ */
+export function AreaBanner({ icon, area, text, preview, onPreview }: { icon: IconName; area: string; text: string; preview?: string; onPreview?: () => void }) {
+  return <View style={styles.area}>
+    <View style={styles.areaIcon}><Icon name={icon} size={18} color={studio.accent} /></View>
+    <View style={styles.areaCopy}>
+      <Text style={styles.areaLabel}>{area}</Text>
+      <Text style={styles.areaText}>{text}</Text>
+    </View>
+    {preview && onPreview && <Pressable accessibilityRole="link" accessibilityLabel={preview} onPress={onPreview} hitSlop={6} style={({ pressed }) => [styles.areaLink, pressed && styles.pressed]}>
+      <Text style={styles.areaLinkText}>{preview}</Text>
+    </Pressable>}
+  </View>;
+}
+
 export function Card({ children, tone, style }: { children: ReactNode; tone?: 'accent' | 'amber' | 'red' | 'green'; style?: StyleProp<ViewStyle> }) {
   const toneStyle = tone ? { borderColor: { accent: studio.accentLine, amber: studio.amber, red: studio.red, green: studio.green }[tone] } : null;
   return <View style={[styles.card, toneStyle, style]}>{children}</View>;
@@ -136,6 +153,13 @@ const styles = StyleSheet.create({
   badgeText: { ...studioType.mark, fontSize: 10, lineHeight: 13, color: studio.text },
   title: { ...studioType.title, color: studio.text },
   subtitle: { ...studioType.body, color: studio.muted },
+  area: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: studio.radiusSmall, backgroundColor: studio.accentSoft, borderWidth: 1, borderColor: studio.accentLine },
+  areaIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a090c80' },
+  areaCopy: { flex: 1, gap: 2 },
+  areaLabel: { ...studioType.label, fontSize: 10, color: studio.pink },
+  areaText: { ...studioType.small, color: studio.text },
+  areaLink: { paddingHorizontal: 12, height: 32, borderRadius: 16, justifyContent: 'center', backgroundColor: '#0a090c80' },
+  areaLinkText: { ...studioType.small, fontWeight: '700', color: studio.text },
   card: { gap: 12, padding: 18, borderRadius: studio.radius, backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, ...squircle },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 8 },
   section: { fontSize: 20, lineHeight: 25, fontWeight: '700', letterSpacing: -0.3, flexShrink: 1 },

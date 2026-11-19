@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { fetchEventStats, type EventStats } from '../organizer/organizerApi';
 import { dayFormat } from './format';
 import { useStudio } from './StudioContext';
 import { studio, studioType } from './theme';
-import { Card, Kpi, Message, SectionTitle, Segmented, StudioPage, studioStyles } from './ui';
+import { Card, Kpi, Message, SectionTitle, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
 
 const metrics = { views: 'Aufrufe', saves: 'Gemerkt', ticketClicks: 'Ticket-Klicks', snaps: 'SHOTS' } as const;
 const icons = { views: 'search', saves: 'heart', ticketClicks: 'ticket', snaps: 'camera' } as const;
@@ -32,7 +33,8 @@ export default function StatsScreen() {
   const sorted = [...(rows ?? [])].sort((a, b) => b[metric] - a[metric]);
   const max = Math.max(1, ...sorted.map((row) => row[metric]));
 
-  return <StudioPage title="Zahlen" subtitle="Summen pro Event. Aufrufe und Ticket-Klicks zählen pro Gerät höchstens einmal am Tag.">
+  return <StudioPage title="Zahlen" bottomInset={40} subtitle="Summen pro Event. Aufrufe und Ticket-Klicks zählen pro Gerät höchstens einmal am Tag."
+    trailing={<StudioButton small variant="secondary" label="Zurück" onPress={() => router.canGoBack() ? router.back() : router.replace('/studio')} />}>
     <View style={studioStyles.row}>
       {(Object.keys(metrics) as Metric[]).map((key) => <Kpi key={key} icon={icons[key]} label={metrics[key]} value={rows ? total(key) : '–'} />)}
     </View>

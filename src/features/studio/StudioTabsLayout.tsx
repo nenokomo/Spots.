@@ -23,19 +23,20 @@ function PlusButton({ onPress }: { onPress: () => void }) {
   </Pressable>;
 }
 
-type Choice = { icon: IconName; title: string; text: string; href?: Href; note?: string };
+type Choice = { area: string; icon: IconName; title: string; text: string; href?: Href; note?: string };
 
 /** Sheet behind „+“: what an organizer can create. Posts (Beiträge) are not available in Studio yet. */
 function CreateSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const { events } = useStudio();
+  const { events, organizer } = useStudio();
+  const city = organizer?.city ?? 'eurer Stadt';
   const next = events.filter((event) => isUpcoming(event) && event.status === 'scheduled').sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
   const choices: Choice[] = [
-    { icon: 'camera', title: 'Story in Entdecken', text: 'Bilder für eure Kachel in Entdecken.', href: '/studio/story' },
-    { icon: 'calendar', title: 'Neues Event', text: 'Event anlegen, Flyer und Tickets eintragen.', href: { pathname: '/studio/event/[id]', params: { id: 'new' } } },
+    { area: 'Eventseite', icon: 'calendar', title: 'Neues Event', text: 'Event anlegen, Flyer und Tickets eintragen.', href: { pathname: '/studio/event/[id]', params: { id: 'new' } } },
     next
-      ? { icon: 'wave', title: 'Event-Story', text: `Fotos für „${next.title}“ (${dayFormat.format(new Date(next.startsAt))}), 24 Stunden sichtbar.`, href: { pathname: '/studio/event/[id]', params: { id: next.id } } }
-      : { icon: 'wave', title: 'Event-Story', text: 'Fotos für die Eventseite.', note: 'Legt zuerst ein Event an.' },
-    { icon: 'grid', title: 'Beitrag', text: 'Bilder und Text für eure Veranstalterseite.', note: 'Kommt bald' },
+      ? { area: 'Eventseite', icon: 'wave', title: 'Event-Story', text: `Fotos für „${next.title}“ (${dayFormat.format(new Date(next.startsAt))}), 24 Stunden sichtbar.`, href: { pathname: '/studio/event/[id]', params: { id: next.id } } }
+      : { area: 'Eventseite', icon: 'wave', title: 'Event-Story', text: 'Fotos für die Eventseite.', note: 'Legt zuerst ein Event an.' },
+    { area: 'Entdecken', icon: 'camera', title: 'Story in Entdecken', text: `Bilder für eure Kachel unter „Veranstalter in ${city}“.`, href: '/studio/story' },
+    { area: 'Veranstalterseite', icon: 'grid', title: 'Beitrag', text: 'Bilder und Text für eure Veranstalterseite.', note: 'Kommt bald' },
   ];
   return <Modal visible={visible} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}>
     <View style={styles.sheetBackdrop}>
@@ -52,6 +53,7 @@ function CreateSheet({ visible, onClose }: { visible: boolean; onClose: () => vo
               style={({ pressed }) => [styles.choice, disabled && styles.choiceDisabled, pressed && styles.pressed]}>
               <View style={styles.choiceIcon}><Icon name={choice.icon} size={20} color={studio.accent} /></View>
               <View style={styles.choiceCopy}>
+                <Text style={styles.choiceArea}>{choice.area}</Text>
                 <Text style={styles.choiceTitle}>{choice.title}</Text>
                 <Text numberOfLines={2} style={styles.choiceText}>{choice.text}</Text>
               </View>
@@ -65,7 +67,8 @@ function CreateSheet({ visible, onClose }: { visible: boolean; onClose: () => vo
 }
 
 /**
- * Reiterleiste von Spots Studio: Heute · Events · + · Zahlen · Profil, als schwebende Glas-Kapsel wie in der Besucher-App.
+ * Reiterleiste von Spots Studio, ein Reiter pro Bereich in Spots: Heute · Events (Eventseiten) · + · Story (Entdecken) · Seite
+ * (Veranstalterseite), als schwebende Glas-Kapsel wie in der Besucher-App. Die Zahlen liegen als eigene Seite darüber.
  * „+“ öffnet die Auswahl zum Erstellen. Zugang und gemeinsame Daten regelt StudioLayout darüber.
  */
 export default function StudioTabsLayout() {
@@ -89,8 +92,8 @@ export default function StudioTabsLayout() {
       <Tabs.Screen name="index" options={{ title: 'Heute', tabBarIcon: ({ focused }) => <TabIcon name="radar" focused={focused} /> }} />
       <Tabs.Screen name="events" options={{ title: 'Events', tabBarIcon: ({ focused }) => <TabIcon name="calendar" focused={focused} /> }} />
       <Tabs.Screen name="create" options={{ title: 'Erstellen', tabBarButton: () => <PlusButton onPress={() => setCreating(true)} /> }} />
-      <Tabs.Screen name="stats" options={{ title: 'Zahlen', tabBarIcon: ({ focused }) => <TabIcon name="wave" focused={focused} /> }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: ({ focused }) => <TabIcon name="profile" focused={focused} /> }} />
+      <Tabs.Screen name="story" options={{ title: 'Story', tabBarIcon: ({ focused }) => <TabIcon name="camera" focused={focused} /> }} />
+      <Tabs.Screen name="profile" options={{ title: 'Seite', tabBarIcon: ({ focused }) => <TabIcon name="profile" focused={focused} /> }} />
     </Tabs>
     <CreateSheet visible={creating} onClose={() => setCreating(false)} />
   </>;
@@ -113,6 +116,7 @@ const styles = StyleSheet.create({
   choiceDisabled: { opacity: 0.5 },
   choiceIcon: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.accentSoft },
   choiceCopy: { flex: 1, gap: 2 },
+  choiceArea: { ...studioType.label, fontSize: 9, lineHeight: 12, color: studio.pink },
   choiceTitle: { ...studioType.heading, fontSize: 16, lineHeight: 21, color: studio.text },
   choiceText: { ...studioType.small, color: studio.muted },
   choiceNote: { ...studioType.label, fontSize: 10, color: studio.faint },

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { useNow } from '../../hooks/useNow';
+import { eventDetailHref } from '../../navigation/eventRoutes';
 import { postShot } from '../../services/content';
 import { formatBerlinInput, parseBerlinDateTime, parseBerlinEnd } from '../../utils/berlinTime';
 import { geocodeAddress } from '../organizer/geocode';
@@ -13,7 +14,7 @@ import { normalizeWebsite } from '../organizer/signup';
 import { useStudio } from './StudioContext';
 import { StudioImageField } from './StudioImageField';
 import { studio } from './theme';
-import { Card, Input, Message, SectionTitle, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
+import { AreaBanner, Card, Input, Message, SectionTitle, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
 
 const categories: Record<EventCategory, string> = { club: 'Clubnacht', concert: 'Konzert', event: 'Event' };
 const back = () => router.canGoBack() ? router.back() : router.replace('/studio/events');
@@ -145,6 +146,8 @@ function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: O
   return <StudioPage title={event ? 'Event bearbeiten' : 'Neues Event'} bottomInset={40}
     trailing={<StudioButton small variant="secondary" label="Zurück" onPress={back} />}>
     {cancelled && <Card tone="red"><Text style={studioStyles.body}>Dieses Event ist abgesagt und nicht mehr in Spots zu sehen.</Text></Card>}
+    <AreaBanner icon="calendar" area="Eventseite" text={event ? `Ihr bearbeitet die Eventseite von „${event.title}“.` : 'Ein neues Event bekommt seine eigene Eventseite in Spots.'}
+      preview={event?.isPublished ? 'Ansehen' : undefined} onPreview={event ? () => router.push(eventDetailHref(event.id)) : undefined} />
     {/* Story first: „Event-Story posten“ on Heute lands right here. */}
     {event && <EventStoryCard event={event} />}
     <SectionTitle>Was & wann</SectionTitle>

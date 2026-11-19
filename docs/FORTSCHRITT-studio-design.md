@@ -36,6 +36,15 @@ Stand: 19.11.2026. Branch `design/studio` (von `design/feinschliff`, enthält ak
 - **Profil:** Visitenkarte (Logo, Name, Status) mit „So sehen euch Gäste“, Beiträge-Hinweis „bald“, Ansprechperson als privat markiert.
 - Datenlogik unverändert (StudioContext, organizerApi, Speichern, Freigabe). Geprüft: Typecheck, Lint. Nicht auf dem Handy geprüft.
 
+## Drei Bereiche klar getrennt (19.11., Runde 2)
+
+- Tabs jetzt ein Bereich pro Reiter: **Heute · Events (Eventseiten) · + · Story (Entdecken-Story) · Seite (Veranstalterseite)**. Zahlen sind eine eigene Seite (`/studio/stats`), erreichbar über „Alle Zahlen“ auf Heute.
+- Routen verschoben: `studio/story.tsx` → `studio/(tabs)/story.tsx` (Jacints Story-Seite, nur die Route), `studio/(tabs)/stats.tsx` → `studio/stats.tsx`. Links `/studio/story` und `/studio/stats` bleiben gleich.
+- Neuer Baustein `AreaBanner` auf jeder Seite: welcher Bereich, wo er für Gäste erscheint, bei Eventseiten „Ansehen“ (nur wenn live).
+- Entdecken-Story: Hinweis „Als eure Kachel unter ‚Veranstalter in <Stadt>‘. Nicht auf Eventseiten.“
+- Veranstalterseite: Titel „Veranstalterseite“, Trennlinie „Privat · nicht auf eurer Seite“ vor Ansprechperson und Konto.
+- Heute: „Eure Bereiche in Spots“ mit den drei Bereichen; „+“-Auswahl zeigt bei jedem Eintrag den Bereich.
+
 ## Offen
 
 - Handy-Test durch Noyan.

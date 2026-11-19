@@ -1,5 +1,4 @@
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { OrganizerStoryItem } from '../../services/organizerStories';
@@ -7,12 +6,12 @@ import { addStoryItem, deleteStoryItem, fetchMyStoryItems, maxStoryItems } from 
 import { dayFormat } from './format';
 import { useStudio } from './StudioContext';
 import { studio, studioType } from './theme';
-import { Card, Input, Message, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
+import { AreaBanner, Card, Input, Message, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
 
 type Picked = { uri: string; mimeType?: string | null };
 
 /**
- * /studio/story: Entdecken-Story des Clubs (SQL 33). Einfache, funktionale Oberfläche – Design offen für Noyan.
+ * /studio/story (Reiter „Story“): Entdecken-Story des Clubs (SQL 33), die Kachel unter „Veranstalter in <Stadt>“.
  * Bilder bleiben, bis der Club sie löscht; optional mit Text und einem eigenen Event (vergangen oder kommend).
  */
 export default function StoryScreen() {
@@ -25,7 +24,6 @@ export default function StoryScreen() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const organizerId = organizer?.id;
-  const back = () => router.canGoBack() ? router.back() : router.replace('/studio');
 
   const load = useCallback(() => {
     if (!organizerId) return;
@@ -33,7 +31,7 @@ export default function StoryScreen() {
   }, [organizerId]);
   useEffect(load, [load]);
 
-  if (!organizer) return <StudioPage title="Entdecken-Story" trailing={<StudioButton small variant="secondary" label="Zurück" onPress={back} />}>
+  if (!organizer) return <StudioPage title="Entdecken-Story">
     <Text style={studioStyles.muted}>Bitte zuerst die Angaben zum Club ergänzen.</Text>
   </StudioPage>;
 
@@ -64,9 +62,9 @@ export default function StoryScreen() {
   const choices = [...events].filter((event) => event.status !== 'cancelled').sort((a, b) => b.startsAt.localeCompare(a.startsAt)).slice(0, 30);
   const full = (items?.length ?? 0) >= maxStoryItems;
 
-  return <StudioPage title="Entdecken-Story" bottomInset={40}
-    subtitle="Eure Kachel in Entdecken: Eindrücke von vergangenen Events oder Vorfreude auf kommende. Die Bilder bleiben, bis ihr sie löscht."
-    trailing={<StudioButton small variant="secondary" label="Zurück" onPress={back} />}>
+  return <StudioPage title="Entdecken-Story"
+    subtitle="Eindrücke von vergangenen Events oder Vorfreude auf kommende. Die Bilder bleiben, bis ihr sie löscht.">
+    <AreaBanner icon="search" area="Erscheint in Entdecken" text={`Als eure Kachel unter „Veranstalter in ${organizer.city ?? 'eurer Stadt'}“. Nicht auf Eventseiten.`} />
     {organizer.reviewStatus !== 'approved' && <Card tone="amber"><Text style={studioStyles.body}>Ihr könnt schon posten. Sichtbar wird die Story, sobald das Spots-Team euren Club freigegeben hat.</Text></Card>}
 
     <SectionTitle>Neues Bild</SectionTitle>

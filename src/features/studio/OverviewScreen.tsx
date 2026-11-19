@@ -143,7 +143,7 @@ export default function OverviewScreen() {
   const tasks = todos(upcoming, approved);
 
   return <StudioPage title={organizer.displayName} subtitle={longDay.format(new Date(now))}
-    trailing={<Pressable accessibilityRole="button" accessibilityLabel="Profil öffnen" onPress={() => router.push('/studio/profile')} style={styles.logo}>
+    trailing={<Pressable accessibilityRole="button" accessibilityLabel="Veranstalterseite bearbeiten" onPress={() => router.push('/studio/profile')} style={styles.logo}>
       {organizer.avatarUrl ? <Image source={{ uri: organizer.avatarUrl }} style={StyleSheet.absoluteFill} accessibilityLabel={`Logo von ${organizer.displayName}`} /> : <Icon name="profile" size={22} color={studio.muted} />}
     </Pressable>}>
     {/* Review progress only until the club is approved. */}
@@ -157,6 +157,7 @@ export default function OverviewScreen() {
           <StudioButton label="Event anlegen" icon="calendar" onPress={() => router.push(editHref('new'))} />
         </Card>}
 
+    <SectionTitle action={<StudioButton small variant="ghost" label="Alle Zahlen" onPress={() => router.push('/studio/stats')} />}>Zahlen</SectionTitle>
     <View style={studioStyles.row}>
       <Kpi icon="calendar" label="Kommend" value={upcoming.length} hint={`${live} davon live`} />
       <Kpi icon="search" label="Aufrufe" value={stats ? sum('views') : '–'} hint="alle Events" />
@@ -179,17 +180,25 @@ export default function OverviewScreen() {
       ))}</View>
     </>}
 
-    {/* Entdecken-Story (SQL 33, Jacint): own card with a clear way in. */}
-    <Pressable accessibilityRole="button" accessibilityLabel="Story in Entdecken bearbeiten" onPress={() => router.push('/studio/story')} style={({ pressed }) => [styles.story, pressed && styles.pressed]}>
-      <LinearGradient colors={[studio.pink, studio.accentFill[0], '#7a2bd6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.storyRing}>
-        <View style={styles.storyInner}><Icon name="camera" size={20} color={studio.text} /></View>
-      </LinearGradient>
-      <View style={studioStyles.flex}>
-        <Text style={studioStyles.heading}>Eure Story in Entdecken</Text>
-        <Text style={studioStyles.muted}>So sehen Leute in {organizer.city ?? 'eurer Stadt'} euren Club. Eindrücke von vergangenen Events und Vorfreude auf kommende.</Text>
-      </View>
-      <Icon name="chevron" size={15} color={studio.faint} />
-    </Pressable>
+    {/* The three areas an organizer edits, each with where it appears in Spots. */}
+    <SectionTitle>Eure Bereiche in Spots</SectionTitle>
+    <View style={styles.areas}>
+      {([
+        { icon: 'calendar', title: 'Eventseiten', text: `${upcoming.length} kommend · Flyer, Tickets, Ort, Event-Story`, href: '/studio/events' },
+        { icon: 'camera', title: 'Entdecken-Story', text: `Eure Kachel unter „Veranstalter in ${organizer.city ?? 'eurer Stadt'}“`, href: '/studio/story' },
+        { icon: 'profile', title: 'Veranstalterseite', text: 'Logo, Beschreibung, Beiträge', href: '/studio/profile' },
+      ] as const).map((area) => (
+        <Pressable key={area.title} accessibilityRole="button" accessibilityLabel={`${area.title} bearbeiten. ${area.text}`} onPress={() => router.push(area.href)}
+          style={({ pressed }) => [styles.areaRow, pressed && styles.pressed]}>
+          <View style={styles.areaIcon}><Icon name={area.icon} size={20} color={studio.accent} /></View>
+          <View style={studioStyles.flex}>
+            <Text style={studioStyles.heading}>{area.title}</Text>
+            <Text numberOfLines={1} style={studioStyles.muted}>{area.text}</Text>
+          </View>
+          <Icon name="chevron" size={15} color={studio.faint} />
+        </Pressable>
+      ))}
+    </View>
 
     {later.length > 0 && <>
       <SectionTitle action={<StudioButton small variant="ghost" label="Alle Events" onPress={() => router.push('/studio/events')} />}>Danach</SectionTitle>
@@ -218,9 +227,9 @@ const styles = StyleSheet.create({
   taskDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: studio.amber },
   taskTitle: { ...studioType.body, fontWeight: '700', color: studio.text },
   taskEvent: { fontWeight: '400', color: studio.muted },
-  story: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: studio.radius, backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, ...squircle },
-  storyRing: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px 2px #ff4ab84d' },
-  storyInner: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.bg },
+  areas: { borderRadius: studio.radius, overflow: 'hidden', backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, ...squircle },
+  areaRow: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: studio.line },
+  areaIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.accentSoft },
   steps: { flexDirection: 'row', gap: 8 },
   step: { flex: 1, gap: 6 },
   dot: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: studio.line, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.bg },

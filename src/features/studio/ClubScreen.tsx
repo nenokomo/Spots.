@@ -11,7 +11,7 @@ import { normalizeSocial, normalizeWebsite, phonePattern } from '../organizer/si
 import { useStudio } from './StudioContext';
 import { StudioImageField } from './StudioImageField';
 import { studio } from './theme';
-import { Card, Input, Message, Pill, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
+import { AreaBanner, Card, Input, Message, Pill, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
 
 function ProfileForm({ organizer, reload }: { organizer: MyOrganizer; reload: () => void }) {
   const [name, setName] = useState(organizer.displayName);
@@ -139,17 +139,20 @@ function ProfileHead({ organizer }: { organizer: MyOrganizer }) {
 
 export default function ClubScreen() {
   const { organizer, reload } = useStudio();
-  return <StudioPage title="Profil" subtitle="So erscheint ihr in Spots. Ansprechperson und Telefon bleiben privat.">
+  return <StudioPage title="Veranstalterseite" subtitle="Eure eigene Seite in Spots: Logo, Beschreibung und Beiträge. Eure Events erscheinen dort automatisch.">
     {organizer && <>
+      <AreaBanner icon="profile" area="Veranstalterseite" text="Gäste kommen von jeder Eventseite und aus Entdecken hierher." />
       <ProfileHead organizer={organizer} />
-      <SectionTitle>Öffentliches Profil</SectionTitle>
+      <SectionTitle>Profil auf eurer Seite</SectionTitle>
       <ProfileForm key={organizer.id} organizer={organizer} reload={reload} />
       <SectionTitle>Beiträge</SectionTitle>
       <Card>
         <Text style={studioStyles.heading}>Bilder und Text für eure Seite</Text>
         <Text style={studioStyles.muted}>Bald könnt ihr hier Beiträge für eure Veranstalterseite posten.</Text>
       </Card>
-      <SectionTitle>Ansprechperson (privat)</SectionTitle>
+      {/* Clearly apart: nothing below appears on the page. */}
+      <View style={styles.privateDivider}><View style={styles.privateLine} /><Text style={styles.privateLabel}>Privat · nicht auf eurer Seite</Text><View style={styles.privateLine} /></View>
+      <SectionTitle>Ansprechperson</SectionTitle>
       <ContactForm organizer={organizer} />
     </>}
     <SectionTitle>Konto</SectionTitle>
@@ -160,5 +163,8 @@ export default function ClubScreen() {
 const styles = StyleSheet.create({
   headRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   logo: { width: 72, height: 72, borderRadius: 36, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: studio.panelHigh, borderWidth: 2, borderColor: studio.accentLine },
+  privateDivider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
+  privateLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: studio.line },
+  privateLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: studio.faint },
   name: { fontSize: 22, lineHeight: 27, fontWeight: '800', letterSpacing: -0.4, color: studio.text },
 });

@@ -4,7 +4,7 @@ import { Text } from 'react-native';
 import { EventCard } from './EventCard';
 import { isUpcoming } from './format';
 import { useStudio } from './StudioContext';
-import { Card, Message, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
+import { AreaBanner, Card, Message, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
 
 
 
@@ -19,6 +19,7 @@ export default function EventsScreen() {
 
   return <StudioPage title="Events" subtitle={approved ? 'Live-Events erscheinen sofort in Spots.' : 'Bis zur Freigabe bleiben alle Events Entwürfe.'}
     trailing={organizer ? <StudioButton small icon="calendar" label="Neues Event" onPress={() => router.push({ pathname: '/studio/event/[id]', params: { id: 'new' } })} /> : undefined}>
+    <AreaBanner icon="calendar" area="Eventseiten" text="Jedes Event hat seine eigene Eventseite in Spots: Flyer, Tickets, Ort und Event-Story. Tippt auf ein Event, um es zu bearbeiten." />
     <Segmented options={views} value={view} onChange={setView} />
     <Message error={error} />
     {shown.length === 0 && <Card>
