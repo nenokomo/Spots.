@@ -1,6 +1,6 @@
 # Fortschritt – design/feinschliff (Noyan)
 
-Stand: 15.11.2026
+Stand: 19.11.2026
 
 ## Erledigt (betrifft Noyans Design, Radar-Karte)
 
@@ -50,11 +50,22 @@ Stand: 15.11.2026
 - Abschnittstitel überall mit rosa Neon-Leuchten (`SectionTitle` in `ui/Section.tsx`): Entdecken, Gemerkt, Radar, Heute Nacht, Event- und Veranstalterseite.
 - Entdecken: „Als Nächstes“ direkt unter den Kategorien, mehr Abstand zwischen den übrigen Abschnitten, Kacheln mit 10 px Abstand; Suchleiste schlägt ab 3 Buchstaben Städte vor (Open-Meteo, wie Radar).
 
+- Eventseite: feste Veranstalter-Karte unter dem Titel („Profil ›“), auch ohne Story.
+- Veranstalterseite neu: Titelbild aus dem nächsten Flyer, großes Profilbild mittig mit Story-Ring (kommende Events als Storys), Name und Stadt, Zahlenleiste, Bio mittig, „Als Nächstes“/„Dein Event“, Pill-Umschalter Events (Standard) / Beiträge.
+
+## Veranstalterseite neu (19.11.)
+
+- Kopf: Titelbild (nächster echter Flyer, sonst Logo/Symbolbild), Profilbild mit Story-Ring linksbündig, Name, „Veranstalter · Stadt“, Musik-Chips (häufigste Genres der Events).
+- „Über uns“-Karte: erster Satz der Biografie als Motto, Rest mit „Mehr lesen“, Website. **Daten nötig von Jacint:** eigenes Feld Motto und Titelbild.
+- „Als Nächstes“ / „Jetzt live“: immer das nächste Event. Feste Leiste unten „Tickets fürs nächste Event“ + Merken (nur mit Ticket-Link).
+- „Programm“: nächste 4 Termine als Datumszeilen (mit Ticket-Pill bei Link), Kalender-Fenster (Kalender aus Entdecken) für alles Weitere.
+- Beiträge direkt auf der Seite wie ein Instagram-Feed; vergangene Events (3, mehr aufklappbar). Kopfleiste mit Name erscheint beim Scrollen.
+- Geprüft: Typecheck, Lint (nur die bekannten 2 Meldungen zu expo-image-picker). Handy-Test durch Noyan.
+
 ## Als Nächstes
 
-1. Handy-Test durch Noyan; Scan-Design je nach Ergebnis anpassen (Farbe, Tempo, Strahlbreite).
-2. Committen, `main` hereinholen (neue Commits von Jacint).
-3. Nächster Screen.
+1. `main` hereinholen (Jacints Veranstalter-Storys, SQL 33; mögliche Konflikte in ExploreScreen und EventStoryViewer).
+2. Spots Studio neu gestalten, siehe [FORTSCHRITT-studio-design.md](FORTSCHRITT-studio-design.md).
 
 ## Daten nötig von Jacint (falls Clubs zurückkommen)
 
