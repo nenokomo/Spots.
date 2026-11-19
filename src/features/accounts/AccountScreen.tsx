@@ -78,6 +78,8 @@ export default function AccountScreen() {
   const [error, setError] = useState<string | null>(null);
   const [recovering, setRecovering] = useState(false);
   const [club, setClub] = useState(emptyOrganizerSignup);
+  // Team-Mitglied mit Einladungscode: Veranstalter-Konto ohne eigenen Club (SQL 35). Der Code wird im Studio eingelöst.
+  const [invited, setInvited] = useState(false);
   const accountType = useAccountType(session?.user.id ?? null);
   // Produktion: nur Anmelden fürs Spots-Team; Registrieren erscheint automatisch, sobald Konten für alle freigeschaltet sind.
   const team = accountClientMode === 'team';
@@ -122,17 +124,19 @@ export default function AccountScreen() {
       await actions.requestPasswordReset(email, Linking.createURL('/account', { queryParams: { reset: '1' } }));
       setMessage('Falls es zu dieser Adresse ein Konto gibt, ist ein Link unterwegs. Öffne ihn auf diesem Gerät.');
     } else if (mode === 'register' && !team) {
-      let organizer: Record<string, string | null> | undefined;
-      if (kind === 'organizer') {
+      let organizer: Record<string, string | null> | 'invited' | undefined;
+      if (kind === 'organizer' && invited) organizer = 'invited';
+      else if (kind === 'organizer') {
         const checked = validateOrganizerSignup(club);
         if ('error' in checked) throw new Error(checked.error);
         organizer = checked.data;
       }
       const result = await actions.register(email, password, Linking.createURL('/account'), organizer);
-      if (organizer) setClub(emptyOrganizerSignup);
+      if (organizer) { setClub(emptyOrganizerSignup); setInvited(false); }
       setMode('signIn');
       setMessage(result.requiresEmailConfirmation
-        ? organizer ? 'Fast geschafft: Bitte bestätigt eure E-Mail und meldet euch dann an. Das Spots-Team prüft euren Club.' : 'Fast geschafft: Bitte bestätige deine E-Mail und melde dich dann an.'
+        ? organizer === 'invited' ? 'Fast geschafft: Bitte bestätige deine E-Mail und melde dich dann an. Danach gibst du den Einladungscode ein.'
+        : organizer ? 'Fast geschafft: Bitte bestätigt eure E-Mail und meldet euch dann an. Das Spots-Team prüft euren Club.' : 'Fast geschafft: Bitte bestätige deine E-Mail und melde dich dann an.'
         : 'Konto erstellt.');
     } else {
       // Weiter geht es über den Effekt oben, sobald die Kontoart bekannt ist.
@@ -214,8 +218,10 @@ export default function AccountScreen() {
               setRecovering(false);
             })} />
           </View> : !session && <View style={styles.form}>
-            {mode === 'register' && kind === 'organizer' && !team
+            {mode === 'register' && kind === 'organizer' && !team && !invited
               && <OrganizerSignupFields value={club} onChange={setClub} editable={!busy} Input={Field} hintStyle={styles.hint} />}
+            {mode === 'register' && kind === 'organizer' && !team && invited
+              && <Text style={styles.hint}>Du gehörst zum Team eines Clubs, der schon bei Spots ist. Erstelle dein Konto und gib nach dem Anmelden den Einladungscode ein, den du vom Club bekommen hast.</Text>}
             <Field label="E-Mail" value={email} onChange={setEmail} keyboard="email-address" autoComplete="email" editable={!busy} />
             {mode !== 'forgot' && <Field label="Passwort" value={password} onChange={setPassword} secure autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
               placeholder={mode === 'register' ? 'mindestens 8 Zeichen' : undefined} editable={!busy} />}
@@ -223,6 +229,7 @@ export default function AccountScreen() {
               onPress={() => void action(submit, mode === 'register')} />
             {mode === 'signIn' && <Button label="Passwort vergessen?" variant="ghost" disabled={busy} onPress={() => switchMode('forgot')} />}
             {mode === 'signIn' && !team && <Button label={kind === 'organizer' ? 'Club registrieren' : 'Neues Konto erstellen'} variant="secondary" disabled={busy} onPress={() => switchMode('register')} />}
+            {mode === 'register' && kind === 'organizer' && !team && <Button label={invited ? 'Doch einen neuen Club registrieren' : 'Ich habe einen Einladungscode'} variant="ghost" disabled={busy} onPress={() => { setInvited((value) => !value); setError(null); }} />}
             {mode !== 'signIn' && <Button label="Zurück zur Anmeldung" variant="ghost" disabled={busy} onPress={() => switchMode('signIn')} />}
           </View>)}
         </View>}

@@ -253,3 +253,50 @@ export async function setShotHidden(shotId: string, hidden: boolean): Promise<vo
   if (error) throw failure(hidden ? 'Ausblenden' : 'Wieder zeigen');
   if (!data?.length) throw new Error('Dieses Bild hat das Spots-Team gesperrt. Es lässt sich hier nicht ändern.');
 }
+
+// ---------------------------------------------------------------------------------------------
+// Team-Mitglieder (SQL 35): Der Besitzer erzeugt Einladungscodes; eingeladene Veranstalter-Konten lösen sie ein.
+// ---------------------------------------------------------------------------------------------
+export type OrganizerMember = { userId: string; email: string; role: 'owner' | 'editor'; since: string };
+export type OrganizerInvite = { code: string; expiresAt: string };
+/** 12 Zeichen in Vierergruppen, leichter abzutippen. */
+export const formatInviteCode = (code: string) => code.replace(/(.{4})(?=.)/g, '$1-');
+
+export async function fetchMembers(organizerId: string): Promise<OrganizerMember[]> {
+  const { data, error } = await getAccountClient().rpc('spots_organizer_members', { p_organizer_id: organizerId });
+  if (error) throw failure('Laden des Teams');
+  return ((data ?? []) as { user_id: string; email: string; role: 'owner' | 'editor'; created_at: string }[])
+    .map((row) => ({ userId: row.user_id, email: row.email, role: row.role, since: row.created_at }));
+}
+
+export async function fetchInvites(organizerId: string): Promise<OrganizerInvite[]> {
+  const { data, error } = await getAccountClient().rpc('spots_organizer_invites', { p_organizer_id: organizerId });
+  if (error) throw failure('Laden der Einladungen');
+  return ((data ?? []) as { code: string; expires_at: string }[]).map((row) => ({ code: row.code, expiresAt: row.expires_at }));
+}
+
+export async function createInvite(organizerId: string): Promise<OrganizerInvite> {
+  const { data, error } = await getAccountClient().rpc('spots_organizer_create_invite', { p_organizer_id: organizerId });
+  const row = (data as { code: string; expires_at: string }[] | null)?.[0];
+  if (error?.message?.includes('limit')) throw new Error('Es gibt schon fünf offene Einladungen. Bitte zuerst eine zurückziehen.');
+  if (error || !row) throw failure('Erstellen der Einladung');
+  return { code: row.code, expiresAt: row.expires_at };
+}
+
+export async function revokeInvite(code: string): Promise<void> {
+  const { error } = await getAccountClient().rpc('spots_organizer_revoke_invite', { p_code: code });
+  if (error) throw failure('Zurückziehen der Einladung');
+}
+
+export async function removeMember(organizerId: string, userId: string): Promise<void> {
+  const { error } = await getAccountClient().rpc('set_organizer_editor', { p_organizer_id: organizerId, p_user_id: userId, p_enabled: false });
+  if (error) throw failure('Entfernen');
+}
+
+/** Löst einen Einladungscode ein. Falscher oder abgelaufener Code: verständliche Meldung, kein Hinweis auf den Club. */
+export async function redeemInvite(code: string): Promise<void> {
+  const { data, error } = await getAccountClient().rpc('spots_organizer_redeem_invite', { p_code: code });
+  if (error?.message?.includes('Too many')) throw new Error('Zu viele Versuche. Bitte in einer Stunde erneut versuchen.');
+  if (error) throw failure('Einlösen');
+  if (!data) throw new Error('Der Code ist ungültig oder abgelaufen. Bitte beim Club einen neuen erfragen.');
+}
