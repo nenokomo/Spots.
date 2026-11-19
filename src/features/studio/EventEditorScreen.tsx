@@ -10,6 +10,7 @@ import { saveOrganizerEvent, searchPublicVenues, type EventCategory, type MyOrga
 import { normalizeWebsite } from '../organizer/signup';
 import { EventShotsCard } from './EventShotsCard';
 import { useStudio } from './StudioContext';
+import { TicketsCard } from './TicketsCard';
 import { StudioImageField } from './StudioImageField';
 import { studio } from './theme';
 import { Card, Input, Message, SectionTitle, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
@@ -195,6 +196,7 @@ function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: O
       </View>
     </Card>}
 
+    {event && <TicketsCard eventId={event.id} />}
     {event && <EventStoryCard event={event} />}
     {event && <EventShotsCard eventId={event.id} />}
 

@@ -300,3 +300,42 @@ export async function redeemInvite(code: string): Promise<void> {
   if (error) throw failure('Einlösen');
   if (!data) throw new Error('Der Code ist ungültig oder abgelaufen. Bitte beim Club einen neuen erfragen.');
 }
+
+// ---------------------------------------------------------------------------------------------
+// Ticketarten eines eigenen Events (SQL 17): nur Information und Link nach außen, kein Verkauf in Spots.
+// ---------------------------------------------------------------------------------------------
+export type StudioTicket = { id: string; name: string; priceCents: number | null; externalUrl: string | null; soldOut: boolean };
+export type StudioTicketInput = { name: string; priceCents: number | null; externalUrl: string | null };
+export const maxTickets = 10;
+
+/** „12“, „12,5“, „12.50 €“ → Cent. Leer = Preis offen (null). Ungültig = 'invalid'. */
+export function parsePrice(value: string): number | null | 'invalid' {
+  const raw = value.replace(/[€\s]/g, '').replace(',', '.');
+  if (!raw) return null;
+  if (!/^\d{1,5}(\.\d{1,2})?$/.test(raw)) return 'invalid';
+  return Math.round(Number(raw) * 100);
+}
+
+export async function fetchTickets(eventId: string): Promise<StudioTicket[]> {
+  const { data, error } = await getAccountClient().from('ticket_types').select('id,name,price_cents,external_url,sold_out')
+    .eq('event_id', eventId).order('sort_order').order('price_cents').limit(maxTickets);
+  if (error) throw failure('Laden der Tickets');
+  return ((data ?? []) as { id: string; name: string; price_cents: number | null; external_url: string | null; sold_out: boolean }[])
+    .map((row) => ({ id: row.id, name: row.name, priceCents: row.price_cents, externalUrl: row.external_url, soldOut: row.sold_out }));
+}
+
+export async function addTicket(eventId: string, input: StudioTicketInput, sortOrder: number): Promise<void> {
+  const { error } = await getAccountClient().from('ticket_types').insert({ event_id: eventId, name: input.name.trim(), price_cents: input.priceCents,
+    external_url: input.externalUrl, sort_order: sortOrder, is_published: true });
+  if (error) throw failure('Speichern des Tickets');
+}
+
+export async function setTicketSoldOut(ticketId: string, soldOut: boolean): Promise<void> {
+  const { error } = await getAccountClient().from('ticket_types').update({ sold_out: soldOut }).eq('id', ticketId);
+  if (error) throw failure('Ändern des Tickets');
+}
+
+export async function deleteTicket(ticketId: string): Promise<void> {
+  const { error } = await getAccountClient().from('ticket_types').delete().eq('id', ticketId);
+  if (error) throw failure('Löschen des Tickets');
+}

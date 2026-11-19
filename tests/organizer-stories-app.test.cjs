@@ -84,3 +84,17 @@ test('event story page keeps the former texts of the event story', () => {
   assert.deepEqual(plain(page.saveEvent), { id: 'e', title: 'Nacht' });
   assert.equal(page.actionLabel, 'Zum Veranstalter');
 });
+
+test('studio helpers: ticket prices in cents and invite codes in groups of four', () => {
+  const api = load('src/features/organizer/organizerApi.ts', { '../accounts/client': { getAccountClient: () => client },
+    '../../services/organizerStories': service(), './signup': {} });
+  assert.equal(api.parsePrice('12'), 1200);
+  assert.equal(api.parsePrice('12,5'), 1250);
+  assert.equal(api.parsePrice(' 8.90 € '), 890);
+  assert.equal(api.parsePrice('0'), 0);
+  assert.equal(api.parsePrice(''), null, 'empty means price open');
+  assert.equal(api.parsePrice('zwölf'), 'invalid');
+  assert.equal(api.parsePrice('12,555'), 'invalid');
+  assert.equal(api.parsePrice('-5'), 'invalid');
+  assert.equal(api.formatInviteCode('0A1B2C3D4E5F'), '0A1B-2C3D-4E5F');
+});
