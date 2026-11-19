@@ -55,7 +55,7 @@ export function ShotCamera({ visible, eventId, eventTitle, onClose }: Props) {
   async function shoot() {
     if (busy) return;
     if (!session) {
-      setNotice({ title: 'Bitte anmelden', text: 'Shots posten geht nur mit Konto. Ansehen kannst du sie auch als Gast.', signIn: true });
+      setNotice({ title: 'Bitte anmelden', text: 'SHOTS posten und ansehen geht nur mit Konto.', signIn: true });
       return;
     }
     setNotice(null);

@@ -1,4 +1,5 @@
 import { getAccountClient } from '../accounts/client';
+import { ORGANIZER_PUBLIC_BUCKET, toStoryItems, type OrganizerStoryItem } from '../../services/organizerStories';
 import type { OrganizerSignupData } from './signup';
 
 // Veranstalter-Bereich (SQL 15, 17, 26, 27). Alle Aufrufe laufen mit der Sitzung des Kontos;
@@ -168,8 +169,7 @@ export async function searchPublicVenues(query: string): Promise<PublicVenueChoi
 const imageTypes: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 export const maxImageBytes = 5 * 1024 * 1024;
 
-/** Lädt ein Bild in den öffentlichen Speicher (SQL 27, Ordner = Veranstalter) und liefert die feste Adresse. */
-export async function uploadOrganizerImage(organizerId: string, image: { uri: string; mimeType?: string | null }, kind: 'logo' | 'flyer'): Promise<string> {
+async function uploadPublicImage(organizerId: string, image: { uri: string; mimeType?: string | null }, kind: 'logo' | 'flyer' | 'story') {
   const mimeType = image.mimeType || 'image/jpeg';
   const extension = imageTypes[mimeType];
   if (!extension) throw new Error('Bitte ein JPG-, PNG- oder WebP-Bild wählen.');
@@ -177,8 +177,52 @@ export async function uploadOrganizerImage(organizerId: string, image: { uri: st
   if (body.byteLength > maxImageBytes) throw new Error('Das Bild ist größer als 5 MB.');
   const random = Math.floor(Math.random() * 36 ** 6).toString(36);
   const path = `${organizerId}/${kind}-${Date.now().toString(36)}-${random}.${extension}`;
-  const storage = getAccountClient().storage.from('organizer-public');
+  const storage = getAccountClient().storage.from(ORGANIZER_PUBLIC_BUCKET);
   const { error } = await storage.upload(path, body, { contentType: mimeType, upsert: false });
   if (error) throw failure('Hochladen des Bilds');
-  return storage.getPublicUrl(path).data.publicUrl;
+  return { path, url: storage.getPublicUrl(path).data.publicUrl };
+}
+
+/** Lädt ein Bild in den öffentlichen Speicher (SQL 27, Ordner = Veranstalter) und liefert die feste Adresse. */
+export async function uploadOrganizerImage(organizerId: string, image: { uri: string; mimeType?: string | null }, kind: 'logo' | 'flyer'): Promise<string> {
+  return (await uploadPublicImage(organizerId, image, kind)).url;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Entdecken-Story (SQL 33): Bilder, die bleiben, bis der Club sie löscht. Höchstens 30.
+// ---------------------------------------------------------------------------------------------
+export const maxStoryItems = 30;
+
+export async function fetchMyStoryItems(organizerId: string): Promise<OrganizerStoryItem[]> {
+  const client = getAccountClient();
+  const { data, error } = await client.from('organizer_story_items').select('id,storage_path,caption,created_at,event_id,events(title,starts_at)')
+    .eq('organizer_id', organizerId).order('created_at', { ascending: false }).order('id').limit(maxStoryItems);
+  if (error) throw failure('Laden der Story');
+  type Row = { id: string; storage_path: string; caption: string | null; created_at: string; event_id: string | null; events: { title: string; starts_at: string } | { title: string; starts_at: string }[] | null };
+  return toStoryItems(client, organizerId, ((data ?? []) as Row[]).map((row) => {
+    const event = Array.isArray(row.events) ? row.events[0] : row.events;
+    return { id: row.id, storage_path: row.storage_path, caption: row.caption, created_at: row.created_at,
+      event_id: event ? row.event_id : null, event_title: event?.title ?? null, event_starts_at: event?.starts_at ?? null };
+  }));
+}
+
+/** Bild hochladen, dann die Zeile. Klappt die Zeile nicht, wird die Datei wieder entfernt. */
+export async function addStoryItem(organizerId: string, image: { uri: string; mimeType?: string | null }, input: { caption: string | null; eventId: string | null }): Promise<void> {
+  const client = getAccountClient();
+  const { path } = await uploadPublicImage(organizerId, image, 'story');
+  const { error } = await client.from('organizer_story_items')
+    .insert({ organizer_id: organizerId, storage_path: path, caption: input.caption?.trim() || null, event_id: input.eventId });
+  if (error) {
+    await client.storage.from(ORGANIZER_PUBLIC_BUCKET).remove([path]).catch(() => {});
+    if (error.message?.includes('limit')) throw new Error(`Die Story hat schon ${maxStoryItems} Bilder. Bitte zuerst eins löschen.`);
+    throw failure('Speichern des Story-Bilds');
+  }
+}
+
+/** Zeile löschen, danach die Datei (öffentliche Adresse funktioniert dann nicht mehr). */
+export async function deleteStoryItem(organizerId: string, item: Pick<OrganizerStoryItem, 'id' | 'storagePath'>): Promise<void> {
+  const client = getAccountClient();
+  const { error } = await client.from('organizer_story_items').delete().eq('id', item.id).eq('organizer_id', organizerId);
+  if (error) throw failure('Löschen des Story-Bilds');
+  await client.storage.from(ORGANIZER_PUBLIC_BUCKET).remove([item.storagePath]).catch(() => {});
 }
