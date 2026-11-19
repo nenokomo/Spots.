@@ -29,6 +29,6 @@ Produktion ist unverändert. Alles nur in Spots-Test (`nfomkdvotqtlyymomksb`).
 ## Offen
 
 - **Function `cleanup-snaps` in Spots-Test bereitstellen** – braucht Jacints ausdrückliches OK.
-- Volle Testreihe vor dem Merge nach `main` (Expo dabei aus).
+- Volle Testreihe vor dem Merge nach `main`: 226/226 (19.11.).
 - Design für Noyan: Melde-Knopf in der Story, Studio-Karten (Team, Tickets, Bilder), Admin-Reiter „Storys“.
 - Datenschutz-Entwurf: Einladungscodes, Meldungen zu Story-Bildern, E-Mail-Anzeige für den Club-Besitzer ergänzen.

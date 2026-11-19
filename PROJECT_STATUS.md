@@ -21,7 +21,7 @@ Neue Arbeit startet als eigener Branch von `main` (`backend/<thema>`, `design/<t
 - **Startseite** (`/account`): Ohne Konto startet die App mit „Wie nutzt du Spots?“ – **Privat**, **Veranstalter** oder „Als Gast fortfahren“; danach Anmelden, „Passwort vergessen?“, „Neues Konto erstellen“ / „Club registrieren“ (Kontoart aus der Auswahl). Gast gilt nur bis zum nächsten App-Start. Sperre über `Stack.Protected` in `src/app/_layout.tsx`. Profil: unten Abmelden und Konto löschen. Merkliste mit Konto (lokale TEST-Events bleiben auf dem Gerät). Produktion: nur Anmelden + Gast.
 - **Spots Studio** (`/studio`, nur Veranstalter-Konten): Übersicht mit Freigabe-Stand, Events anlegen/bearbeiten/absagen (eigene Adresse → Kartenposition über OpenStreetMap oder Ort aus dem Adressbuch, Ende Pflicht, Flyer-Upload, „Live in Spots“ erst nach Freigabe), Statistik (Aufrufe, Gemerkt, Ticket-Klicks, Snaps), Club-Profil mit Logo und privater Ansprechperson. Veranstalter sehen die Besucher-App nicht; private Konten kommen nicht ins Studio.
 - **Admin-Bereich `/admin`** (Admin-Rolle): Event-Entwürfe, Veranstalter-Anträge (freigeben, ablehnen, sperren), Shots, Story-Bilder (ausblenden, entfernen), Orte, Meldungen.
-- **Moderation, Team, Tickets** ([docs/FORTSCHRITT-moderation.md](docs/FORTSCHRITT-moderation.md), Branch `backend/moderation-team`): Story-Bilder melden; im Studio Bilder zu eigenen Events ausblenden, Team per Einladungscode, Ticketarten pro Event. Auf dem Handy von Jacint bestätigt (19.11.).
+- **Moderation, Team, Tickets** ([docs/FORTSCHRITT-moderation.md](docs/FORTSCHRITT-moderation.md), in `main`): Story-Bilder melden; im Studio Bilder zu eigenen Events ausblenden, Team per Einladungscode, Ticketarten pro Event. Auf dem Handy von Jacint bestätigt (19.11.).
 - **Produktion**: nur Team-Anmeldung (keine Registrierung), Admin für das Team.
 
 **Design** (`src/constants/theme.ts`): fast schwarzer Hintergrund mit Pflaumen-Verlauf, iOS-artige Grauflächen, Akzent `#c922ab`. Neue Seiten nutzen die vorhandenen Bausteine; Feinschliff ist Noyans Bereich.
@@ -37,7 +37,7 @@ Spots Studio hat bewusst einen eigenen Look (`src/features/studio/theme.ts`: Gra
 
 ## Geprüft
 
-- **218/218 Tests** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`), Expo-Lint und Typecheck ohne Fehler.
+- **226/226 Tests** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`), Expo-Lint und Typecheck ohne Fehler.
 - Handy (15.11./19.11., iPhone, Expo Go gegen Spots-Test): Registrieren + Bestätigen, Merkliste mit Konto, Konto löschen, Club-Registrierung, Studio, Club-Event mit eigener Adresse auf Radar und Entdecken, Startseite bei jedem Start, Passwort vergessen (19.11.), Veranstalter-Story posten und in Entdecken ansehen. Expo dafür mit den Spots-Test-Variablen im Terminal starten (sonst Produktion).
 
 ## Nicht geprüft / bekannte Probleme
