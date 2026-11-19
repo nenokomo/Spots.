@@ -24,7 +24,7 @@ Produktion ist unverändert. Alles nur in Spots-Test (`nfomkdvotqtlyymomksb`).
 
 - PGlite: `tests/story-moderation.test.cjs` (7/7) und die bisherigen Shots-/Story-Tests. App-Tests 99/99, Lint, Typecheck.
 - Web gegen Spots-Test (Gast): Story öffnen → „Melden“ → Grund wählen → Hinweis zum Anmelden, keine Konsolenfehler.
-- **Handy (20.11., Jacint, Expo Go gegen Spots-Test):** alles getestet, passt (Meldung von Jacint; einzelne Schritte nicht protokolliert).
+- **Handy (19.11., Jacint, Expo Go gegen Spots-Test):** alles getestet, passt (Meldung von Jacint; einzelne Schritte nicht protokolliert).
 
 ## Offen
 
