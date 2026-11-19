@@ -32,7 +32,7 @@ Clubs registrieren sich **direkt als Veranstalter** – getrenntes System, kein 
 - **Veranstalter-Storys (17.11., Branch `backend/veranstalter-storys`)** – Entscheidung Jacint: Entdecken zeigt alle freigegebenen Veranstalter der Stadt als Story-Kachel (wie eine Profilanzeige); nur Veranstalter posten; ohne Story Logo und Name; Event-Story ab dem Anlegen.
   - **SQL 33** `supabase/ops/33_organizer_stories.sql`, in Spots-Test eingespielt: Tabelle `organizer_story_items` (Bild im Bucket `organizer-public`, Pfad `<club>/story-…`, optional Text und eigenes Event, max. 30, öffentlich nur bei freigegebenem Club, Team darf löschen); `spots_explore_organizers(stadt)` (Stadt gleich oder „Frankfurt“ ↔ „Frankfurt am Main“, Story + nächstes Event, Titel von Entwürfen bleiben verborgen); Event-Story für Mitglieder ab Anlegen bis 2 h nach Ende; Statistik „Shots“ zählt nur Gäste.
   - App: Studio-Seite `/studio/story` (posten, löschen, Event wählen) und Karte „Event-Story“ im Event-Editor; Entdecken mit Veranstalter-Kacheln (`OrganizerStoryTile`) und gemeinsamer Story-Ansicht für Events und Veranstalter (`StoryViewer`). Stadt: gewählte Stadt, mit Standort die Stadt des nächsten Events, sonst alle.
-  - Prüfung: PGlite-Test `tests/organizer-stories.test.cjs` (6/6), App-Tests 46/46, Lint, Typecheck. Web gegen Spots-Test: Kachel „Jacint club test“, Story mit Logo, „Zum Profil“ öffnet die Seite, keine Konsolenfehler. **Noch nicht auf dem Handy getestet**, Studio-Seite nicht von innen gesehen.
+  - Prüfung: PGlite-Test `tests/organizer-stories.test.cjs` (6/6), App-Tests 46/46, Lint, Typecheck. Web gegen Spots-Test: Kachel „Jacint club test“, Story mit Logo, „Zum Profil“ öffnet die Seite, keine Konsolenfehler. **Handy (19.11., iPhone, Expo Go gegen Spots-Test):** Story im Studio gepostet und als Besucher in Entdecken gesehen. Hinweis: Expo für Spots-Test mit den Spots-Test-Variablen im Terminal starten, sonst landet die App in der Produktion (dort „invalid_credentials“).
 
 ## Läuft gerade
 
@@ -40,7 +40,7 @@ Clubs registrieren sich **direkt als Veranstalter** – getrenntes System, kein 
 
 ## Offen
 
-- Veranstalter-Storys: Handy-Test (Story posten, in Entdecken ansehen, hochwischen); Melden von Story-Bildern und Admin-Ansicht fehlen; Kachel-Design für Noyan.
+- Veranstalter-Storys: Melden von Story-Bildern und Admin-Ansicht fehlen; Kachel-Design für Noyan.
 
 - Handy-Test: als Club registrieren → Mail bestätigen → anmelden → Studio erscheint → Logo, Event mit Ort/Flyer anlegen → mit Admin-Konto freigeben → Event live stellen → in der Besucher-App öffnen, Ticket-Link → Statistik. Achtung: eingebauter Mailversand nur 2 Mails/Stunde und nur an Supabase-Team-Adressen.
 - Club-Adresse hat keine Kartenposition: Events erscheinen nur mit Ort aus dem Adressbuch auf der Karte. Später: Club mit Adressbuch-Ort verknüpfen oder Adresssuche (Geocoding).
