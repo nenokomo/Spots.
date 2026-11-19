@@ -23,7 +23,7 @@ Registrieren, Anmelden, Passwort vergessen, Konto löschen (Pflicht bei Apple/Go
   - Links in Mails führten auf `localhost:3000`. Ursache (Quellcode Supabase Auth, 15.11.): Rücksprungadressen mit IP-Adresse als Host werden immer abgelehnt, bevor die Erlaubt-Liste geprüft wird – auch exakte Einträge helfen nicht. Expo Go im WLAN nutzt `exp://192.168…`. Lösung zum Testen: `npx expo start --tunnel` (`exp://….exp.direct`, passt zu `exp://**`). Die echte App mit `meine-app://` ist nicht betroffen. Die IP-Einträge in Spots-Test können weg.
   - Der eingebaute Mailversand schickt nur **2 Mails pro Stunde** fürs ganze Projekt. Danach „Zu viele Anfragen“.
 - Merkliste mit echten Events bestätigt (2 Einträge im Konto, TEST-Events nur auf dem Gerät). **Konto löschen** bestätigt: Konto, Profil und Merkliste weg, Events unverändert (601).
-- Noch offen: **Passwort vergessen** (Mail-Limit). Das private Testkonto ist gelöscht – zum Testen ein neues privates Konto anlegen und nur den neuesten Link öffnen.
+- **Passwort vergessen (19.11.)**: auf dem Handy bestätigt (Expo Go mit `--tunnel` und den Spots-Test-Variablen, Link in derselben App geöffnet). Es bleibt bei PKCE (sicherer: keine fertige Anmeldung im Link). Der Branch `backend/passwort-link` (implicit flow für Links in einer anderen App-Instanz) wird nicht gemergt und bleibt nur zum Nachschauen.
 - Etappe 1 am 15.11. nach `main` gemergt (zusammen mit Etappe 2).
 - Start gegen Spots-Test ohne `.env.local` zu ändern: in PowerShell `EXPO_PUBLIC_SUPABASE_URL` und `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` setzen, dann `npx expo start --clear`.
 

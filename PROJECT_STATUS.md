@@ -37,11 +37,10 @@ Spots Studio hat bewusst einen eigenen Look (`src/features/studio/theme.ts`: Gra
 ## Geprüft
 
 - **218/218 Tests** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`), Expo-Lint und Typecheck ohne Fehler.
-- Handy (15.11./19.11., iPhone, Expo Go gegen Spots-Test): Registrieren + Bestätigen, Merkliste mit Konto, Konto löschen, Club-Registrierung, Studio, Club-Event mit eigener Adresse auf Radar und Entdecken, Startseite bei jedem Start, Veranstalter-Story posten und in Entdecken ansehen. Expo dafür mit den Spots-Test-Variablen im Terminal starten (sonst Produktion).
+- Handy (15.11./19.11., iPhone, Expo Go gegen Spots-Test): Registrieren + Bestätigen, Merkliste mit Konto, Konto löschen, Club-Registrierung, Studio, Club-Event mit eigener Adresse auf Radar und Entdecken, Startseite bei jedem Start, Passwort vergessen (19.11.), Veranstalter-Story posten und in Entdecken ansehen. Expo dafür mit den Spots-Test-Variablen im Terminal starten (sonst Produktion).
 
 ## Nicht geprüft / bekannte Probleme
 
-- **Passwort vergessen** auf dem Handy noch nicht zu Ende getestet (Mail-Limit).
 - Eingebauter Supabase-Mailversand: **nur 2 Mails pro Stunde** und nur an Supabase-Team-Adressen; deutsche Mailtexte erst mit eigenem Mailserver (SMTP).
 - Rücksprung aus Mails in **Expo Go**: Supabase lehnt Adressen mit IP (`exp://192.168…`) immer ab (Quellcode Supabase Auth, Erlaubt-Liste wird gar nicht geprüft) und nimmt dann `localhost:3000`. Zum Testen Expo mit `--tunnel` starten (`exp://….exp.direct` passt zu `exp://**`). Die echte App (`meine-app://`, später `spots://`) ist nicht betroffen.
 - Kartenposition von Club-Events kommt aus OpenStreetMap (Nominatim) und kann etwas daneben liegen; die Adresse steht auf der Eventseite. Datenschutz: Event-Adressen gehen beim Speichern an Nominatim.
@@ -60,7 +59,6 @@ Spots Studio hat bewusst einen eigenen Look (`src/features/studio/theme.ts`: Gra
 
 ## Nächste empfohlene Schritte
 
-1. Passwort vergessen auf dem Handy fertig testen (neues privates Testkonto, nur den neuesten Link öffnen).
-2. Noyan: Design von Spots Studio und der Registrieren-Seite.
-3. Studio-Ablauf komplett durchspielen: Club → Freigabe → Event live → Statistik.
-4. Mailserver und Domain klären, dann Produktions-Runde für Konten und Veranstalter planen.
+1. Noyan: Design von Spots Studio und der Registrieren-Seite.
+2. Studio-Ablauf komplett durchspielen: Club → Freigabe → Event live → Statistik.
+3. Mailserver und Domain klären, dann Produktions-Runde für Konten und Veranstalter planen.
