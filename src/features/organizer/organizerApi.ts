@@ -195,13 +195,13 @@ export const maxStoryItems = 30;
 
 export async function fetchMyStoryItems(organizerId: string): Promise<OrganizerStoryItem[]> {
   const client = getAccountClient();
-  const { data, error } = await client.from('organizer_story_items').select('id,storage_path,caption,created_at,event_id,events(title,starts_at)')
+  const { data, error } = await client.from('organizer_story_items').select('id,storage_path,caption,created_at,moderation_status,event_id,events(title,starts_at)')
     .eq('organizer_id', organizerId).order('created_at', { ascending: false }).order('id').limit(maxStoryItems);
   if (error) throw failure('Laden der Story');
-  type Row = { id: string; storage_path: string; caption: string | null; created_at: string; event_id: string | null; events: { title: string; starts_at: string } | { title: string; starts_at: string }[] | null };
+  type Row = { id: string; storage_path: string; caption: string | null; created_at: string; moderation_status: string; event_id: string | null; events: { title: string; starts_at: string } | { title: string; starts_at: string }[] | null };
   return toStoryItems(client, organizerId, ((data ?? []) as Row[]).map((row) => {
     const event = Array.isArray(row.events) ? row.events[0] : row.events;
-    return { id: row.id, storage_path: row.storage_path, caption: row.caption, created_at: row.created_at,
+    return { id: row.id, storage_path: row.storage_path, caption: row.caption, created_at: row.created_at, moderation_status: row.moderation_status,
       event_id: event ? row.event_id : null, event_title: event?.title ?? null, event_starts_at: event?.starts_at ?? null };
   }));
 }
@@ -225,4 +225,31 @@ export async function deleteStoryItem(organizerId: string, item: Pick<OrganizerS
   const { error } = await client.from('organizer_story_items').delete().eq('id', item.id).eq('organizer_id', organizerId);
   if (error) throw failure('Löschen des Story-Bilds');
   await client.storage.from(ORGANIZER_PUBLIC_BUCKET).remove([item.storagePath]).catch(() => {});
+}
+
+// ---------------------------------------------------------------------------------------------
+// Shots und Event-Story eines eigenen Events im Studio (SQL 17/34): ansehen, ausblenden, wieder zeigen.
+// ---------------------------------------------------------------------------------------------
+export type StudioShot = {
+  id: string; url: string | null; byOrganizer: boolean; hidden: boolean;
+  /** Vom Spots-Team ausgeblendet oder entfernt: der Club kann es nicht ändern. */
+  teamLocked: boolean; createdAt: string; expiresAt: string;
+};
+
+export async function fetchEventShots(eventId: string): Promise<StudioShot[]> {
+  const client = getAccountClient();
+  const { data, error } = await client.from('live_snaps').select('id,storage_path,by_organizer,moderation_status,team_locked,created_at,expires_at')
+    .eq('event_id', eventId).eq('media_type', 'image').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(100);
+  if (error) throw failure('Laden der Shots');
+  const rows = (data ?? []) as { id: string; storage_path: string; by_organizer: boolean; moderation_status: string; team_locked: boolean; created_at: string; expires_at: string }[];
+  const signed = rows.length ? (await client.storage.from('live-snaps').createSignedUrls(rows.map((row) => row.storage_path), 60 * 15)).data ?? [] : [];
+  const urls = new Map(signed.flatMap((item) => item.path && item.signedUrl ? [[item.path, item.signedUrl] as const] : []));
+  return rows.map((row) => ({ id: row.id, url: urls.get(row.storage_path) ?? null, byOrganizer: row.by_organizer,
+    hidden: row.moderation_status !== 'visible', teamLocked: row.team_locked, createdAt: row.created_at, expiresAt: row.expires_at }));
+}
+
+export async function setShotHidden(shotId: string, hidden: boolean): Promise<void> {
+  const { data, error } = await getAccountClient().from('live_snaps').update({ moderation_status: hidden ? 'hidden' : 'visible' }).eq('id', shotId).select('id');
+  if (error) throw failure(hidden ? 'Ausblenden' : 'Wieder zeigen');
+  if (!data?.length) throw new Error('Dieses Bild hat das Spots-Team gesperrt. Es lässt sich hier nicht ändern.');
 }
