@@ -1,5 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+/** Nur in der Entwicklung: technischer Grund hinter einer Fehlermeldung (Status, Code), nie in der fertigen App. */
+function devDetail(error: { status?: number; code?: string; name?: string; message?: string }) {
+  if (typeof __DEV__ === 'undefined' || !__DEV__) return '';
+  return ` [${error.status ?? '–'} ${error.code ?? error.name ?? ''}: ${error.message ?? ''}]`;
+}
+
 /** Injectable client keeps credential handling in the Supabase SDK, with deterministic local tests. */
 export function createAccountActions(client: SupabaseClient) {
   function checkedEmail(email: string) {
@@ -26,7 +32,7 @@ export function createAccountActions(client: SupabaseClient) {
     },
     async signIn(email: string, password: string) {
       const { error } = await client.auth.signInWithPassword(credentials(email, password));
-      if (error) throw new Error('Anmeldung fehlgeschlagen. Bitte Zugangsdaten und E-Mail-Bestätigung prüfen.');
+      if (error) throw new Error(`Anmeldung fehlgeschlagen. Bitte Zugangsdaten und E-Mail-Bestätigung prüfen.${devDetail(error)}`);
     },
     async signOut() {
       const { error } = await client.auth.signOut({ scope: 'local' });
@@ -42,7 +48,7 @@ export function createAccountActions(client: SupabaseClient) {
       const { error } = await client.auth.resetPasswordForEmail(checkedEmail(email), { redirectTo });
       if (error) {
         throw new Error(error.status === 429 ? 'Zu viele Anfragen. Bitte in ein paar Minuten erneut versuchen.'
-          : 'Die E-Mail konnte gerade nicht verschickt werden. Bitte später erneut versuchen.');
+          : `Die E-Mail konnte gerade nicht verschickt werden. Bitte später erneut versuchen.${devDetail(error)}`);
       }
     },
     async updatePassword(password: string) {
