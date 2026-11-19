@@ -24,11 +24,11 @@ Produktion ist unverändert. Alles nur in Spots-Test (`nfomkdvotqtlyymomksb`).
 
 - PGlite: `tests/story-moderation.test.cjs` (7/7) und die bisherigen Shots-/Story-Tests. App-Tests 99/99, Lint, Typecheck.
 - Web gegen Spots-Test (Gast): Story öffnen → „Melden“ → Grund wählen → Hinweis zum Anmelden, keine Konsolenfehler.
+- **Handy (20.11., Jacint, Expo Go gegen Spots-Test):** alles getestet, passt (Meldung von Jacint; einzelne Schritte nicht protokolliert).
 
 ## Offen
 
 - **Function `cleanup-snaps` in Spots-Test bereitstellen** – braucht Jacints ausdrückliches OK.
-- **Handy-Test** (Expo mit den Spots-Test-Variablen starten): Story melden mit Konto → Admin-Reiter „Storys“; Gäste-Shot im Studio ausblenden; Ticket anlegen und auf der Eventseite sehen; Einladungscode erstellen, zweites Veranstalter-Konto registrieren („Ich habe einen Einladungscode“), einlösen, Mitglied entfernen.
 - Volle Testreihe vor dem Merge nach `main` (Expo dabei aus).
 - Design für Noyan: Melde-Knopf in der Story, Studio-Karten (Team, Tickets, Bilder), Admin-Reiter „Storys“.
 - Datenschutz-Entwurf: Einladungscodes, Meldungen zu Story-Bildern, E-Mail-Anzeige für den Club-Besitzer ergänzen.
