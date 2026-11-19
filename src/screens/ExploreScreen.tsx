@@ -8,9 +8,10 @@ import { EventCalendar } from '../components/EventCalendar';
 import { EventHero } from '../components/EventCards';
 import { HypeChart } from '../components/HypeChart';
 import { EventDataState } from '../components/EventDataState';
-import { EventStoryViewer } from '../components/EventStoryViewer';
+import { EventStoryViewer, StoryViewer } from '../components/EventStoryViewer';
 import { GlassBackdrop } from '../components/GlassBackdrop';
 import { Icon } from '../components/Icon';
+import { OrganizerStoryTile } from '../components/OrganizerStoryTile';
 import { Screen } from '../components/Screen';
 import { StoryTile } from '../components/StoryTile';
 import { Button } from '../components/ui/Button';
@@ -20,15 +21,18 @@ import { Sheet } from '../components/ui/Sheet';
 import { tabBarContentInset } from '../constants/navigation';
 import { colors, gutter, radius, space, squircle, type, type Category } from '../constants/theme';
 import { useLiveEvents, useUpcomingEvents } from '../hooks/useEvents';
+import { useExploreOrganizers } from '../hooks/useExploreOrganizers';
 import { useLocation } from '../hooks/useLocation';
 import { useNow } from '../hooks/useNow';
 import { useToday } from '../hooks/useToday';
-import { eventHref } from '../navigation/eventRoutes';
+import { eventHref, organizerHref } from '../navigation/eventRoutes';
 import { searchCities, type City } from '../services/cities';
+import type { ExploreOrganizer } from '../services/organizerStories';
 import { popularEvents } from '../services/popularity';
 import { isLocatedEvent, matchesCategory, type SpotEvent } from '../types/events';
 import { isTonight } from '../utils/eventStatus';
 import { dayKey, distanceKm, matchesEventPeriod, type Coordinate } from '../utils/events';
+import { organizerStoryPage } from '../utils/stories';
 
 const periods = [
   { id: 'all', label: 'Alle Termine' },
@@ -90,6 +94,8 @@ export default function ExploreScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [story, setStory] = useState<string | null>(null);
   const closeStory = useCallback(() => setStory(null), []);
+  const [organizerStory, setOrganizerStory] = useState<string | null>(null);
+  const closeOrganizerStory = useCallback(() => setOrganizerStory(null), []);
 
   // Use an existing location permission to show what is on nearby. Never prompts again after a refusal.
   useFocusEffect(useCallback(() => { void locate({ automatic: true }); }, [locate]));
@@ -116,6 +122,20 @@ export default function ExploreScreen() {
   const featured = events.slice(0, 5);
   // Popular in the user's city: chosen city, else the city of the nearest ranked events. Preview data only for now.
   const popular = useMemo(() => popularEvents(remote.events, choice.kind === 'city' ? choice.area.label : null), [remote.events, choice]);
+  // Without search and genre/date filters the lower part is the directory of organizers in the chosen city
+  // (Veranstalter-Story, SQL 33). With a search or filter it shows the matching events instead.
+  const eventFiltersActive = category !== 'Alle' || period !== 'all' || !!activeDate || search.trim().length > 0;
+  const showOrganizers = !eventFiltersActive;
+  // City: the chosen one; around the user's position the city of the nearest event; otherwise all of Germany.
+  const organizerCity = useMemo(() => {
+    if (choice.kind === 'city') return choice.area.label;
+    if (!area) return null;
+    let nearest: SpotEvent | null = null;
+    for (const event of events) if (distances.has(event.id) && (!nearest || distances.get(event.id)! < distances.get(nearest.id)!)) nearest = event;
+    return nearest?.location ?? null;
+  }, [choice, area, events, distances]);
+  const directory = useExploreOrganizers(showOrganizers ? organizerCity : null);
+  const organizerPages = useMemo(() => directory.organizers.map((organizer) => organizerStoryPage(organizer, today)), [directory.organizers, today]);
   const heroWidth = Math.min(width - gutter * 2 - 24, 420);
   const filtersActive = category !== 'Alle' || period !== 'all' || !!activeDate || choice.kind !== 'auto' || search.trim().length > 0;
   const areaLabel = area ? `${area.label} · ${areaRadius} km` : choice.kind === 'gps' && location.loading ? 'Standort …' : 'Überall';
@@ -128,12 +148,14 @@ export default function ExploreScreen() {
   const toOrganizer = (event: SpotEvent) => destination(event).pathname === '/organizer/[id]';
 
   return <Screen>
-    <FlatList
+    <FlatList<SpotEvent | ExploreOrganizer>
       key="explore-grid"
-      data={events}
+      data={showOrganizers ? directory.organizers : events}
       numColumns={2}
-      keyExtractor={(event) => event.id}
-      renderItem={({ item }) => <View style={styles.cell}><StoryTile event={item} today={today} now={now} distanceKm={distances.get(item.id)} onOpen={() => setStory(item.id)} /></View>}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => <View style={styles.cell}>{'slug' in item
+        ? <OrganizerStoryTile organizer={item} today={today} onOpen={() => setOrganizerStory(item.id)} />
+        : <StoryTile event={item} today={today} now={now} distanceKm={distances.get(item.id)} onOpen={() => setStory(item.id)} />}</View>}
       columnWrapperStyle={styles.gridRow}
       initialNumToRender={6}
       windowSize={7}
@@ -142,7 +164,7 @@ export default function ExploreScreen() {
       keyboardDismissMode="on-drag"
       showsVerticalScrollIndicator={false}
       refreshing={remote.loading}
-      onRefresh={remote.reload}
+      onRefresh={() => { remote.reload(); directory.reload(); }}
       ListHeaderComponent={<View>
         <PageHeader section="ENTDECKEN" title="Entdecken" subtitle="Finde den richtigen Spot für deinen Abend." />
         <View style={styles.search}>
@@ -195,11 +217,19 @@ export default function ExploreScreen() {
           <HypeChart ranked={popular.ranked} today={today} hrefFor={destination} />
         </>}
 
-        <SectionHeader spacious title={area ? `Alle Events · ${area.label}` : 'Alle Events'} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
-        {fellBack && <Text style={styles.fallback}>In deiner Nähe ist gerade nichts geplant. Das sind alle Events in Deutschland.</Text>}
-        <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
+        {showOrganizers ? <>
+          <SectionHeader spacious title={organizerCity ? `Veranstalter in ${organizerCity}` : 'Alle Veranstalter'} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
+          <Text style={styles.fallback}>{organizerCity ? 'Tippe auf eine Kachel für Eindrücke, wische hoch zum nächsten Veranstalter.' : 'Wähle oben eine Stadt, um die Veranstalter dort zu sehen.'}</Text>
+          <EventDataState loading={directory.loading} error={directory.error} onRetry={directory.reload} />
+        </> : <>
+          <SectionHeader spacious title={area ? `Passende Events · ${area.label}` : 'Passende Events'} action={filtersActive ? 'Zurücksetzen' : undefined} onAction={resetFilters} />
+          {fellBack && <Text style={styles.fallback}>In deiner Nähe ist gerade nichts geplant. Das sind alle Events in Deutschland.</Text>}
+          <EventDataState loading={remote.loading} error={remote.error} onRetry={remote.reload} />
+        </>}
       </View>}
-      ListEmptyComponent={remote.loading || remote.error ? undefined : <EmptyState icon="search" title="Keine passenden Events" text={area ? `Im Umkreis von ${areaRadius} km um ${area.label} ist für diese Auswahl nichts geplant.` : 'Passe deine Suche oder deine Filter an.'} action="Filter zurücksetzen" onAction={resetFilters} />}
+      ListEmptyComponent={showOrganizers
+        ? (directory.loading || directory.error ? undefined : <EmptyState icon="profile" title="Noch keine Veranstalter" text={organizerCity ? `In ${organizerCity} ist noch kein Veranstalter bei Spots.` : 'Noch ist kein Veranstalter bei Spots.'} />)
+        : (remote.loading || remote.error ? undefined : <EmptyState icon="search" title="Keine passenden Events" text={area ? `Im Umkreis von ${areaRadius} km um ${area.label} ist für diese Auswahl nichts geplant.` : 'Passe deine Suche oder deine Filter an.'} action="Filter zurücksetzen" onAction={resetFilters} />)}
     />
 
     <Modal visible={datesOpen} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setDatesOpen(false)}>
@@ -237,6 +267,11 @@ export default function ExploreScreen() {
       {story !== null && <EventStoryViewer events={events} initialId={story} today={today} onClose={closeStory}
         actionLabel={(event) => toOrganizer(event) ? 'Zum Veranstalter' : 'Event ansehen'}
         onOpenEvent={(event) => { setStory(null); router.push(eventHref(event, 'discover')); }} />}
+    </Modal>
+
+    <Modal visible={organizerStory !== null} animationType="none" transparent statusBarTranslucent navigationBarTranslucent onRequestClose={closeOrganizerStory}>
+      {organizerStory !== null && <StoryViewer pages={organizerPages} initialId={organizerStory} onClose={closeOrganizerStory}
+        onAction={(page) => { setOrganizerStory(null); router.push(organizerHref(page.id)); }} />}
     </Modal>
   </Screen>;
 }

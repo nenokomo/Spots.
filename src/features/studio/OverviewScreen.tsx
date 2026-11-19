@@ -98,6 +98,11 @@ export default function OverviewScreen() {
       <Kpi label="Gemerkt" value={stats ? sum('saves') : '–'} hint="Merklisten mit Konto" />
       <Kpi label="Ticket-Klicks" value={stats ? sum('ticketClicks') : '–'} hint="alle Events" />
     </View>
+    <Card>
+      <Text style={studioStyles.heading}>Eure Story in Entdecken</Text>
+      <Text style={studioStyles.muted}>So sehen Leute in {organizer.city ?? 'eurer Stadt'} euren Club: Eindrücke von vergangenen Events und Vorfreude auf kommende.</Text>
+      <StudioButton small variant="secondary" icon="camera" label="Story bearbeiten" onPress={() => router.push('/studio/story')} />
+    </Card>
     <SectionTitle action={<StudioButton small variant="ghost" icon="calendar" label="Neues Event" onPress={() => router.push({ pathname: '/studio/event/[id]', params: { id: 'new' } })} />}>Als Nächstes</SectionTitle>
     {upcoming.length === 0 && <Card>
       <Text style={studioStyles.heading}>Noch kein Event geplant</Text>

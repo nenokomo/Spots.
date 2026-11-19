@@ -1,6 +1,9 @@
+import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useNow } from '../../hooks/useNow';
+import { postShot } from '../../services/content';
 import { formatBerlinInput, parseBerlinDateTime, parseBerlinEnd } from '../../utils/berlinTime';
 import { geocodeAddress } from '../organizer/geocode';
 import { saveOrganizerEvent, searchPublicVenues, type EventCategory, type MyOrganizer, type OrganizerEvent, type PublicVenueChoice } from '../organizer/organizerApi';
@@ -23,6 +26,36 @@ function initialPlace(organizer: MyOrganizer, event: OrganizerEvent | null): Pla
 }
 const samePlace = (a: Place, event: OrganizerEvent) => a.street.trim() === (event.street ?? '') && a.houseNumber.trim() === (event.houseNumber ?? '')
   && a.postcode.trim() === (event.postcode ?? '') && a.city.trim() === (event.city ?? '');
+
+/**
+ * Event-Story (SQL 33): Club-Mitglieder posten ab dem Anlegen bis zwei Stunden nach dem Ende. Jedes Bild bleibt 24 Stunden
+ * und erscheint auf der Eventseite, sobald das Event live ist. Einfache Oberfläche – Design offen für Noyan.
+ */
+function EventStoryCard({ event }: { event: OrganizerEvent }) {
+  const now = useNow();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  // Wie die Datenbank: bis zwei Stunden nach dem Ende (ohne Ende: acht Stunden nach Beginn).
+  const open = event.status === 'scheduled' && (event.endsAt ? Date.parse(event.endsAt) : Date.parse(event.startsAt) + 8 * 3_600_000) + 2 * 3_600_000 > now;
+  async function post() {
+    setError(null); setNotice(null);
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+    if (result.canceled || !result.assets[0]) return;
+    setBusy(true);
+    try { await postShot(event.id, result.assets[0], { eventStory: true }); setNotice('In der Event-Story. Sichtbar für 24 Stunden.'); }
+    catch (failure) { setError(failure instanceof Error ? failure.message : 'Posten hat nicht geklappt.'); }
+    finally { setBusy(false); }
+  }
+  return <Card>
+    <Text style={studioStyles.heading}>Event-Story</Text>
+    <Text style={studioStyles.muted}>{open
+      ? `Fotos für die Eventseite, zum Beispiel Line-up oder Aufbau. Jedes bleibt 24 Stunden.${event.isPublished ? '' : ' Zu sehen, sobald das Event live ist.'}`
+      : 'Für dieses Event ist die Story vorbei.'}</Text>
+    {open && <StudioButton small variant="secondary" icon="camera" label="Foto posten" loading={busy} onPress={() => void post()} />}
+    <Message error={error} text={notice} />
+  </Card>;
+}
 
 function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: OrganizerEvent | null; reload: () => void }) {
   const start = event ? formatBerlinInput(event.startsAt) : null;
@@ -160,6 +193,8 @@ function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: O
           trackColor={{ true: studio.lime, false: studio.panelHigh }} thumbColor={approved && live ? studio.limeInk : undefined} />
       </View>
     </Card>}
+
+    {event && <EventStoryCard event={event} />}
 
     <Message error={error} />
     <StudioButton label="Speichern" loading={busy} onPress={() => void save()} />
