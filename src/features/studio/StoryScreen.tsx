@@ -120,9 +120,9 @@ const styles = StyleSheet.create({
   optional: { color: studio.faint },
   chips: { gap: 8 },
   chip: { maxWidth: 260, minHeight: 38, paddingHorizontal: 14, justifyContent: 'center', borderRadius: 999, borderWidth: 1, borderColor: studio.line, backgroundColor: studio.panelHigh },
-  chipActive: { backgroundColor: studio.lime, borderColor: studio.lime },
+  chipActive: { backgroundColor: studio.accent, borderColor: studio.accent },
   chipLabel: { ...studioType.small, color: studio.text },
-  chipLabelActive: { color: studio.limeInk, fontWeight: '700' },
+  chipLabelActive: { color: studio.onAccent, fontWeight: '700' },
   item: { flexDirection: 'row', alignItems: 'flex-start' },
   thumb: { width: 72, height: 128, borderRadius: studio.radiusSmall, backgroundColor: studio.bg },
 });

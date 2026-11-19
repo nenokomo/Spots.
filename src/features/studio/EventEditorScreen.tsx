@@ -1,7 +1,9 @@
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Icon } from '../../components/Icon';
 import { useNow } from '../../hooks/useNow';
 import { postShot } from '../../services/content';
 import { formatBerlinInput, parseBerlinDateTime, parseBerlinEnd } from '../../utils/berlinTime';
@@ -47,12 +49,19 @@ function EventStoryCard({ event }: { event: OrganizerEvent }) {
     catch (failure) { setError(failure instanceof Error ? failure.message : 'Posten hat nicht geklappt.'); }
     finally { setBusy(false); }
   }
-  return <Card>
-    <Text style={studioStyles.heading}>Event-Story</Text>
-    <Text style={studioStyles.muted}>{open
+  return <Card tone={open ? 'accent' : undefined}>
+    <View style={styles.storyHead}>
+      <LinearGradient colors={open ? [studio.pink, studio.accentFill[0], '#7a2bd6'] : [studio.panelHigh, studio.panelHigh]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.storyRing}>
+        <View style={styles.storyInner}><Icon name="camera" size={18} color={studio.text} /></View>
+      </LinearGradient>
+      <View style={styles.venueCopy}>
+        <Text style={studioStyles.heading}>Event-Story</Text>
+        <Text style={studioStyles.muted}>{open
       ? `Fotos für die Eventseite, zum Beispiel Line-up oder Aufbau. Jedes bleibt 24 Stunden.${event.isPublished ? '' : ' Zu sehen, sobald das Event live ist.'}`
       : 'Für dieses Event ist die Story vorbei.'}</Text>
-    {open && <StudioButton small variant="secondary" icon="camera" label="Foto posten" loading={busy} onPress={() => void post()} />}
+      </View>
+    </View>
+    {open && <StudioButton icon="camera" label="Foto in die Event-Story" loading={busy} onPress={() => void post()} />}
     <Message error={error} text={notice} />
   </Card>;
 }
@@ -136,7 +145,9 @@ function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: O
   return <StudioPage title={event ? 'Event bearbeiten' : 'Neues Event'} bottomInset={40}
     trailing={<StudioButton small variant="secondary" label="Zurück" onPress={back} />}>
     {cancelled && <Card tone="red"><Text style={studioStyles.body}>Dieses Event ist abgesagt und nicht mehr in Spots zu sehen.</Text></Card>}
-    <SectionTitle>Was und wann</SectionTitle>
+    {/* Story first: „Event-Story posten“ on Heute lands right here. */}
+    {event && <EventStoryCard event={event} />}
+    <SectionTitle>Was & wann</SectionTitle>
     <Card>
       <Input label="Titel" value={title} onChange={setTitle} placeholder="z. B. Techno Night mit …" maxLength={200} editable={!busy} />
       <View style={studioStyles.row}>
@@ -176,25 +187,30 @@ function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: O
       </>}
     </Card>
 
-    <SectionTitle>Details</SectionTitle>
+    <SectionTitle>Flyer & Tickets</SectionTitle>
     <Card>
       <StudioImageField label="Flyer" organizerId={organizer.id} kind="flyer" value={imageUrl} onChange={setImageUrl} disabled={busy} />
-      <Input label="Beschreibung" optional value={description} onChange={setDescription} placeholder="Line-up, Dresscode, Einlass …" multiline maxLength={5000} editable={!busy} />
       <Input label="Ticket-Link" optional value={ticketUrl} onChange={setTicketUrl} placeholder="tickets.example.de/…" keyboard="url" maxLength={500} editable={!busy} />
+      <Text style={studioStyles.muted}>Mit Ticket-Link zeigt Spots „Tickets kaufen“ auf der Eventseite und eurer Veranstalterseite. Verkauft wird beim Anbieter.</Text>
     </Card>
 
-    {!cancelled && <Card tone={approved && live ? 'lime' : undefined}>
+    <SectionTitle>Beschreibung</SectionTitle>
+    <Card>
+      <Input label="Über das Event" optional value={description} onChange={setDescription} placeholder="Line-up, Dresscode, Einlass …" multiline maxLength={5000} editable={!busy} />
+    </Card>
+
+    {!cancelled && <SectionTitle>Veröffentlichen</SectionTitle>}
+
+    {!cancelled && <Card tone={approved && live ? 'accent' : undefined}>
       <View style={styles.liveRow}>
         <View style={styles.venueCopy}>
           <Text style={studioStyles.heading}>Live in Spots</Text>
           <Text style={studioStyles.muted}>{approved ? 'Sofort sichtbar auf Radar, Entdecken und eurer Seite.' : 'Geht, sobald das Spots-Team euren Club freigegeben hat. Bis dahin ein Entwurf.'}</Text>
         </View>
         <Switch accessibilityLabel="Live in Spots" value={approved && live} onValueChange={setLive} disabled={!approved || busy}
-          trackColor={{ true: studio.lime, false: studio.panelHigh }} thumbColor={approved && live ? studio.limeInk : undefined} />
+          trackColor={{ true: studio.accent, false: studio.panelHigh }} thumbColor={approved && live ? studio.onAccent : undefined} />
       </View>
     </Card>}
-
-    {event && <EventStoryCard event={event} />}
 
     <Message error={error} />
     <StudioButton label="Speichern" loading={busy} onPress={() => void save()} />
@@ -207,7 +223,7 @@ function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: O
 export default function EventEditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { organizer, events, reload } = useStudio();
-  if (organizer === undefined) return <View style={styles.loading}><ActivityIndicator color={studio.lime} /></View>;
+  if (organizer === undefined) return <View style={styles.loading}><ActivityIndicator color={studio.accent} /></View>;
   if (!organizer) return <StudioPage title="Event"><Text style={studioStyles.muted}>Bitte zuerst die Angaben zum Club ergänzen.</Text></StudioPage>;
   const event = id === 'new' ? null : events.find((item) => item.id === id);
   if (event === undefined) return <StudioPage title="Event" trailing={<StudioButton small variant="secondary" label="Zurück" onPress={back} />}>
@@ -220,7 +236,10 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.bg },
   venue: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   venueCopy: { flex: 1, gap: 4 },
-  result: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: studio.radiusSmall, backgroundColor: studio.bg, borderWidth: 1, borderColor: studio.line, gap: 2 },
-  resultPressed: { borderColor: studio.lime },
+  result: { paddingVertical: 12, paddingHorizontal: 14, borderRadius: studio.radiusSmall, backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, gap: 2 },
+  resultPressed: { borderColor: studio.accent },
   liveRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  storyHead: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  storyRing: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  storyInner: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.bg },
 });

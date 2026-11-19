@@ -1,15 +1,17 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
+import { Icon } from '../../components/Icon';
 import { getAccountClient } from '../accounts/client';
 import { createAccountActions } from '../accounts/auth';
 import { setGuestMode } from '../accounts/guestMode';
 import { useAccountSession } from '../accounts/useAccountSession';
-import { fetchOrganizerContact, saveOrganizerContact, updateOrganizerProfile, type MyOrganizer } from '../organizer/organizerApi';
+import { fetchOrganizerContact, reviewLabels, saveOrganizerContact, updateOrganizerProfile, type MyOrganizer } from '../organizer/organizerApi';
 import { normalizeSocial, normalizeWebsite, phonePattern } from '../organizer/signup';
 import { useStudio } from './StudioContext';
 import { StudioImageField } from './StudioImageField';
-import { Card, Input, Message, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
+import { studio } from './theme';
+import { Card, Input, Message, Pill, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
 
 function ProfileForm({ organizer, reload }: { organizer: MyOrganizer; reload: () => void }) {
   const [name, setName] = useState(organizer.displayName);
@@ -115,18 +117,48 @@ function AccountCard() {
   </Card>;
 }
 
+/** Business card on top: logo, name, city, status and the way to the public page. */
+function ProfileHead({ organizer }: { organizer: MyOrganizer }) {
+  const approved = organizer.reviewStatus === 'approved';
+  return <Card tone="accent">
+    <View style={styles.headRow}>
+      <View style={styles.logo}>
+        {organizer.avatarUrl ? <Image source={{ uri: organizer.avatarUrl }} style={StyleSheet.absoluteFill} accessibilityLabel={`Logo von ${organizer.displayName}`} /> : <Icon name="profile" size={26} color={studio.muted} />}
+      </View>
+      <View style={studioStyles.flex}>
+        <Text numberOfLines={2} style={styles.name}>{organizer.displayName}</Text>
+        {organizer.city && <Text style={studioStyles.muted}>Veranstalter · {organizer.city}</Text>}
+        <Pill label={approved ? 'Live in Spots' : reviewLabels[organizer.reviewStatus]} tone={approved ? 'accent' : organizer.reviewStatus === 'pending' ? 'amber' : organizer.reviewStatus === 'draft' ? 'muted' : 'red'} />
+      </View>
+    </View>
+    {approved
+      ? <StudioButton variant="secondary" icon="search" label="So sehen euch Gäste" onPress={() => router.push({ pathname: '/organizer/[id]', params: { id: organizer.id } })} />
+      : <Text style={studioStyles.muted}>Eure öffentliche Seite ist zu sehen, sobald das Spots-Team euren Club freigegeben hat.</Text>}
+  </Card>;
+}
+
 export default function ClubScreen() {
   const { organizer, reload } = useStudio();
-  return <StudioPage title="Club" subtitle="So erscheint ihr in Spots. Ansprechperson und Telefon bleiben privat.">
+  return <StudioPage title="Profil" subtitle="So erscheint ihr in Spots. Ansprechperson und Telefon bleiben privat.">
     {organizer && <>
-      {organizer.reviewStatus === 'approved' && <StudioButton small variant="ghost" label="Öffentliche Seite ansehen"
-        onPress={() => router.push({ pathname: '/organizer/[id]', params: { id: organizer.id } })} />}
-      <SectionTitle>Profil</SectionTitle>
+      <ProfileHead organizer={organizer} />
+      <SectionTitle>Öffentliches Profil</SectionTitle>
       <ProfileForm key={organizer.id} organizer={organizer} reload={reload} />
-      <SectionTitle>Ansprechperson</SectionTitle>
+      <SectionTitle>Beiträge</SectionTitle>
+      <Card>
+        <Text style={studioStyles.heading}>Bilder und Text für eure Seite</Text>
+        <Text style={studioStyles.muted}>Bald könnt ihr hier Beiträge für eure Veranstalterseite posten.</Text>
+      </Card>
+      <SectionTitle>Ansprechperson (privat)</SectionTitle>
       <ContactForm organizer={organizer} />
     </>}
     <SectionTitle>Konto</SectionTitle>
     <AccountCard />
   </StudioPage>;
 }
+
+const styles = StyleSheet.create({
+  headRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  logo: { width: 72, height: 72, borderRadius: 36, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: studio.panelHigh, borderWidth: 2, borderColor: studio.accentLine },
+  name: { fontSize: 22, lineHeight: 27, fontWeight: '800', letterSpacing: -0.4, color: studio.text },
+});

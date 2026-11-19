@@ -15,7 +15,7 @@ export default function StudioLayout() {
   const type = useAccountType(userId);
 
   if (account.loading || (userId && type === null)) {
-    return <View style={styles.loading}><ActivityIndicator color={studio.lime} /></View>;
+    return <View style={styles.loading}><ActivityIndicator color={studio.accent} /></View>;
   }
   if (!userId || type !== 'organizer') return <Redirect href="/" />;
 

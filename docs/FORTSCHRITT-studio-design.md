@@ -1,6 +1,6 @@
 # Fortschritt – Spots Studio Design (Noyan)
 
-Stand: 19.11.2026. Noch nichts umgesetzt, nur Vorschläge. Vor dem Start: `main` hereinholen (Jacints Veranstalter-Storys, SQL 33).
+Stand: 19.11.2026. Branch `design/studio` (von `design/feinschliff`, enthält aktuelles `main`). Erste Runde umgesetzt, siehe unten.
 
 ## Ausgangslage
 
@@ -25,7 +25,19 @@ Stand: 19.11.2026. Noch nichts umgesetzt, nur Vorschläge. Vor dem Start: `main`
 - Umsatz/Ticketverkauf (Entscheidung offen).
 - Beiträge im Studio anlegen; Ticketarten mit Preisen; Verlauf der Statistik über die Zeit; Titelbild und Motto fürs Profil.
 
-## Offen / Entscheidung Noyan
+## Umgesetzt (19.11., Runde 1)
 
-- Spots-Look oder eigener Studio-Look?
-- Neuer Tab-Aufbau so okay?
+- **Look:** Spots-Familie (`studio/theme.ts`): gleicher Hintergrund mit Pflaumen-Verlauf, Rosa als Akzent, gefüllte Knöpfe im Orchidee-Verlauf, Neon-Abschnittstitel, „SPOTS STUDIO“-Abzeichen. Lime entfernt (Namen `lime*` → `accent`/`onAccent`/`accentSoft`). Status-Pills mit Punkt: Entwurf grau, In Prüfung/Verschoben gelb, Live rosa leuchtend, Abgesagt rot.
+- **Tabs:** Heute · Events · + · Zahlen · Profil als schwebende Glas-Kapsel wie in der Besucher-App. „+“ (neue Route `studio/(tabs)/create.tsx`, nie angezeigt) öffnet die Auswahl: Story in Entdecken, Neues Event, Event-Story (nächstes Event), Beitrag („Kommt bald“).
+- **Heute:** Logo oben rechts (→ Profil), Freigabe-Stand nur bis zur Freigabe, großes Kärtchen fürs nächste Event (Flyer, „Heute Nacht“/„Läuft gerade“, Event-Story posten, Bearbeiten), 4 Kennzahlen, „Zu erledigen“ (Flyer fehlt, kein Ticket-Link, noch nicht live), Entdecken-Story mit Story-Ring, „Danach“.
+- **Events:** Umschalter mit Anzahl, Datumsfeld in Rosa, Platzhalter „Flyer“ wenn keiner da ist, leerer Zustand mit „Event anlegen“.
+- **Editor:** Event-Story ganz oben, dann Was & wann → Wo → Flyer & Tickets → Beschreibung → Veröffentlichen.
+- **Zahlen:** Kennzahlen mit Symbolen, „Umsatz & Tickets“ ehrlich nur mit Ticket-Klicks und Hinweis, Balken im Verlauf, „SHOTS“ statt „Snaps“.
+- **Profil:** Visitenkarte (Logo, Name, Status) mit „So sehen euch Gäste“, Beiträge-Hinweis „bald“, Ansprechperson als privat markiert.
+- Datenlogik unverändert (StudioContext, organizerApi, Speichern, Freigabe). Geprüft: Typecheck, Lint. Nicht auf dem Handy geprüft.
+
+## Offen
+
+- Handy-Test durch Noyan.
+- Story-Seite (`StoryScreen`, Jacints einfache Oberfläche) bekommt die neuen Farben, Gestaltung noch offen.
+- Datums-/Zeitauswahl im Editor braucht ein neues Paket (Freigabe nötig).
