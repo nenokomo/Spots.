@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Image, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventHero } from '../components/EventCards';
 import { EventCalendar } from '../components/EventCalendar';
@@ -13,6 +13,7 @@ import { OrganizerAvatar, postImages } from '../components/GalleryPost';
 import { Icon } from '../components/Icon';
 import { OrganizerEventRow, openTicket, ticketLink } from '../components/OrganizerEventRow';
 import { OrganizerPostList } from '../components/OrganizerPosts';
+import { SaveEventButton } from '../components/SaveEventButton';
 import { Backdrop } from '../components/Screen';
 import { Button, IconButton } from '../components/ui/Button';
 import { EmptyState, SectionTitle } from '../components/ui/Section';
@@ -61,6 +62,8 @@ export default function OrganizerProfileScreen() {
   const [allPast, setAllPast] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [calendarDate, setCalendarDate] = useState<string | null>(null);
+  // Compact bar fades in once the name has scrolled under the top.
+  const [scrollY] = useState(() => new Animated.Value(0));
   const back = () => router.canGoBack() ? router.back() : router.replace('/');
 
   const data = state.status === 'ready' ? state.data : null;
@@ -76,6 +79,10 @@ export default function OrganizerProfileScreen() {
       highlightTitle: phase === 'live' || phase === 'started' ? 'Jetzt live' : 'Als Nächstes',
       others: upcoming.filter((event) => event.id !== highlight?.id),
       stories: upcoming.filter((event) => !event.imageIsPlaceholder),
+      // What the organizer plays: the most frequent genres/categories of all its events.
+      sounds: [...events.flatMap((event) => [...new Set([...(event.genres ?? []), ...event.categories])])
+        .reduce((counts, tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1), new Map<string, number>())]
+        .sort((a, b) => b[1] - a[1]).slice(0, 4).map(([tag]) => tag),
     };
   }, [data, now]);
   const calendarDays = useMemo(() => groups.upcoming.map((event) => dayKey(new Date(event.startsAt))), [groups.upcoming]);
@@ -112,6 +119,7 @@ export default function OrganizerProfileScreen() {
   const programme = groups.others.slice(0, PROGRAM_PREVIEW);
   const dayEvents = calendarDate ? groups.upcoming.filter((event) => dayKey(new Date(event.startsAt)) === calendarDate) : [];
   const openCalendar = () => { setCalendarDate(calendarDays[0] ?? null); setCalendarOpen(true); };
+  const barOpacity = scrollY.interpolate({ inputRange: [150, 210], outputRange: [0, 1], extrapolate: 'clamp' });
   const avatar = <View style={styles.avatarGap}><OrganizerAvatar organizer={organizer} size={AVATAR} /></View>;
 
   async function share() {
@@ -121,15 +129,12 @@ export default function OrganizerProfileScreen() {
   return (
     <View style={styles.screen}>
       <Backdrop />
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + space.xxxl }} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + (highlightTicket ? 110 : space.xxxl) }} showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}>
         {/* Cover: the next flyer, blurred, fading into the page. */}
         <View style={[styles.cover, { height: insets.top + 230 }]}>
           {cover && <Image source={cover} resizeMode="cover" blurRadius={realFlyer ? 24 : 12} style={StyleSheet.absoluteFill} />}
           <LinearGradient pointerEvents="none" colors={cover ? ['#0a090cb3', '#0a090c33', '#0a090ccc', colors.background] : ['#3a1530', '#1d1020', colors.background]} locations={cover ? [0, 0.3, 0.75, 1] : [0, 0.55, 1]} style={StyleSheet.absoluteFill} />
-          <View style={[styles.toolbar, { paddingTop: insets.top + space.sm }]}>
-            <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} />
-            <IconButton icon="share" accessibilityLabel="Veranstalter teilen" onPress={() => void share()} />
-          </View>
         </View>
 
         {/* Identity on the cover's lower edge, left-aligned like the event title. */}
@@ -145,6 +150,7 @@ export default function OrganizerProfileScreen() {
             <Text style={styles.kind}>Veranstalter</Text>
             {organizer.city && <><View style={styles.kindDot} /><Icon name="pin" size={13} color={colors.pink} /><Text style={styles.kind}>{organizer.city}</Text></>}
           </View>
+          {groups.sounds.length > 0 && <View style={styles.sounds}>{groups.sounds.map((tag) => <Text key={tag} style={styles.sound}>{tag}</Text>)}</View>}
         </View>
 
         <View style={styles.body}>
@@ -172,11 +178,6 @@ export default function OrganizerProfileScreen() {
           {groups.highlight && <View style={styles.block}>
             <SectionTitle title={groups.highlightTitle} style={styles.blockTitle} />
             <EventHero event={groups.highlight} href={eventDetailHref(groups.highlight.id)} today={today} now={now} width={cardWidth} />
-            {/* Always a ticket area, like on the event page: buy at the provider, or a quiet note without a link. */}
-            {highlightTicket
-              ? <Button label={highlightTicket.label === 'Tickets' ? 'Tickets kaufen' : highlightTicket.label} icon="ticket" accessibilityLabel={highlightTicket.a11y}
-                  onPress={() => openTicket(groups.highlight!, highlightTicket.url)} />
-              : <Button label="Noch keine Online-Tickets" icon="ticket" variant="secondary" disabled onPress={() => {}} />}
           </View>}
 
           {groups.upcoming.length > 0 && <View style={styles.block}>
@@ -219,7 +220,33 @@ export default function OrganizerProfileScreen() {
             <Icon name="down" size={14} color={colors.muted} />
           </Pressable>}
         </View>}
-      </ScrollView>
+      </Animated.ScrollView>
+
+      {/* Fixed top: back and share always reachable; behind them a glass bar with picture and name fades in. */}
+      <View pointerEvents="box-none" style={styles.topBar}>
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: barOpacity }]}>
+          <GlassBackdrop radius={0} variant="panel" />
+          <View style={styles.topLine} />
+        </Animated.View>
+        <View pointerEvents="box-none" style={[styles.toolbar, { paddingTop: insets.top + space.sm, paddingBottom: space.sm }]}>
+          <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} />
+          <Animated.View pointerEvents="none" style={[styles.topTitle, { opacity: barOpacity }]}>
+            <OrganizerAvatar organizer={organizer} size={28} />
+            <Text numberOfLines={1} style={styles.topName}>{organizer.displayName}</Text>
+          </Animated.View>
+          <IconButton icon="share" accessibilityLabel="Veranstalter teilen" onPress={() => void share()} />
+        </View>
+      </View>
+
+      {/* Fixed bottom bar like on the event page: tickets for the next event and save – only when it has tickets. */}
+      {groups.highlight && highlightTicket && <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <GlassBackdrop radius={0} variant="panel" />
+        <View style={styles.barRow}>
+          <Button label={highlightTicket.label === 'Tickets' ? 'Tickets fürs nächste Event' : highlightTicket.label} icon="ticket" accessibilityLabel={`${highlightTicket.a11y}: ${groups.highlight.title}`}
+            onPress={() => openTicket(groups.highlight!, highlightTicket.url)} style={styles.flex} />
+          <SaveEventButton id={groups.highlight.id} title={groups.highlight.title} size={52} />
+        </View>
+      </View>}
 
       <Modal visible={story !== null} animationType="none" transparent statusBarTranslucent navigationBarTranslucent onRequestClose={closeStory}>
         {story !== null && <EventStoryViewer events={groups.stories} initialId={story} today={today} onClose={closeStory} onOpenEvent={(event) => { setStory(null); router.push(eventDetailHref(event.id)); }} />}
@@ -253,7 +280,14 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   stateBack: { backgroundColor: colors.surface, marginLeft: space.lg, marginBottom: space.lg },
   cover: { overflow: 'hidden', backgroundColor: colors.surface },
-  toolbar: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: space.lg },
+  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, paddingHorizontal: space.lg },
+  topBar: { position: 'absolute', top: 0, left: 0, right: 0 },
+  topLine: { position: 'absolute', left: 0, right: 0, bottom: 0, height: StyleSheet.hairlineWidth, backgroundColor: colors.separator },
+  topTitle: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm },
+  topName: { ...type.headline, color: colors.text, flexShrink: 1 },
+  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: space.md, paddingHorizontal: space.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator },
+  barRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  flex: { flex: 1 },
   head: { paddingHorizontal: gutter, gap: space.sm },
   ringWrap: { alignSelf: 'flex-start', marginBottom: space.xs },
   ring: { width: AVATAR + 14, height: AVATAR + 14, borderRadius: (AVATAR + 14) / 2, alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 18px #00000080' },
@@ -265,6 +299,8 @@ const styles = StyleSheet.create({
   name: { fontSize: 32, lineHeight: 37, fontWeight: '800', letterSpacing: -0.6, color: colors.text },
   kindRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   kind: { ...type.headline, fontSize: 15, color: colors.pink },
+  sounds: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: space.xs },
+  sound: { color: colors.text, fontSize: 12, fontWeight: '600', backgroundColor: '#ffffff14', borderRadius: 13, overflow: 'hidden', paddingHorizontal: 11, paddingVertical: 5 },
   kindDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: colors.faint, marginHorizontal: 3 },
   about: { marginTop: space.xl, padding: space.lg, gap: space.md, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: '#ffffff08', borderWidth: 1, borderColor: colors.accentLine, ...squircle },
   aboutLabel: { ...type.overline, fontSize: 11, color: colors.pink },
