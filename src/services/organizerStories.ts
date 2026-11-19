@@ -11,6 +11,8 @@ export type OrganizerStoryItem = {
   id: string; storagePath: string; url: string; caption: string | null; createdAt: string;
   /** Verknüpftes eigenes Event (vergangen oder kommend); null ohne Event oder wenn es nicht öffentlich ist. */
   event: { id: string; title: string; startsAt: string } | null;
+  /** Nur im Studio gefüllt: vom Spots-Team ausgeblendet (SQL 34). In Entdecken kommen nur sichtbare Bilder an. */
+  hidden?: boolean;
 };
 export type ExploreOrganizer = {
   id: string; slug: string; displayName: string; city: string | null; avatarUrl: string | null;
@@ -18,7 +20,7 @@ export type ExploreOrganizer = {
   story: OrganizerStoryItem[];
 };
 
-type StoryRow = { id: string; storage_path: string; caption: string | null; created_at: string; event_id: string | null; event_title: string | null; event_starts_at: string | null };
+type StoryRow = { id: string; storage_path: string; caption: string | null; created_at: string; event_id: string | null; event_title: string | null; event_starts_at: string | null; moderation_status?: string };
 type ExploreRow = {
   id: string; slug: string; display_name: string; city: string | null; avatar_url: string | null;
   next_event_id: string | null; next_event_title: string | null; next_event_starts_at: string | null; story: StoryRow[] | null;
@@ -40,7 +42,7 @@ export function toStoryItems(client: SupabaseClient, organizerId: string, rows: 
   return rows.flatMap((row) => {
     const url = storyImageUrl(client, organizerId, row.storage_path);
     if (!url) return [];
-    return [{ id: row.id, storagePath: row.storage_path, url, caption: row.caption, createdAt: row.created_at,
+    return [{ id: row.id, storagePath: row.storage_path, url, caption: row.caption, createdAt: row.created_at, hidden: row.moderation_status === 'hidden',
       event: row.event_id && row.event_title && row.event_starts_at ? { id: row.event_id, title: row.event_title, startsAt: row.event_starts_at } : null }];
   });
 }

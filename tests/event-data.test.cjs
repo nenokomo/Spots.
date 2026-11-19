@@ -38,7 +38,7 @@ function row(overrides = {}) {
   };
 }
 
-test('live requires start <= now < end, including overnight, and valid GPS', () => {
+test('live requires start <= now < end (or four hours without an end), including overnight, and valid GPS', () => {
   const event = mapEventRow(row());
   assert.equal(isLiveEvent(event, Date.parse('2026-11-03T20:59:59Z')), false);
   assert.equal(isLiveEvent(event, Date.parse('2026-11-03T21:00:00Z')), true);
@@ -46,8 +46,16 @@ test('live requires start <= now < end, including overnight, and valid GPS', () 
   assert.equal(isLiveEvent(event, Date.parse('2026-11-04T04:00:00Z')), false);
   assert.equal(isUpcomingEvent(event, Date.parse('2026-11-03T20:59:59Z')), true);
   assert.equal(isUpcomingEvent(event, Date.parse('2026-11-03T21:00:00Z')), false);
-  for (const overrides of [{ endsAt: null }, { endsAt: 'invalid' }, { endsAt: '2026-11-03T19:00:00Z' }, { latitude: null }, { latitude: '' }, { latitude: 91 }, { longitude: -181 }]) {
+  for (const overrides of [{ latitude: null }, { latitude: '' }, { latitude: 91 }, { longitude: -181 }]) {
     assert.equal(isLiveEvent(mapEventRow(row(overrides)), Date.parse('2026-11-03T23:00:00Z')), false);
+  }
+  // Without a usable end (missing, invalid, before the start): on the radar for four hours after the start.
+  for (const overrides of [{ endsAt: null }, { endsAt: 'invalid' }, { endsAt: '2026-11-03T19:00:00Z' }]) {
+    const open = mapEventRow(row(overrides));
+    assert.equal(isLiveEvent(open, Date.parse('2026-11-03T20:59:59Z')), false);
+    assert.equal(isLiveEvent(open, Date.parse('2026-11-03T23:00:00Z')), true);
+    assert.equal(isLiveEvent(open, Date.parse('2026-11-04T00:59:59Z')), true);
+    assert.equal(isLiveEvent(open, Date.parse('2026-11-04T01:00:00Z')), false);
   }
 });
 
@@ -111,7 +119,7 @@ test('real Supabase SDK builds publication/time/GPS filters; no writes or demo f
     assert.ok(requests[1].url.searchParams.get('select').includes('status:status'));
     assert.match(requests[0].url.searchParams.get('starts_at'), /^gt\./);
     assert.match(requests[1].url.searchParams.get('starts_at'), /^lte\./);
-    assert.match(requests[1].url.searchParams.get('ends_at'), /^gt\./);
+    assert.match(requests[1].url.searchParams.get('or'), /^\(ends_at\.gt\."[^"]+",and\(ends_at\.is\.null,starts_at\.gt\."[^"]+"\)\)$/);
     assert.deepEqual(requests[1].url.searchParams.getAll('latitude'), ['gte.-90', 'lte.90']);
     assert.deepEqual(requests[1].url.searchParams.getAll('longitude'), ['gte.-180', 'lte.180']);
     await fetchEvent('test-midnight-pulse', signal);

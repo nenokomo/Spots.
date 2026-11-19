@@ -165,3 +165,18 @@ export async function reportShot(snapId: string, reason: ShotReportReason, detai
   if (error?.code === '42501') throw new Error('Zum Melden bitte zuerst anmelden.');
   if (error) throw new Error('Die Meldung konnte nicht gesendet werden. Bitte später erneut versuchen.');
 }
+
+/**
+ * Meldet ein Story-Bild eines Veranstalters (SQL 34). Braucht ein Konto. Story-Bilder blenden sich nicht
+ * automatisch aus; das Spots-Team prüft die Meldung.
+ */
+export async function reportStoryItem(itemId: string, reason: ShotReportReason) {
+  if (!uuid.test(itemId)) throw new Error('Test-Bilder können nicht gemeldet werden.');
+  if (unavailable.has('story_reports')) throw new Error('Melden ist hier noch nicht eingerichtet.');
+  const client = await signedInClient('Zum Melden bitte zuerst anmelden.');
+  const { error } = await client.from('content_reports').insert({ story_item_id: itemId, reason });
+  if (error && (missingSchema(error.code) || error.code === 'PGRST204')) { unavailable.add('story_reports'); throw new Error('Melden ist hier noch nicht eingerichtet.'); }
+  if (error?.code === '23505') return; // schon von diesem Konto gemeldet
+  if (error?.code === '42501') throw new Error('Zum Melden bitte zuerst anmelden.');
+  if (error) throw new Error('Die Meldung konnte nicht gesendet werden. Bitte später erneut versuchen.');
+}

@@ -1,5 +1,5 @@
 import { getSupabase } from '../lib/supabase';
-import { isLiveEvent, isUpcomingEvent, type SpotEvent } from '../types/events';
+import { isLiveEvent, isUpcomingEvent, LIVE_WITHOUT_END_MS, type SpotEvent } from '../types/events';
 import { mapEventRow } from './eventAdapter';
 import { testEvents } from './testEvents';
 import { eventColumns as columns, eventProjection, publishedValue } from './eventSchema';
@@ -62,7 +62,10 @@ export async function fetchUpcomingEvents(signal: AbortSignal) {
 
 export async function fetchLiveEvents(signal: AbortSignal) {
   const now = new Date().toISOString();
-  const events = await fetchPages(() => publishedQuery().lte(columns.startsAt, now).gt(columns.endsAt, now)
+  // Running now: confirmed end in the future, or no end and started within the last hours (see isLiveEvent).
+  const recent = new Date(Date.now() - LIVE_WITHOUT_END_MS).toISOString();
+  const events = await fetchPages(() => publishedQuery().lte(columns.startsAt, now)
+    .or(`${columns.endsAt}.gt."${now}",and(${columns.endsAt}.is.null,${columns.startsAt}.gt."${recent}")`)
     .gte(columns.latitude, -90).lte(columns.latitude, 90)
     .gte(columns.longitude, -180).lte(columns.longitude, 180), signal);
   // Also validate client-side, including end > start and numeric GPS bounds.

@@ -2,11 +2,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AccessibilityInfo, Animated, Easing, Image, PanResponder, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, space, squircle, type } from '../constants/theme';
-import { reportShot, shotReportReasons, type ShotReportReason } from '../services/content';
+import { colors, squircle } from '../constants/theme';
+import { reportShot } from '../services/content';
 import { snapAge, type SnapMedia } from '../utils/stories';
-import { Button } from './ui/Button';
-import { ListGroup, ListRow } from './ui/List';
+import { ReportPanel } from './ReportPanel';
 
 export const SNAP_MS = 5000;
 
@@ -180,50 +179,9 @@ export function SnapViewer({ items, startIndex = 0, author, now, onClose, onSeen
           <Text style={styles.reportText}>Melden</Text>
         </Pressable>}
       </Animated.View>
-      {reporting && <ShotReportPanel shotId={reporting.id} bottomInset={insets.bottom} onDone={() => setReporting(null)} />}
-    </View>
-  );
-}
-
-/** Reasons and send button for a shot, shown over the paused viewer (no second modal). */
-function ShotReportPanel({ shotId, bottomInset, onDone }: { shotId: string; bottomInset: number; onDone: () => void }) {
-  const [reason, setReason] = useState<ShotReportReason | null>(null);
-  const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
-  const [error, setError] = useState<string | null>(null);
-  async function send() {
-    if (!reason) return;
-    setState('sending');
-    setError(null);
-    try { await reportShot(shotId, reason, ''); setState('sent'); }
-    catch (failure) { setState('idle'); setError(failure instanceof Error ? failure.message : 'Die Meldung konnte nicht gesendet werden.'); }
-  }
-  return (
-    <View style={styles.panelLayer}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Melden abbrechen" onPress={onDone} style={StyleSheet.absoluteFill} />
-      <View style={[styles.panel, { paddingBottom: Math.max(bottomInset, 16) + 8 }]}>
-        {state === 'sent'
-          ? <>
-              <Text accessibilityRole="alert" style={styles.panelTitle}>Danke für deine Meldung</Text>
-              <Text style={styles.panelText}>Wir prüfen den SHOT. Nach mehreren Meldungen wird er sofort ausgeblendet.</Text>
-              <Button label="Schließen" variant="secondary" onPress={onDone} />
-            </>
-          : <>
-              <Text style={styles.panelTitle}>SHOT melden</Text>
-              <Text style={styles.panelText}>Warum soll dieser SHOT weg?</Text>
-              <ListGroup>
-                {shotReportReasons.map((item) => (
-                  <ListRow key={item.id} title={item.label} value={reason === item.id ? '✓' : undefined}
-                    accessibilityLabel={`${item.label}${reason === item.id ? ', ausgewählt' : ''}`} onPress={() => setReason(item.id)} />
-                ))}
-              </ListGroup>
-              {error && <Text accessibilityRole="alert" style={styles.panelError}>{error}</Text>}
-              <View style={styles.panelActions}>
-                <Button label="Abbrechen" variant="secondary" onPress={onDone} style={styles.flex} />
-                <Button label="Melden" onPress={() => void send()} disabled={!reason} loading={state === 'sending'} style={styles.flex}
-                  accessibilityLabel={reason ? 'Meldung senden' : 'Zuerst einen Grund auswählen'} />
-              </View>
-            </>}
-      </View>
+      {reporting && <ReportPanel title="SHOT melden" question="Warum soll dieser SHOT weg?"
+        sentText="Wir prüfen den SHOT. Nach mehreren Meldungen wird er sofort ausgeblendet." bottomInset={insets.bottom}
+        onSend={(reason) => reportShot(reporting.id, reason, '')} onDone={() => setReporting(null)} />}
     </View>
   );
 }
@@ -233,12 +191,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   report: { position: 'absolute', right: 12, height: 32, paddingHorizontal: 12, borderRadius: 16, justifyContent: 'center', backgroundColor: '#00000066' },
   reportText: { color: colors.text, fontSize: 13, fontWeight: '600' },
-  panelLayer: { ...StyleSheet.absoluteFill, justifyContent: 'flex-end', backgroundColor: '#00000080' },
-  panel: { gap: space.md, padding: space.lg, borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: colors.surfaceRaised, ...squircle },
-  panelTitle: { ...type.title3, color: colors.text },
-  panelText: { ...type.callout, color: colors.muted },
-  panelError: { ...type.footnote, color: colors.danger },
-  panelActions: { flexDirection: 'row', gap: space.sm },
   backdrop: { backgroundColor: colors.background },
   card: { flex: 1, overflow: 'hidden', borderRadius: 22, backgroundColor: colors.background, ...squircle },
   cover: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
