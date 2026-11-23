@@ -87,7 +87,7 @@ test('event story page keeps the former texts of the event story', () => {
 
 test('studio helpers: ticket prices in cents and invite codes in groups of four', () => {
   const api = load('src/features/organizer/organizerApi.ts', { '../accounts/client': { getAccountClient: () => client },
-    '../../services/organizerStories': service(), './signup': {} });
+    '../../services/organizerStories': service(), '../../services/organizers': { postImageUrls: async () => new Map() }, './signup': {} });
   assert.equal(api.parsePrice('12'), 1200);
   assert.equal(api.parsePrice('12,5'), 1250);
   assert.equal(api.parsePrice(' 8.90 € '), 890);
@@ -97,4 +97,42 @@ test('studio helpers: ticket prices in cents and invite codes in groups of four'
   assert.equal(api.parsePrice('12,555'), 'invalid');
   assert.equal(api.parsePrice('-5'), 'invalid');
   assert.equal(api.formatInviteCode('0A1B2C3D4E5F'), '0A1B-2C3D-4E5F');
+});
+
+test('daily totals: one row per day with zeros, sums over events, days outside the window ignored', () => {
+  const api = load('src/features/organizer/organizerApi.ts', { '../accounts/client': { getAccountClient: () => client },
+    '../../services/organizerStories': service(), '../../services/organizers': { postImageUrls: async () => new Map() }, './signup': {} });
+  const rows = [
+    { eventId: 'a', day: '2026-11-21', views: 3, ticketClicks: 1, saves: 0, snaps: 0 },
+    { eventId: 'b', day: '2026-11-21', views: 2, ticketClicks: 0, saves: 1, snaps: 4 },
+    { eventId: 'a', day: '2026-11-23', views: 5, ticketClicks: 2, saves: 0, snaps: 0 },
+    { eventId: 'a', day: '2026-10-01', views: 99, ticketClicks: 0, saves: 0, snaps: 0 },
+  ];
+  const totals = plain(api.dailyTotals(rows, '2026-11-23', 4));
+  assert.deepEqual(totals.map((row) => row.day), ['2026-11-20', '2026-11-21', '2026-11-22', '2026-11-23']);
+  assert.deepEqual(totals[1], { day: '2026-11-21', views: 5, ticketClicks: 1, saves: 1, snaps: 4 });
+  assert.deepEqual(totals[2], { day: '2026-11-22', views: 0, ticketClicks: 0, saves: 0, snaps: 0 });
+  assert.equal(totals[3].views, 5);
+  assert.equal(api.dailyTotals([], '2026-03-01', 3)[0].day, '2026-02-27', 'crosses month borders');
+});
+
+test('post images: signed links in gallery order, posts without readable media stay without images', async () => {
+  const media = [
+    { post_id: 'p1', storage_path: 'u/a.jpg', sort_order: 0 }, { post_id: 'p1', storage_path: 'u/b.jpg', sort_order: 1 },
+    { post_id: 'p2', storage_path: 'u/c.jpg', sort_order: 0 }, { post_id: 'p2', storage_path: 'u/blocked.jpg', sort_order: 1 },
+  ];
+  const calls = [];
+  const stub = {
+    from: (table) => ({ select: () => ({ in: (column, ids) => ({ order: () => ({ limit: async () => { calls.push([table, column, ids]); return { data: media, error: null }; } }) }) }) }),
+    storage: { from: (bucket) => ({ createSignedUrls: async (paths, seconds) => { calls.push([bucket, seconds]);
+      return { data: paths.map((p) => p.includes('blocked') ? { path: p, signedUrl: null, error: 'not found' } : { path: p, signedUrl: `https://proj.supabase.co/sign/${p}?token=t` }) }; } }) },
+  };
+  const { postImageUrls } = load('src/services/organizers.ts', { '../lib/supabase': { getSupabase: () => stub } });
+  const images = await postImageUrls(stub, ['p1', 'p2', 'p3']);
+  assert.deepEqual(plain(images.get('p1')), ['https://proj.supabase.co/sign/u/a.jpg?token=t', 'https://proj.supabase.co/sign/u/b.jpg?token=t']);
+  assert.deepEqual(plain(images.get('p2')), ['https://proj.supabase.co/sign/u/c.jpg?token=t']);
+  assert.equal(images.get('p3'), undefined);
+  assert.deepEqual(plain(calls[0]), ['organizer_post_media', 'post_id', ['p1', 'p2', 'p3']]);
+  assert.deepEqual(plain(calls[1]), ['organizer-media', 3600]);
+  assert.equal((await postImageUrls(stub, [])).size, 0);
 });
