@@ -1,52 +1,48 @@
 # Fortschritt – Spots Studio Design (Noyan)
 
-Stand: 19.11.2026. Branch `design/studio` (von `design/feinschliff`, enthält aktuelles `main`). Erste Runde umgesetzt, siehe unten.
+Stand: 23.11.2026. Branch `design/studio` (enthält `main` vom 19.11.: Jacints Moderation, Team, Ticketarten).
 
-## Ausgangslage
+## Aktueller Aufbau (23.11., Runde 4: Studio neu strukturiert)
 
-- Studio heute: Übersicht · Events · Statistik · Club, eigener Look „Backstage“ (Graphit, Neon-Lime) in `src/features/studio/theme.ts`.
-- Noyan ist mit Design und Struktur nicht zufrieden → komplett neu.
-- In `main` (noch nicht in `design/feinschliff`): Studio-Seite „Entdecken-Story“ (`StoryScreen.tsx`, Bilder posten/löschen, optional Text und Event) und „Event-Story“ im Event-Editor (Jacint).
+Grund: Die alte Struktur (Heute · Events · + · Story · Seite, dazu „Zahlen“ als Extra-Seite) war unübersichtlich, vieles gab es doppelt (Story posten an vier Stellen, Event anlegen an drei). Farben und Look sind gleich geblieben, nur der Aufbau ist neu.
 
-## Vorschläge
+**Vier Reiter, jeder mit genau einer Aufgabe. Jede Aktion gibt es nur an einer Stelle.**
 
-1. **Umsatz:** Spots verkauft keine Tickets selbst (Kauf beim Anbieter), daher keine Umsatzzahlen. Wege (Jacints Backend, große Entscheidung): eigener Verkauf (z. B. Stripe) oder Umsätze vom Anbieter abrufen. Bis dahin: Bereich „Umsatz & Tickets“ gestalten, ehrlich nur Ticket-Klicks + Hinweis. Keine erfundenen Zahlen.
-2. **Storys:** Posten gibt es schon (Jacint, siehe oben). Design: großer „+“-Knopf mittig in der Tab-Leiste (Story · Event · Beitrag); an Event-Tagen oben „Heute Nacht: Story posten“.
-3. **Neue Tabs:** Heute · Events · + · Zahlen · Profil.
-   - Heute: Event von heute/nächstes, Live-Status, Aufgaben („Flyer fehlt“, „Kein Ticket-Link“), Freigabe nur bis zur Freigabe.
-   - Events: Liste/Kalender, Entwürfe getrennt, Event duplizieren.
-   - Zahlen: pro Event mit Verlauf und Trend, später Umsatz.
-   - Profil: Vorschau der Besucherseite, bearbeiten, Beiträge verwalten, Konto.
-4. **Editor:** Datums-/Zeitauswahl statt Textfeldern, Schritte (Basis → Ort → Flyer → Tickets → Veröffentlichen), Vorschau „So sieht dein Event in Spots aus“.
-5. **Look:** Spots-Familie (dunkel, Rosa/Orchidee) mit eigener Kennung („STUDIO“-Abzeichen) statt fremdem Lime-Look. Status einheitlich: Entwurf grau, In Prüfung gelb, Live rosa, Abgesagt rot. Leere Zustände mit nächstem Schritt.
+| Reiter | Route | Datei | Aufgabe |
+| --- | --- | --- | --- |
+| Events | `/studio` | `EventsScreen.tsx` | Liste (Kommend · Vergangen), einziger Knopf „Neues Event“, bis zur Freigabe der Stand der Prüfung. Bei kommenden Events steht direkt in der Zeile, was fehlt (Flyer, Ticket-Link). |
+| Story | `/studio/story` | `StoryScreen.tsx` | Einziger Ort zum Posten. Erst wählen „Entdecken“ oder „Eventseite“, dann Bild wählen, posten. Darunter die Bilder in Entdecken (löschen). |
+| Einnahmen | `/studio/revenue` | `RevenueScreen.tsx` | Einnahmen und verkaufte Tickets oben, Reichweite darunter (Aufrufe, Gemerkt, Ticket-Klicks), dann jedes Event mit allen Zahlen in einer Zeile. |
+| Profil | `/studio/profile` | `ClubScreen.tsx` | Visitenkarte mit „So sehen euch Gäste“, darunter aufklappbar: Seite bearbeiten · Team · Ansprechperson · Konto. |
+
+Dazu nur eine weitere Seite: **das Event** (`/studio/event/[id]`, `EventEditorScreen.tsx`) mit fester Reihenfolge: Das Event → Ort → Flyer → Tickets (Link und Ticketarten) → Sichtbarkeit → Bilder zu diesem Event. „Speichern“ bleibt unten stehen.
+
+- Weggefallen: Reiter „Heute“ (`OverviewScreen`), „+“ mit Auswahl (`CreateTab`), Extra-Seite „Zahlen“ (`/studio/stats`), Hinweis-Banner „Bereich“ (`AreaBanner`), Platzhalter „Beiträge – bald“, Karte „Event-Story“ im Event (Posten nur noch im Reiter „Story“).
+- Neu: `Setup.tsx` (Einrichtung ohne Club statt der Reiter, Karte zur Freigabe), `AccountCard.tsx` (aus `ClubScreen` gelöst), in `ui.tsx` `Fold` (aufklappbarer Bereich) und `footer` für `StudioPage`.
+- Datenlogik unverändert: gleiche Aufrufe wie vorher (`organizerApi`, `postShot`, `StudioContext`). Jacints Karten `TeamCard`, `TicketsCard`, `EventShotsCard` sind weiter eingebunden, nur Überschriften angepasst.
+- Geprüft: Typecheck, Lint, `tests/organizer-app`, `navigation`, `design-integration`, `organizer-stories-app` (25/25). **Nicht auf dem Handy geprüft.**
+
+## Einnahmen: was echt ist und was fehlt
+
+- Echt: Aufrufe, Gemerkt, Ticket-Klicks, SHOTS pro Event (`fetchEventStats`, SQL 26).
+- **Fehlt: Einnahmen und verkaufte Tickets.** Spots verkauft keine Tickets selbst, die Zahlen liegen beim Ticket-Anbieter oder an der Abendkasse. Die Seite zeigt deshalb „–“ und erklärt warum. Keine erfundenen Zahlen.
+- Nur in der Entwicklung (`__DEV__`): Knopf „TEST · Beispielzahlen zeigen“ ganz unten, um das Design mit Zahlen zu beurteilen. Deutlich als TEST markiert, nie im Release.
 
 ## Daten nötig von Jacint
 
-- Umsatz/Ticketverkauf (Entscheidung offen).
-- Beiträge im Studio anlegen; Ticketarten mit Preisen; Verlauf der Statistik über die Zeit; Titelbild und Motto fürs Profil.
-
-## Umgesetzt (19.11., Runde 1)
-
-- **Look:** Spots-Familie (`studio/theme.ts`): gleicher Hintergrund mit Pflaumen-Verlauf, Rosa als Akzent, gefüllte Knöpfe im Orchidee-Verlauf, Neon-Abschnittstitel, „SPOTS STUDIO“-Abzeichen. Lime entfernt (Namen `lime*` → `accent`/`onAccent`/`accentSoft`). Status-Pills mit Punkt: Entwurf grau, In Prüfung/Verschoben gelb, Live rosa leuchtend, Abgesagt rot.
-- **Tabs:** Heute · Events · + · Zahlen · Profil als schwebende Glas-Kapsel wie in der Besucher-App. „+“ (neue Route `studio/(tabs)/create.tsx`, nie angezeigt) öffnet die Auswahl: Story in Entdecken, Neues Event, Event-Story (nächstes Event), Beitrag („Kommt bald“).
-- **Heute:** Logo oben rechts (→ Profil), Freigabe-Stand nur bis zur Freigabe, großes Kärtchen fürs nächste Event (Flyer, „Heute Nacht“/„Läuft gerade“, Event-Story posten, Bearbeiten), 4 Kennzahlen, „Zu erledigen“ (Flyer fehlt, kein Ticket-Link, noch nicht live), Entdecken-Story mit Story-Ring, „Danach“.
-- **Events:** Umschalter mit Anzahl, Datumsfeld in Rosa, Platzhalter „Flyer“ wenn keiner da ist, leerer Zustand mit „Event anlegen“.
-- **Editor:** Event-Story ganz oben, dann Was & wann → Wo → Flyer & Tickets → Beschreibung → Veröffentlichen.
-- **Zahlen:** Kennzahlen mit Symbolen, „Umsatz & Tickets“ ehrlich nur mit Ticket-Klicks und Hinweis, Balken im Verlauf, „SHOTS“ statt „Snaps“.
-- **Profil:** Visitenkarte (Logo, Name, Status) mit „So sehen euch Gäste“, Beiträge-Hinweis „bald“, Ansprechperson als privat markiert.
-- Datenlogik unverändert (StudioContext, organizerApi, Speichern, Freigabe). Geprüft: Typecheck, Lint. Nicht auf dem Handy geprüft.
-
-## Drei Bereiche klar getrennt (19.11., Runde 2)
-
-- Tabs jetzt ein Bereich pro Reiter: **Heute · Events (Eventseiten) · + · Story (Entdecken-Story) · Seite (Veranstalterseite)**. Zahlen sind eine eigene Seite (`/studio/stats`), erreichbar über „Alle Zahlen“ auf Heute.
-- Routen verschoben: `studio/story.tsx` → `studio/(tabs)/story.tsx` (Jacints Story-Seite, nur die Route), `studio/(tabs)/stats.tsx` → `studio/stats.tsx`. Links `/studio/story` und `/studio/stats` bleiben gleich.
-- Neuer Baustein `AreaBanner` auf jeder Seite: welcher Bereich, wo er für Gäste erscheint, bei Eventseiten „Ansehen“ (nur wenn live).
-- Entdecken-Story: Hinweis „Als eure Kachel unter ‚Veranstalter in <Stadt>‘. Nicht auf Eventseiten.“
-- Veranstalterseite: Titel „Veranstalterseite“, Trennlinie „Privat · nicht auf eurer Seite“ vor Ansprechperson und Konto.
-- Heute: „Eure Bereiche in Spots“ mit den drei Bereichen; „+“-Auswahl zeigt bei jedem Eintrag den Bereich.
+- **Verkaufszahlen pro Event** (verkaufte Tickets, Einnahmen in Cent). `RevenueScreen.tsx` erwartet pro Event `{ ticketsSold, revenueCents }` (Typ `Sales`). Zwei Wege:
+  1. Schnell: Der Veranstalter trägt pro Ticketart ein, wie viele verkauft sind (neue Spalte bei `ticket_types`), Spots rechnet Preis × Anzahl.
+  2. Später: Ticketverkauf direkt über Spots (z. B. Stripe) oder Abruf beim Ticket-Anbieter. Große Entscheidung.
+- Verlauf der Zahlen über die Zeit (für Trends); Beiträge im Studio anlegen; Titelbild und Motto fürs Profil.
 
 ## Offen
 
-- Handy-Test durch Noyan.
-- Story-Seite (`StoryScreen`, Jacints einfache Oberfläche) bekommt die neuen Farben, Gestaltung noch offen.
-- Datums-/Zeitauswahl im Editor braucht ein neues Paket (Freigabe nötig).
+- Handy-Test durch Noyan (alle vier Reiter, Event anlegen und speichern, Story für Entdecken und für eine Eventseite).
+- Datums-/Zeitauswahl im Event statt Textfeldern braucht ein neues Paket (Freigabe nötig).
+- Feinschliff der Karten von Jacint (`TeamCard`, `TicketsCard`, `EventShotsCard`).
+
+## Frühere Runden (kurz)
+
+- 19.11., Runde 1: Spots-Look statt Graphit/Lime (`studio/theme.ts`, Rosa als Akzent, „SPOTS STUDIO“-Abzeichen, Status-Pills).
+- 19.11., Runde 2: Reiter Heute · Events · + · Story · Seite, Banner pro Bereich. Durch Runde 4 ersetzt.
+- 23.11., Runde 3: `main` gemergt (`lime` → `accent` in Jacints Karten), Zahlen-Seite überarbeitet. Durch Runde 4 ersetzt.

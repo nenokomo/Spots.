@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '../../components/Icon';
@@ -18,12 +18,13 @@ export function StudioMark() {
   </View>;
 }
 
-export function StudioPage({ title, subtitle, trailing, children, bottomInset = 120 }: { title: string; subtitle?: string; trailing?: ReactNode; children: ReactNode; bottomInset?: number }) {
+/** Seite im Studio. `footer` bleibt unten stehen (z. B. „Speichern“ im Event), der Rest scrollt. */
+export function StudioPage({ title, subtitle, trailing, children, footer, bottomInset = 120 }: { title: string; subtitle?: string; trailing?: ReactNode; children: ReactNode; footer?: ReactNode; bottomInset?: number }) {
   const insets = useSafeAreaInsets();
   return <View style={styles.page}>
     <Backdrop />
     <ScrollView style={styles.fill} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false}
-      contentContainerStyle={[styles.pageContent, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + bottomInset }]}>
+      contentContainerStyle={[styles.pageContent, { paddingTop: insets.top + 16, paddingBottom: footer ? 24 : insets.bottom + bottomInset }]}>
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           <StudioMark />
@@ -34,23 +35,25 @@ export function StudioPage({ title, subtitle, trailing, children, bottomInset = 
       </View>
       {children}
     </ScrollView>
+    {footer && <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}><View style={styles.footerInner}>{footer}</View></View>}
   </View>;
 }
 
-/**
- * Shows which part of Spots a page edits and where it appears for guests, with an optional preview.
- * Keeps the three areas apart: Eventseite · Entdecken-Story · Veranstalterseite.
- */
-export function AreaBanner({ icon, area, text, preview, onPreview }: { icon: IconName; area: string; text: string; preview?: string; onPreview?: () => void }) {
-  return <View style={styles.area}>
-    <View style={styles.areaIcon}><Icon name={icon} size={18} color={studio.accent} /></View>
-    <View style={styles.areaCopy}>
-      <Text style={styles.areaLabel}>{area}</Text>
-      <Text style={styles.areaText}>{text}</Text>
-    </View>
-    {preview && onPreview && <Pressable accessibilityRole="link" accessibilityLabel={preview} onPress={onPreview} hitSlop={6} style={({ pressed }) => [styles.areaLink, pressed && styles.pressed]}>
-      <Text style={styles.areaLinkText}>{preview}</Text>
-    </Pressable>}
+/** Aufklappbarer Bereich: eine Zeile, die ihren Inhalt öffnet. Der Inhalt lädt beim ersten Öffnen und behält danach seine Eingaben. */
+export function Fold({ icon, title, hint, defaultOpen = false, children }: { icon: IconName; title: string; hint?: string; defaultOpen?: boolean; children: ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const [mounted, setMounted] = useState(defaultOpen);
+  return <View style={styles.fold}>
+    <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} accessibilityLabel={title}
+      onPress={() => { setOpen(!open); setMounted(true); }} style={({ pressed }) => [styles.foldHead, open && styles.foldHeadOpen, pressed && styles.foldPressed]}>
+      <View style={styles.foldIcon}><Icon name={icon} size={18} color={studio.accent} /></View>
+      <View style={styles.foldCopy}>
+        <Text style={styles.foldTitle}>{title}</Text>
+        {hint && <Text numberOfLines={1} style={styles.foldHint}>{hint}</Text>}
+      </View>
+      <Icon name={open ? 'down' : 'chevron'} size={16} color={studio.faint} />
+    </Pressable>
+    {mounted && <View style={open ? styles.foldBody : styles.hidden}>{children}</View>}
   </View>;
 }
 
@@ -153,13 +156,18 @@ const styles = StyleSheet.create({
   badgeText: { ...studioType.mark, fontSize: 10, lineHeight: 13, color: studio.text },
   title: { ...studioType.title, color: studio.text },
   subtitle: { ...studioType.body, color: studio.muted },
-  area: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: studio.radiusSmall, backgroundColor: studio.accentSoft, borderWidth: 1, borderColor: studio.accentLine },
-  areaIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a090c80' },
-  areaCopy: { flex: 1, gap: 2 },
-  areaLabel: { ...studioType.label, fontSize: 10, color: studio.pink },
-  areaText: { ...studioType.small, color: studio.text },
-  areaLink: { paddingHorizontal: 12, height: 32, borderRadius: 16, justifyContent: 'center', backgroundColor: '#0a090c80' },
-  areaLinkText: { ...studioType.small, fontWeight: '700', color: studio.text },
+  footer: { paddingHorizontal: studio.page, paddingTop: 12, borderTopWidth: 1, borderTopColor: studio.line, backgroundColor: studio.bg },
+  footerInner: { gap: 8, maxWidth: 820 - studio.page * 2, width: '100%', alignSelf: 'center' },
+  fold: { gap: 10 },
+  foldHead: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, borderRadius: studio.radius, backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, ...squircle },
+  foldHeadOpen: { borderColor: studio.accentLine },
+  foldPressed: { opacity: 0.85 },
+  foldIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.accentSoft },
+  foldCopy: { flex: 1, gap: 2 },
+  foldTitle: { ...studioType.heading, fontSize: 16, lineHeight: 21, color: studio.text },
+  foldHint: { ...studioType.small, color: studio.muted },
+  foldBody: { gap: 10 },
+  hidden: { display: 'none' },
   card: { gap: 12, padding: 18, borderRadius: studio.radius, backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, ...squircle },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 8 },
   section: { fontSize: 20, lineHeight: 25, fontWeight: '700', letterSpacing: -0.3, flexShrink: 1 },

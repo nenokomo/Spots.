@@ -1,25 +1,21 @@
-import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
-import { Icon } from '../../components/Icon';
-import { useNow } from '../../hooks/useNow';
 import { eventDetailHref } from '../../navigation/eventRoutes';
-import { postShot } from '../../services/content';
 import { formatBerlinInput, parseBerlinDateTime, parseBerlinEnd } from '../../utils/berlinTime';
 import { geocodeAddress } from '../organizer/geocode';
 import { saveOrganizerEvent, searchPublicVenues, type EventCategory, type MyOrganizer, type OrganizerEvent, type PublicVenueChoice } from '../organizer/organizerApi';
 import { normalizeWebsite } from '../organizer/signup';
 import { EventShotsCard } from './EventShotsCard';
+import { eventState } from './format';
 import { useStudio } from './StudioContext';
 import { TicketsCard } from './TicketsCard';
 import { StudioImageField } from './StudioImageField';
 import { studio } from './theme';
-import { AreaBanner, Card, Input, Message, SectionTitle, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
+import { Card, Input, Message, Pill, SectionTitle, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
 
 const categories: Record<EventCategory, string> = { club: 'Clubnacht', concert: 'Konzert', event: 'Event' };
-const back = () => router.canGoBack() ? router.back() : router.replace('/studio/events');
+const back = () => router.canGoBack() ? router.back() : router.replace('/studio');
 type Place = { name: string; street: string; houseNumber: string; postcode: string; city: string };
 
 /** Startwerte für den Ort: beim Bearbeiten die Event-Adresse, bei neuen Events der Club mit seiner Adresse. */
@@ -33,42 +29,10 @@ const samePlace = (a: Place, event: OrganizerEvent) => a.street.trim() === (even
   && a.postcode.trim() === (event.postcode ?? '') && a.city.trim() === (event.city ?? '');
 
 /**
- * Event-Story (SQL 33): Club-Mitglieder posten ab dem Anlegen bis zwei Stunden nach dem Ende. Jedes Bild bleibt 24 Stunden
- * und erscheint auf der Eventseite, sobald das Event live ist. Einfache Oberfläche – Design offen für Noyan.
+ * Seite eines Events: alles zu diesem Event an einem Ort, in fester Reihenfolge –
+ * Das Event → Ort → Flyer → Tickets → Sichtbarkeit → Bilder. „Speichern“ bleibt unten stehen.
+ * Storys werden nur im Reiter „Story“ gepostet.
  */
-function EventStoryCard({ event }: { event: OrganizerEvent }) {
-  const now = useNow();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  // Wie die Datenbank: bis zwei Stunden nach dem Ende (ohne Ende: acht Stunden nach Beginn).
-  const open = event.status === 'scheduled' && (event.endsAt ? Date.parse(event.endsAt) : Date.parse(event.startsAt) + 8 * 3_600_000) + 2 * 3_600_000 > now;
-  async function post() {
-    setError(null); setNotice(null);
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
-    if (result.canceled || !result.assets[0]) return;
-    setBusy(true);
-    try { await postShot(event.id, result.assets[0], { eventStory: true }); setNotice('In der Event-Story. Sichtbar für 24 Stunden.'); }
-    catch (failure) { setError(failure instanceof Error ? failure.message : 'Posten hat nicht geklappt.'); }
-    finally { setBusy(false); }
-  }
-  return <Card tone={open ? 'accent' : undefined}>
-    <View style={styles.storyHead}>
-      <LinearGradient colors={open ? [studio.pink, studio.accentFill[0], '#7a2bd6'] : [studio.panelHigh, studio.panelHigh]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.storyRing}>
-        <View style={styles.storyInner}><Icon name="camera" size={18} color={studio.text} /></View>
-      </LinearGradient>
-      <View style={styles.venueCopy}>
-        <Text style={studioStyles.heading}>Event-Story</Text>
-        <Text style={studioStyles.muted}>{open
-      ? `Fotos für die Eventseite, zum Beispiel Line-up oder Aufbau. Jedes bleibt 24 Stunden.${event.isPublished ? '' : ' Zu sehen, sobald das Event live ist.'}`
-      : 'Für dieses Event ist die Story vorbei.'}</Text>
-      </View>
-    </View>
-    {open && <StudioButton icon="camera" label="Foto in die Event-Story" loading={busy} onPress={() => void post()} />}
-    <Message error={error} text={notice} />
-  </Card>;
-}
-
 function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: OrganizerEvent | null; reload: () => void }) {
   const start = event ? formatBerlinInput(event.startsAt) : null;
   const approved = organizer.reviewStatus === 'approved';
@@ -145,14 +109,21 @@ function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: O
     }
   }
 
-  return <StudioPage title={event ? 'Event bearbeiten' : 'Neues Event'} bottomInset={40}
-    trailing={<StudioButton small variant="secondary" label="Zurück" onPress={back} />}>
+  const state = event ? eventState(event) : null;
+
+  return <StudioPage title={event ? 'Event bearbeiten' : 'Neues Event'}
+    trailing={<StudioButton small variant="secondary" label="Zurück" onPress={back} />}
+    footer={<>
+      <Message error={error} />
+      <StudioButton label={event ? 'Speichern' : 'Event anlegen'} loading={busy} onPress={() => void save()} />
+    </>}>
+    {event && state && <View style={styles.statusRow}>
+      <Pill label={state.label} tone={state.tone} />
+      {event.isPublished && <StudioButton small variant="ghost" label="In Spots ansehen" onPress={() => router.push(eventDetailHref(event.id))} />}
+    </View>}
     {cancelled && <Card tone="red"><Text style={studioStyles.body}>Dieses Event ist abgesagt und nicht mehr in Spots zu sehen.</Text></Card>}
-    <AreaBanner icon="calendar" area="Eventseite" text={event ? `Ihr bearbeitet die Eventseite von „${event.title}“.` : 'Ein neues Event bekommt seine eigene Eventseite in Spots.'}
-      preview={event?.isPublished ? 'Ansehen' : undefined} onPreview={event ? () => router.push(eventDetailHref(event.id)) : undefined} />
-    {/* Story first: „Event-Story posten“ on Heute lands right here. */}
-    {event && <EventStoryCard event={event} />}
-    <SectionTitle>Was & wann</SectionTitle>
+
+    <SectionTitle>Das Event</SectionTitle>
     <Card>
       <Input label="Titel" value={title} onChange={setTitle} placeholder="z. B. Techno Night mit …" maxLength={200} editable={!busy} />
       <View style={studioStyles.row}>
@@ -163,9 +134,10 @@ function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: O
       <Text style={studioStyles.muted}>Endet das Event nach Mitternacht (z. B. 23:00 bis 05:00), gilt das Ende automatisch am nächsten Tag.</Text>
       <Segmented options={categories} value={category} onChange={setCategory} />
       <Input label="Genre" optional value={genre} onChange={setGenre} placeholder="Techno, House, Hip-Hop …" maxLength={40} editable={!busy} />
+      <Input label="Beschreibung" optional value={description} onChange={setDescription} placeholder="Line-up, Dresscode, Einlass …" multiline maxLength={5000} editable={!busy} />
     </Card>
 
-    <SectionTitle>Wo</SectionTitle>
+    <SectionTitle>Ort</SectionTitle>
     <Card>
       {venue ? <View style={styles.venue}>
         <View style={styles.venueCopy}><Text style={studioStyles.heading}>{venue.name}</Text>{venue.city && <Text style={studioStyles.muted}>{venue.city} · aus dem Spots-Adressbuch</Text>}</View>
@@ -192,20 +164,20 @@ function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: O
       </>}
     </Card>
 
-    <SectionTitle>Flyer & Tickets</SectionTitle>
+    <SectionTitle>Flyer</SectionTitle>
     <Card>
       <StudioImageField label="Flyer" organizerId={organizer.id} kind="flyer" value={imageUrl} onChange={setImageUrl} disabled={busy} />
+    </Card>
+
+    <SectionTitle>Tickets</SectionTitle>
+    <Card>
       <Input label="Ticket-Link" optional value={ticketUrl} onChange={setTicketUrl} placeholder="tickets.example.de/…" keyboard="url" maxLength={500} editable={!busy} />
       <Text style={studioStyles.muted}>Mit Ticket-Link zeigt Spots „Tickets kaufen“ auf der Eventseite und eurer Veranstalterseite. Verkauft wird beim Anbieter.</Text>
+      {!event && <Text style={studioStyles.muted}>Ticketarten mit Preisen könnt ihr eintragen, sobald das Event angelegt ist.</Text>}
     </Card>
+    {event && <TicketsCard eventId={event.id} />}
 
-    <SectionTitle>Beschreibung</SectionTitle>
-    <Card>
-      <Input label="Über das Event" optional value={description} onChange={setDescription} placeholder="Line-up, Dresscode, Einlass …" multiline maxLength={5000} editable={!busy} />
-    </Card>
-
-    {!cancelled && <SectionTitle>Veröffentlichen</SectionTitle>}
-
+    {!cancelled && <SectionTitle>Sichtbarkeit</SectionTitle>}
     {!cancelled && <Card tone={approved && live ? 'accent' : undefined}>
       <View style={styles.liveRow}>
         <View style={styles.venueCopy}>
@@ -217,11 +189,11 @@ function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: O
       </View>
     </Card>}
 
-    {event && <TicketsCard eventId={event.id} />}
-    {event && <EventShotsCard eventId={event.id} />}
+    {event && <>
+      <SectionTitle>Bilder zu diesem Event</SectionTitle>
+      <EventShotsCard eventId={event.id} />
+    </>}
 
-    <Message error={error} />
-    <StudioButton label="Speichern" loading={busy} onPress={() => void save()} />
     {event && !cancelled && <StudioButton variant="danger" label="Event absagen" disabled={busy} onPress={() => void save('cancelled')} />}
     {event && cancelled && <StudioButton variant="secondary" label="Absage zurücknehmen" disabled={busy} onPress={() => void save('scheduled')} />}
   </StudioPage>;
@@ -247,7 +219,5 @@ const styles = StyleSheet.create({
   result: { paddingVertical: 12, paddingHorizontal: 14, borderRadius: studio.radiusSmall, backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, gap: 2 },
   resultPressed: { borderColor: studio.accent },
   liveRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  storyHead: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  storyRing: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-  storyInner: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.bg },
+  statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 38 },
 });

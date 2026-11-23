@@ -31,8 +31,7 @@ export function EventShotsCard({ eventId }: { eventId: string }) {
   }
 
   return <Card>
-    <Text style={studioStyles.heading}>Bilder zu diesem Event</Text>
-    <Text style={studioStyles.muted}>Eure Event-Story und die Shots von Gästen der letzten 24 Stunden. Unpassende Bilder könnt ihr ausblenden.</Text>
+    <Text style={studioStyles.muted}>Eure Story und die SHOTS von Gästen der letzten 24 Stunden. Unpassende Bilder könnt ihr ausblenden. Neue Bilder postet ihr im Reiter „Story“.</Text>
     {shots === null && <Text style={studioStyles.muted}>Lädt …</Text>}
     {shots?.length === 0 && <Text style={studioStyles.muted}>Gerade keine Bilder.</Text>}
     {shots?.map((shot) => <View key={shot.id} style={styles.row}>

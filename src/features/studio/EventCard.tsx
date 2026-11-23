@@ -11,10 +11,14 @@ const day = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '
 const month = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', month: 'short' });
 const weekday = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short' });
 
-/** Ein Event als Zeile: Datumsblock, Titel, Ort, Status, Flyer. Tippen öffnet den Editor. */
-export function EventCard({ event }: { event: OrganizerEvent }) {
+/**
+ * Ein Event als Zeile: Datumsblock, Titel, Ort, Status, Flyer. Tippen öffnet die Seite des Events.
+ * `hints` zeigt bei kommenden Events, was noch fehlt (Flyer, Ticket-Link).
+ */
+export function EventCard({ event, hints = false }: { event: OrganizerEvent; hints?: boolean }) {
   const start = new Date(event.startsAt);
   const state = eventState(event);
+  const missing = hints && event.status === 'scheduled' ? [!event.imageUrl && 'Flyer fehlt', !event.ticketUrl && 'Kein Ticket-Link'].filter((text): text is string => !!text) : [];
   return <Pressable accessibilityRole="button" accessibilityLabel={`${event.title} bearbeiten`}
     onPress={() => router.push({ pathname: '/studio/event/[id]', params: { id: event.id } })}
     style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
@@ -26,7 +30,10 @@ export function EventCard({ event }: { event: OrganizerEvent }) {
     <View style={styles.copy}>
       <Text numberOfLines={2} style={styles.title}>{event.title}</Text>
       <Text numberOfLines={1} style={styles.meta}>{timeFormat.format(start)} Uhr{event.venueName ? ` · ${event.venueName}` : ''}</Text>
-      <Pill label={state.label} tone={state.tone} />
+      <View style={styles.status}>
+        <Pill label={state.label} tone={state.tone} />
+        {missing.map((text) => <Text key={text} style={styles.missing}>{text}</Text>)}
+      </View>
     </View>
     {event.imageUrl
       ? <Image source={{ uri: event.imageUrl }} style={styles.flyer} accessibilityLabel={`Flyer: ${event.title}`} />
@@ -45,6 +52,8 @@ const styles = StyleSheet.create({
   copy: { flex: 1, gap: 6 },
   title: { ...studioType.heading, fontSize: 16, lineHeight: 21, color: studio.text },
   meta: { ...studioType.small, color: studio.muted },
+  status: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 10, rowGap: 4 },
+  missing: { ...studioType.small, fontSize: 12, color: studio.amber },
   flyer: { width: 54, height: 70, borderRadius: 10, backgroundColor: studio.panelHigh },
   noFlyer: { alignItems: 'center', justifyContent: 'center', gap: 2, borderWidth: 1, borderColor: studio.line, borderStyle: 'dashed', backgroundColor: 'transparent' },
   noFlyerText: { ...studioType.label, fontSize: 9, color: studio.faint },

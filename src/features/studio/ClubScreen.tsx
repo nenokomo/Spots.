@@ -2,17 +2,14 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
-import { getAccountClient } from '../accounts/client';
-import { createAccountActions } from '../accounts/auth';
-import { setGuestMode } from '../accounts/guestMode';
-import { useAccountSession } from '../accounts/useAccountSession';
 import { fetchOrganizerContact, reviewLabels, saveOrganizerContact, updateOrganizerProfile, type MyOrganizer } from '../organizer/organizerApi';
 import { normalizeSocial, normalizeWebsite, phonePattern } from '../organizer/signup';
+import { AccountCard } from './AccountCard';
 import { useStudio } from './StudioContext';
 import { StudioImageField } from './StudioImageField';
 import { studio } from './theme';
 import { TeamCard } from './TeamCard';
-import { AreaBanner, Card, Input, Message, Pill, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
+import { Card, Fold, Input, Message, Pill, StudioButton, StudioPage, studioStyles } from './ui';
 
 function ProfileForm({ organizer, reload }: { organizer: MyOrganizer; reload: () => void }) {
   const [name, setName] = useState(organizer.displayName);
@@ -61,7 +58,7 @@ function ProfileForm({ organizer, reload }: { organizer: MyOrganizer; reload: ()
     <Input label="Website" optional value={website} onChange={setWebsite} keyboard="url" maxLength={500} editable={!busy} />
     <Input label="Instagram oder andere Social Media" optional value={social} onChange={setSocial} keyboard="url" maxLength={500} editable={!busy} />
     <Message error={error} text={message} />
-    <StudioButton label="Profil speichern" loading={busy} onPress={() => void save()} />
+    <StudioButton label="Seite speichern" loading={busy} onPress={() => void save()} />
   </Card>;
 }
 
@@ -96,30 +93,6 @@ function ContactForm({ organizer }: { organizer: MyOrganizer }) {
   </Card>;
 }
 
-function AccountCard({ member }: { member: boolean }) {
-  const { session } = useAccountSession();
-  const [confirm, setConfirm] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  async function act(task: () => Promise<void>) {
-    setBusy(true); setError(null);
-    try { await task(); await setGuestMode(false); router.replace('/account'); }
-    catch (failure) { setError(failure instanceof Error ? failure.message : 'Hat nicht geklappt.'); setBusy(false); }
-  }
-  return <Card>
-    <Text style={studioStyles.muted}>Angemeldet als {session?.user.email}</Text>
-    <StudioButton variant="secondary" label="Abmelden" disabled={busy} onPress={() => void act(() => createAccountActions(getAccountClient()).signOut())} />
-    {confirm ? <>
-      <Text style={studioStyles.body}>{member
-        ? 'Dein Konto wird endgültig gelöscht. Der Club und seine Events bleiben bestehen. Das lässt sich nicht rückgängig machen.'
-        : 'Euer Konto wird endgültig gelöscht. Der Club und seine Events werden ausgeblendet, nicht gelöscht. Ansprechperson und Telefon werden gelöscht. Das lässt sich nicht rückgängig machen.'}</Text>
-      <StudioButton variant="danger" label="Konto endgültig löschen" loading={busy} onPress={() => void act(() => createAccountActions(getAccountClient()).deleteAccount())} />
-      <StudioButton variant="ghost" label="Abbrechen" disabled={busy} onPress={() => setConfirm(false)} />
-    </> : <StudioButton variant="ghost" label="Konto löschen" disabled={busy} onPress={() => setConfirm(true)} />}
-    <Message error={error} />
-  </Card>;
-}
-
 /** Business card on top: logo, name, city, status and the way to the public page. */
 function ProfileHead({ organizer }: { organizer: MyOrganizer }) {
   const approved = organizer.reviewStatus === 'approved';
@@ -140,36 +113,33 @@ function ProfileHead({ organizer }: { organizer: MyOrganizer }) {
   </Card>;
 }
 
+/**
+ * /studio/profile (Reiter „Profil“): oben die Visitenkarte mit dem Weg zur öffentlichen Seite, darunter vier aufklappbare
+ * Bereiche – Seite bearbeiten · Team · Ansprechperson · Konto. „Seite bearbeiten“ ist offen, solange Logo oder Beschreibung fehlen.
+ */
 export default function ClubScreen() {
   const { organizer, reload } = useStudio();
-  return <StudioPage title="Veranstalterseite" subtitle="Eure eigene Seite in Spots: Logo, Beschreibung und Beiträge. Eure Events erscheinen dort automatisch.">
-    {organizer && <>
-      <AreaBanner icon="profile" area="Veranstalterseite" text="Gäste kommen von jeder Eventseite und aus Entdecken hierher." />
-      <ProfileHead organizer={organizer} />
-      <SectionTitle>Profil auf eurer Seite</SectionTitle>
+  if (!organizer) return null;
+  const owner = organizer.role === 'owner';
+  return <StudioPage title="Profil" subtitle="Eure Seite in Spots und euer Konto.">
+    <ProfileHead organizer={organizer} />
+    <Fold icon="profile" title="Seite bearbeiten" hint="Logo, Name, Adresse, Beschreibung, Links" defaultOpen={!organizer.avatarUrl || !organizer.biography}>
       <ProfileForm key={organizer.id} organizer={organizer} reload={reload} />
-      <SectionTitle>Beiträge</SectionTitle>
-      <Card>
-        <Text style={studioStyles.heading}>Bilder und Text für eure Seite</Text>
-        <Text style={studioStyles.muted}>Bald könnt ihr hier Beiträge für eure Veranstalterseite posten.</Text>
-      </Card>
-      {/* Clearly apart: nothing below appears on the page. */}
-      <View style={styles.privateDivider}><View style={styles.privateLine} /><Text style={styles.privateLabel}>Privat · nicht auf eurer Seite</Text><View style={styles.privateLine} /></View>
-      <SectionTitle>Ansprechperson</SectionTitle>
-      <ContactForm organizer={organizer} />
-      <SectionTitle>Team</SectionTitle>
+    </Fold>
+    <Fold icon="grid" title="Team" hint={owner ? 'Mitglieder einladen und entfernen' : 'Ihr gehört zum Team dieses Clubs'}>
       <TeamCard key={`team-${organizer.id}`} organizer={organizer} />
-    </>}
-    <SectionTitle>Konto</SectionTitle>
-    <AccountCard member={organizer?.role === 'editor'} />
+    </Fold>
+    <Fold icon="headphones" title="Ansprechperson" hint="Nur für das Spots-Team, nicht öffentlich">
+      <ContactForm organizer={organizer} />
+    </Fold>
+    <Fold icon="sliders" title="Konto" hint="Abmelden oder Konto löschen">
+      <AccountCard member={!owner} />
+    </Fold>
   </StudioPage>;
 }
 
 const styles = StyleSheet.create({
   headRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   logo: { width: 72, height: 72, borderRadius: 36, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: studio.panelHigh, borderWidth: 2, borderColor: studio.accentLine },
-  privateDivider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
-  privateLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: studio.line },
-  privateLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: studio.faint },
   name: { fontSize: 22, lineHeight: 27, fontWeight: '800', letterSpacing: -0.4, color: studio.text },
 });

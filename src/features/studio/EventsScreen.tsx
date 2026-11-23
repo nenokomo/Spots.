@@ -1,34 +1,47 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Text } from 'react-native';
+import { useNow } from '../../hooks/useNow';
 import { EventCard } from './EventCard';
 import { isUpcoming } from './format';
+import { ReviewCard } from './Setup';
 import { useStudio } from './StudioContext';
-import { AreaBanner, Card, Message, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
+import { Card, Message, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
 
+const newEvent = () => router.push({ pathname: '/studio/event/[id]', params: { id: 'new' } });
 
-
+/**
+ * /studio (Reiter „Events“, Startseite des Studios): alle Events des Clubs und der einzige Weg zu „Neues Event“.
+ * Ein Tipp auf ein Event öffnet seine Seite. Bis zur Freigabe steht oben der Stand der Prüfung.
+ */
 export default function EventsScreen() {
-  const { organizer, events, error } = useStudio();
+  const { organizer, events, error, reload } = useStudio();
   const [view, setView] = useState<'upcoming' | 'past'>('upcoming');
-  const upcomingCount = events.filter((event) => isUpcoming(event)).length;
-  const views = { upcoming: `Kommend · ${upcomingCount}`, past: `Vergangen · ${events.length - upcomingCount}` };
-  const shown = events.filter((event) => isUpcoming(event) === (view === 'upcoming'))
-    .sort((a, b) => view === 'upcoming' ? a.startsAt.localeCompare(b.startsAt) : b.startsAt.localeCompare(a.startsAt));
-  const approved = organizer?.reviewStatus === 'approved';
+  const now = useNow();
+  if (!organizer) return null;
 
-  return <StudioPage title="Events" subtitle={approved ? 'Live-Events erscheinen sofort in Spots.' : 'Bis zur Freigabe bleiben alle Events Entwürfe.'}
-    trailing={organizer ? <StudioButton small icon="calendar" label="Neues Event" onPress={() => router.push({ pathname: '/studio/event/[id]', params: { id: 'new' } })} /> : undefined}>
-    <AreaBanner icon="calendar" area="Eventseiten" text="Jedes Event hat seine eigene Eventseite in Spots: Flyer, Tickets, Ort und Event-Story. Tippt auf ein Event, um es zu bearbeiten." />
-    <Segmented options={views} value={view} onChange={setView} />
+  const upcomingCount = events.filter((event) => isUpcoming(event, now)).length;
+  const views = { upcoming: `Kommend · ${upcomingCount}`, past: `Vergangen · ${events.length - upcomingCount}` };
+  const shown = events.filter((event) => isUpcoming(event, now) === (view === 'upcoming'))
+    .sort((a, b) => view === 'upcoming' ? a.startsAt.localeCompare(b.startsAt) : b.startsAt.localeCompare(a.startsAt));
+  const approved = organizer.reviewStatus === 'approved';
+  const none = events.length === 0;
+
+  return <StudioPage title="Events" subtitle={organizer.displayName}
+    trailing={none ? undefined : <StudioButton small icon="calendar" label="Neues Event" onPress={newEvent} />}>
+    {!approved && <ReviewCard organizer={organizer} reload={reload} />}
     <Message error={error} />
-    {shown.length === 0 && <Card>
-      <Text style={studioStyles.heading}>{view === 'upcoming' ? 'Keine kommenden Events' : 'Noch keine vergangenen Events'}</Text>
-      {view === 'upcoming' && organizer && <>
-        <Text style={studioStyles.muted}>Legt ein Event an, dann erscheint es hier und nach dem Veröffentlichen in Spots.</Text>
-        <StudioButton icon="calendar" label="Event anlegen" onPress={() => router.push({ pathname: '/studio/event/[id]', params: { id: 'new' } })} />
-      </>}
-    </Card>}
-    {shown.map((event) => <EventCard key={event.id} event={event} />)}
+
+    {none
+      ? <Card tone="accent">
+          <Text style={studioStyles.heading}>Euer erstes Event</Text>
+          <Text style={studioStyles.muted}>Legt ein Event an: Titel, Datum, Ort und Flyer.{approved ? ' Danach stellt ihr es live.' : ' Bis zur Freigabe bleibt es ein Entwurf.'}</Text>
+          <StudioButton icon="calendar" label="Event anlegen" onPress={newEvent} />
+        </Card>
+      : <>
+          <Segmented options={views} value={view} onChange={setView} />
+          {shown.length === 0 && <Card><Text style={studioStyles.muted}>{view === 'upcoming' ? 'Keine kommenden Events.' : 'Noch keine vergangenen Events.'}</Text></Card>}
+          {shown.map((event) => <EventCard key={event.id} event={event} hints={view === 'upcoming'} />)}
+        </>}
   </StudioPage>;
 }
