@@ -32,7 +32,7 @@ div{width:${size}px;height:${size}px;display:grid;place-items:center;background:
 <div><svg viewBox="0 0 64 64" width="${size * 0.82}" height="${size * 0.82}"><circle cx="32" cy="32" r="22" fill="none" stroke="#c922ab" stroke-width="3" opacity=".55"/><circle cx="32" cy="32" r="12" fill="none" stroke="#c922ab" stroke-width="3"/><circle cx="32" cy="32" r="5.5" fill="#f25ad3"/></svg></div>`;
 
 const jobs = [
-  ['public/og-start.png', 1200, 630, cover('Live-Radar für die Nacht', 'Wo geht<br><em>heute</em> was?', 'Partys, Clubs &amp; Events in Karlsruhe')],
+  ['public/og-start.png', 1200, 630, cover('Live-Radar für die Nacht', 'Was geht<br><em>heute?</em>', 'Partys, Clubs &amp; Events in Karlsruhe')],
   ['public/og-veranstalter.png', 1200, 630, cover('Für Clubs, Bars &amp; Event-Crews', 'Dein Event.<br>Auf ihrem <em>Radar.</em>', 'Kostenlos eintragen · Partner werden')],
   ['public/apple-touch-icon.png', 180, 180, icon(180)],
   ['public/icon-192.png', 192, 192, icon(192)],

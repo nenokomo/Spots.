@@ -1,4 +1,6 @@
 ---
+// Entdecken wie in der App: Suche, Filter, „Als Nächstes“ und darunter die Veranstalter der Stadt als hohe Story-Kacheln
+// (rosa Rahmen = hat eine Story). So sieht man auch Veranstalter, die gerade kein Event haben.
 import Icon from '../Icon.astro';
 import Tabs from '../Tabs.astro';
 ---
@@ -12,9 +14,11 @@ import Tabs from '../Tabs.astro';
     <span class="fly fly--4"></span>
     <div class="hero-card__txt"><div class="kick kick--later kick--plain">Fr., 23:00 · Halle 3</div><div class="etitle" style="font-size:5.2cqw">Neonlicht</div></div>
   </div>
-  <div class="tiles">
-    <div class="tile"><span class="fly fly--5"><i>Bass<br />line</i></span><div class="etitle">Bassline</div><div class="emeta">Sa., 22:00 · 2,3 km</div></div>
-    <div class="tile"><span class="fly fly--6"><i>Live</i></span><div class="etitle">Indie Nacht</div><div class="emeta">Sa., 20:00 · 0,9 km</div></div>
+  <div class="ex__h">Veranstalter in Karlsruhe</div>
+  <div class="otiles">
+    <div class="otile otile--story"><span class="fly fly--1"></span><div class="otile__txt"><small>Sa. · 23:00</small><b>Kellerclub</b></div></div>
+    <div class="otile otile--story"><span class="fly fly--6"></span><div class="otile__txt"><small>Veranstalter</small><b>Halle 3</b></div></div>
+    <div class="otile"><span class="fly fly--5"></span><div class="otile__txt"><small>Veranstalter</small><b>Kollektiv Nord</b></div></div>
   </div>
   <Tabs active="search" />
 </div>
