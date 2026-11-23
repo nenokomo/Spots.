@@ -39,3 +39,14 @@ Stand: 11.11.2026 · Keine Rechtsberatung. Arbeitsliste für das Gespräch mit e
 23. **Haftung für Eventangaben und Preise** – Haftungsprivilegien für fremde Inhalte (Art. 4–6 DSA); Preisangaben bei Ticketarten (Preisangabenverordnung).
 24. **Ticketing (Phase 4)** – Zahlungsdienste, Barrierefreiheit (BFSG), kein Widerrufsrecht bei Freizeitveranstaltungen mit festem Termin (§ 312g Abs. 2 Nr. 9 BGB), eigene AGB für den Ticketverkauf.
 25. **Änderungsklauseln** – Keine Zustimmung durch Schweigen bei wesentlichen Änderungen der Nutzungsbedingungen; Verfahren festlegen.
+
+## Nachtrag 23.11.2026 – neue Punkte aus Konten, Studio, Shots und Storys
+
+26. **(P1) Zufällige Gerätekennung für die Zählung** – Die App speichert eine zufällige Kennung auf dem Gerät und sendet sie beim Öffnen einer Eventseite mit; gespeichert wird nur ein kurzlebiger Prüfwert. Ist das „unbedingt erforderlich“ (§ 25 Abs. 2 Nr. 2 TDDDG) oder braucht es eine Einwilligung? Reicht Art. 6 Abs. 1 lit. f DSGVO?
+27. **(P1) Shots ohne Vorab-Prüfung** – Shots von Gästen sind sofort sichtbar. Reichen Melden, automatisches Ausblenden nach drei Meldungen und Moderation durch Club und Team (DSA, Jugendschutz, Recht am eigenen Bild)? Benachrichtigung und Begründung an Betroffene (Art. 17 DSA) fehlen technisch noch.
+28. **(P1) Rolle der Veranstalter** – Clubs moderieren Shots zu ihren Events und sehen Summen zu ihren Events. Eigene Verantwortliche, gemeinsam Verantwortliche (Art. 26 DSGVO) oder nur Nutzer? Vereinbarung nötig?
+29. **(P2) Veranstalter-Story und Beiträge** – dauerhafte Bilder mit möglicherweise erkennbaren Personen; Meldungen blenden hier nicht automatisch aus. Fristen für die Prüfung festlegen.
+30. **(P2) Ansprechperson und Telefonnummer** – Speicherdauer nach Ablehnung eines Antrags oder nach Sperrung; Auskunft und Löschung für Ansprechpersonen, die nicht selbst das Konto führen.
+31. **(P2) Team-Einladungen** – Der Besitzer sieht die E-Mail-Adressen seiner Team-Mitglieder; Information der Mitglieder darüber beim Einlösen des Codes nötig?
+32. **(P2) Adresssuche über Nominatim** – Nutzungsbedingungen der OpenStreetMap Foundation für die öffentliche Nominatim-Instanz (Kennung, Anfragelimit, keine Massenabfragen); Übermittlung in das Vereinigte Königreich.
+33. **(P3) Ticketverkauf über Spots** – geplant mit einem Zahlungsdienst mit Marktplatz-Funktion, bei dem der Club Verkäufer bleibt und Spots eine Provision erhält. Rechtsform, Umsatzsteuer auf die Provision, Meldepflichten für Plattformen, AGB für den Verkauf – ergänzt Punkt 24.
