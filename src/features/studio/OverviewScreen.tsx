@@ -12,6 +12,7 @@ import { EventCard } from './EventCard';
 import { eventState, isUpcoming, timeFormat } from './format';
 import { OrganizerSignupFields } from './OrganizerSignupFields';
 import { useStudio } from './StudioContext';
+import { RedeemInviteCard } from './TeamCard';
 import { studio, studioType } from './theme';
 import { Card, Kpi, Message, Pill, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
 
@@ -71,6 +72,7 @@ function CompleteSignup({ reload }: { reload: () => void }) {
     <Card><OrganizerSignupFields value={value} onChange={setValue} editable={!busy} /></Card>
     <Message error={error} />
     <StudioButton label="Club anlegen und Antrag stellen" loading={busy} onPress={() => void save()} />
+    <RedeemInviteCard onJoined={reload} />
   </StudioPage>;
 }
 

@@ -40,11 +40,11 @@ Clubs registrieren sich **direkt als Veranstalter** – getrenntes System, kein 
 
 ## Offen
 
-- Veranstalter-Storys: Melden von Story-Bildern und Admin-Ansicht fehlen; Kachel-Design für Noyan.
+- Veranstalter-Storys: Melden und Admin-Ansicht siehe `docs/FORTSCHRITT-moderation.md`; Kachel-Design für Noyan.
 
 - Handy-Test: als Club registrieren → Mail bestätigen → anmelden → Studio erscheint → Logo, Event mit Ort/Flyer anlegen → mit Admin-Konto freigeben → Event live stellen → in der Besucher-App öffnen, Ticket-Link → Statistik. Achtung: eingebauter Mailversand nur 2 Mails/Stunde und nur an Supabase-Team-Adressen.
 - Club-Adresse hat keine Kartenposition: Events erscheinen nur mit Ort aus dem Adressbuch auf der Karte. Später: Club mit Adressbuch-Ort verknüpfen oder Adresssuche (Geocoding).
-- Team-Mitglieder einladen (Datenbank kann es, Oberfläche fehlt). Mehrere Clubs pro Konto: Studio zeigt nur den ersten.
-- Alte Bilder im Speicher aufräumen; Ticketarten, Beiträge/Galerien (SQL 19) im Studio.
+- Mehrere Clubs pro Konto: Studio zeigt nur den ersten. (Team-Mitglieder: siehe `docs/FORTSCHRITT-moderation.md`.)
+- Beiträge/Galerien (SQL 19) im Studio. (Ticketarten und Bild-Aufräumen: siehe `docs/FORTSCHRITT-moderation.md`.)
 - Datenschutz-Entwurf: Club-Angaben, Ansprechperson/Telefon, anonyme Zählung ergänzen.
 - Design: Studio-Look ist ein Vorschlag; mit Noyan abstimmen (betrifft Noyans Design: Navigation, Registrieren-Seite, Reiter-Layout).

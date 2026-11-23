@@ -1,3 +1,4 @@
+import { ORGANIZER_PUBLIC_BUCKET, storyImageUrl } from '../../services/organizerStories';
 import { getAccountClient } from '../accounts/client';
 import type { VenueKind } from '../../types/venues';
 
@@ -127,6 +128,36 @@ export async function fetchSnapQueue(): Promise<AdminSnap[]> {
   return rows.map((row) => ({ id: row.id, eventId: row.event_id, eventTitle: row.event_title, url: urls.get(row.storage_path) ?? null,
     status: row.moderation_status, byOrganizer: row.by_organizer, createdAt: row.created_at, expiresAt: row.expires_at,
     reportCount: Number(row.report_count), reasons: row.reasons ?? [] }));
+}
+
+export type AdminStory = {
+  id: string; organizerId: string; organizerName: string; storagePath: string; url: string | null; caption: string | null;
+  status: 'visible' | 'hidden'; createdAt: string; reportCount: number; reasons: string[];
+};
+
+/** Story-Bilder der Veranstalter (SQL 34): gemeldete und ausgeblendete zuerst. Die Bilder liegen im öffentlichen Speicher. */
+export async function fetchStoryQueue(): Promise<AdminStory[]> {
+  const client = getAccountClient();
+  const { data, error } = await client.rpc('spots_admin_story_queue', { p_limit: 100 });
+  if (error) throw failure('Laden der Storys');
+  const rows = (data ?? []) as { id: string; organizer_id: string; organizer_name: string; storage_path: string; caption: string | null;
+    moderation_status: 'visible' | 'hidden'; created_at: string; report_count: number; reasons: string[] | null }[];
+  return rows.map((row) => ({ id: row.id, organizerId: row.organizer_id, organizerName: row.organizer_name, storagePath: row.storage_path,
+    url: storyImageUrl(client, row.organizer_id, row.storage_path), caption: row.caption, status: row.moderation_status,
+    createdAt: row.created_at, reportCount: Number(row.report_count), reasons: row.reasons ?? [] }));
+}
+
+export async function setStoryStatus(id: string, status: 'visible' | 'hidden'): Promise<void> {
+  const { error } = await getAccountClient().rpc('spots_admin_set_story_status', { p_item_id: id, p_status: status });
+  if (error) throw failure(status === 'visible' ? 'Wieder zeigen' : 'Ausblenden');
+}
+
+/** Endgültig entfernen: Zeile löschen, danach die Datei (beides erlaubt die Datenbank dem Team, SQL 33). */
+export async function deleteStory(story: Pick<AdminStory, 'id' | 'storagePath'>): Promise<void> {
+  const client = getAccountClient();
+  const { data, error } = await client.from('organizer_story_items').delete().eq('id', story.id).select('id');
+  if (error || !data?.length) throw failure('Entfernen');
+  await client.storage.from(ORGANIZER_PUBLIC_BUCKET).remove([story.storagePath]).catch(() => {});
 }
 
 export async function setSnapStatus(id: string, status: SnapStatus): Promise<void> {

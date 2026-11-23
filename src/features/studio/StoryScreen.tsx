@@ -6,7 +6,7 @@ import { addStoryItem, deleteStoryItem, fetchMyStoryItems, maxStoryItems } from 
 import { dayFormat } from './format';
 import { useStudio } from './StudioContext';
 import { studio, studioType } from './theme';
-import { AreaBanner, Card, Input, Message, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
+import { AreaBanner, Card, Input, Message, Pill, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
 
 type Picked = { uri: string; mimeType?: string | null };
 
@@ -93,6 +93,7 @@ export default function StoryScreen() {
     {items?.map((item) => <Card key={item.id} style={styles.item}>
       <Image source={{ uri: item.url }} style={styles.thumb} resizeMode="cover" accessibilityLabel={item.caption ?? 'Story-Bild'} />
       <View style={styles.side}>
+        {item.hidden && <Pill tone="red" label="Vom Spots-Team ausgeblendet" />}
         {item.caption && <Text style={studioStyles.body}>{item.caption}</Text>}
         {item.event && <Text style={studioStyles.muted}>{dayFormat.format(new Date(item.event.startsAt))} · {item.event.title}</Text>}
         <Text style={studioStyles.muted}>Gepostet am {dayFormat.format(new Date(item.createdAt))}</Text>

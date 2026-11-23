@@ -195,13 +195,13 @@ export const maxStoryItems = 30;
 
 export async function fetchMyStoryItems(organizerId: string): Promise<OrganizerStoryItem[]> {
   const client = getAccountClient();
-  const { data, error } = await client.from('organizer_story_items').select('id,storage_path,caption,created_at,event_id,events(title,starts_at)')
+  const { data, error } = await client.from('organizer_story_items').select('id,storage_path,caption,created_at,moderation_status,event_id,events(title,starts_at)')
     .eq('organizer_id', organizerId).order('created_at', { ascending: false }).order('id').limit(maxStoryItems);
   if (error) throw failure('Laden der Story');
-  type Row = { id: string; storage_path: string; caption: string | null; created_at: string; event_id: string | null; events: { title: string; starts_at: string } | { title: string; starts_at: string }[] | null };
+  type Row = { id: string; storage_path: string; caption: string | null; created_at: string; moderation_status: string; event_id: string | null; events: { title: string; starts_at: string } | { title: string; starts_at: string }[] | null };
   return toStoryItems(client, organizerId, ((data ?? []) as Row[]).map((row) => {
     const event = Array.isArray(row.events) ? row.events[0] : row.events;
-    return { id: row.id, storage_path: row.storage_path, caption: row.caption, created_at: row.created_at,
+    return { id: row.id, storage_path: row.storage_path, caption: row.caption, created_at: row.created_at, moderation_status: row.moderation_status,
       event_id: event ? row.event_id : null, event_title: event?.title ?? null, event_starts_at: event?.starts_at ?? null };
   }));
 }
@@ -225,4 +225,117 @@ export async function deleteStoryItem(organizerId: string, item: Pick<OrganizerS
   const { error } = await client.from('organizer_story_items').delete().eq('id', item.id).eq('organizer_id', organizerId);
   if (error) throw failure('Löschen des Story-Bilds');
   await client.storage.from(ORGANIZER_PUBLIC_BUCKET).remove([item.storagePath]).catch(() => {});
+}
+
+// ---------------------------------------------------------------------------------------------
+// Shots und Event-Story eines eigenen Events im Studio (SQL 17/34): ansehen, ausblenden, wieder zeigen.
+// ---------------------------------------------------------------------------------------------
+export type StudioShot = {
+  id: string; url: string | null; byOrganizer: boolean; hidden: boolean;
+  /** Vom Spots-Team ausgeblendet oder entfernt: der Club kann es nicht ändern. */
+  teamLocked: boolean; createdAt: string; expiresAt: string;
+};
+
+export async function fetchEventShots(eventId: string): Promise<StudioShot[]> {
+  const client = getAccountClient();
+  const { data, error } = await client.from('live_snaps').select('id,storage_path,by_organizer,moderation_status,team_locked,created_at,expires_at')
+    .eq('event_id', eventId).eq('media_type', 'image').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(100);
+  if (error) throw failure('Laden der Shots');
+  const rows = (data ?? []) as { id: string; storage_path: string; by_organizer: boolean; moderation_status: string; team_locked: boolean; created_at: string; expires_at: string }[];
+  const signed = rows.length ? (await client.storage.from('live-snaps').createSignedUrls(rows.map((row) => row.storage_path), 60 * 15)).data ?? [] : [];
+  const urls = new Map(signed.flatMap((item) => item.path && item.signedUrl ? [[item.path, item.signedUrl] as const] : []));
+  return rows.map((row) => ({ id: row.id, url: urls.get(row.storage_path) ?? null, byOrganizer: row.by_organizer,
+    hidden: row.moderation_status !== 'visible', teamLocked: row.team_locked, createdAt: row.created_at, expiresAt: row.expires_at }));
+}
+
+export async function setShotHidden(shotId: string, hidden: boolean): Promise<void> {
+  const { data, error } = await getAccountClient().from('live_snaps').update({ moderation_status: hidden ? 'hidden' : 'visible' }).eq('id', shotId).select('id');
+  if (error) throw failure(hidden ? 'Ausblenden' : 'Wieder zeigen');
+  if (!data?.length) throw new Error('Dieses Bild hat das Spots-Team gesperrt. Es lässt sich hier nicht ändern.');
+}
+
+// ---------------------------------------------------------------------------------------------
+// Team-Mitglieder (SQL 35): Der Besitzer erzeugt Einladungscodes; eingeladene Veranstalter-Konten lösen sie ein.
+// ---------------------------------------------------------------------------------------------
+export type OrganizerMember = { userId: string; email: string; role: 'owner' | 'editor'; since: string };
+export type OrganizerInvite = { code: string; expiresAt: string };
+/** 12 Zeichen in Vierergruppen, leichter abzutippen. */
+export const formatInviteCode = (code: string) => code.replace(/(.{4})(?=.)/g, '$1-');
+
+export async function fetchMembers(organizerId: string): Promise<OrganizerMember[]> {
+  const { data, error } = await getAccountClient().rpc('spots_organizer_members', { p_organizer_id: organizerId });
+  if (error) throw failure('Laden des Teams');
+  return ((data ?? []) as { user_id: string; email: string; role: 'owner' | 'editor'; created_at: string }[])
+    .map((row) => ({ userId: row.user_id, email: row.email, role: row.role, since: row.created_at }));
+}
+
+export async function fetchInvites(organizerId: string): Promise<OrganizerInvite[]> {
+  const { data, error } = await getAccountClient().rpc('spots_organizer_invites', { p_organizer_id: organizerId });
+  if (error) throw failure('Laden der Einladungen');
+  return ((data ?? []) as { code: string; expires_at: string }[]).map((row) => ({ code: row.code, expiresAt: row.expires_at }));
+}
+
+export async function createInvite(organizerId: string): Promise<OrganizerInvite> {
+  const { data, error } = await getAccountClient().rpc('spots_organizer_create_invite', { p_organizer_id: organizerId });
+  const row = (data as { code: string; expires_at: string }[] | null)?.[0];
+  if (error?.message?.includes('limit')) throw new Error('Es gibt schon fünf offene Einladungen. Bitte zuerst eine zurückziehen.');
+  if (error || !row) throw failure('Erstellen der Einladung');
+  return { code: row.code, expiresAt: row.expires_at };
+}
+
+export async function revokeInvite(code: string): Promise<void> {
+  const { error } = await getAccountClient().rpc('spots_organizer_revoke_invite', { p_code: code });
+  if (error) throw failure('Zurückziehen der Einladung');
+}
+
+export async function removeMember(organizerId: string, userId: string): Promise<void> {
+  const { error } = await getAccountClient().rpc('set_organizer_editor', { p_organizer_id: organizerId, p_user_id: userId, p_enabled: false });
+  if (error) throw failure('Entfernen');
+}
+
+/** Löst einen Einladungscode ein. Falscher oder abgelaufener Code: verständliche Meldung, kein Hinweis auf den Club. */
+export async function redeemInvite(code: string): Promise<void> {
+  const { data, error } = await getAccountClient().rpc('spots_organizer_redeem_invite', { p_code: code });
+  if (error?.message?.includes('Too many')) throw new Error('Zu viele Versuche. Bitte in einer Stunde erneut versuchen.');
+  if (error) throw failure('Einlösen');
+  if (!data) throw new Error('Der Code ist ungültig oder abgelaufen. Bitte beim Club einen neuen erfragen.');
+}
+
+// ---------------------------------------------------------------------------------------------
+// Ticketarten eines eigenen Events (SQL 17): nur Information und Link nach außen, kein Verkauf in Spots.
+// ---------------------------------------------------------------------------------------------
+export type StudioTicket = { id: string; name: string; priceCents: number | null; externalUrl: string | null; soldOut: boolean };
+export type StudioTicketInput = { name: string; priceCents: number | null; externalUrl: string | null };
+export const maxTickets = 10;
+
+/** „12“, „12,5“, „12.50 €“ → Cent. Leer = Preis offen (null). Ungültig = 'invalid'. */
+export function parsePrice(value: string): number | null | 'invalid' {
+  const raw = value.replace(/[€\s]/g, '').replace(',', '.');
+  if (!raw) return null;
+  if (!/^\d{1,5}(\.\d{1,2})?$/.test(raw)) return 'invalid';
+  return Math.round(Number(raw) * 100);
+}
+
+export async function fetchTickets(eventId: string): Promise<StudioTicket[]> {
+  const { data, error } = await getAccountClient().from('ticket_types').select('id,name,price_cents,external_url,sold_out')
+    .eq('event_id', eventId).order('sort_order').order('price_cents').limit(maxTickets);
+  if (error) throw failure('Laden der Tickets');
+  return ((data ?? []) as { id: string; name: string; price_cents: number | null; external_url: string | null; sold_out: boolean }[])
+    .map((row) => ({ id: row.id, name: row.name, priceCents: row.price_cents, externalUrl: row.external_url, soldOut: row.sold_out }));
+}
+
+export async function addTicket(eventId: string, input: StudioTicketInput, sortOrder: number): Promise<void> {
+  const { error } = await getAccountClient().from('ticket_types').insert({ event_id: eventId, name: input.name.trim(), price_cents: input.priceCents,
+    external_url: input.externalUrl, sort_order: sortOrder, is_published: true });
+  if (error) throw failure('Speichern des Tickets');
+}
+
+export async function setTicketSoldOut(ticketId: string, soldOut: boolean): Promise<void> {
+  const { error } = await getAccountClient().from('ticket_types').update({ sold_out: soldOut }).eq('id', ticketId);
+  if (error) throw failure('Ändern des Tickets');
+}
+
+export async function deleteTicket(ticketId: string): Promise<void> {
+  const { error } = await getAccountClient().from('ticket_types').delete().eq('id', ticketId);
+  if (error) throw failure('Löschen des Tickets');
 }

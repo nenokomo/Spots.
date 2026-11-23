@@ -34,9 +34,19 @@ export function isLocatedEvent(event: SpotEvent): event is LocatedEvent {
     && Number.isFinite(point.longitude) && Math.abs(point.longitude) <= 180;
 }
 
+/**
+ * Events without a confirmed end (mostly imported concerts) count as running for this long after their start,
+ * so they appear on the radar at all. Shorter than the 8 hours used for "Hat begonnen": a concert that
+ * started at 20:00 should not sit on the radar at 03:00.
+ */
+export const LIVE_WITHOUT_END_MS = 4 * 60 * 60 * 1000;
+
+/** On the radar now: started and not over. With a confirmed end until that end, otherwise for LIVE_WITHOUT_END_MS. */
 export function isLiveEvent(event: SpotEvent, now: number = Date.now()): event is LocatedEvent {
-  return isLocatedEvent(event) && !!event.endsAt
-    && Date.parse(event.startsAt) <= now && now < Date.parse(event.endsAt);
+  if (!isLocatedEvent(event)) return false;
+  const start = Date.parse(event.startsAt);
+  if (!(start <= now)) return false;
+  return event.endsAt ? now < Date.parse(event.endsAt) : now - start < LIVE_WITHOUT_END_MS;
 }
 
 export function isUpcomingEvent(event: SpotEvent, now: number = Date.now()) {

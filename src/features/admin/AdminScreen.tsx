@@ -10,14 +10,14 @@ import { shotReportReasons } from '../../services/content';
 import { venueKindLabels, venueReportReasons } from '../../types/venues';
 import { useAccountSession } from '../accounts/useAccountSession';
 import {
-  approveDraft, fetchOpenDrafts, fetchOpenReports, fetchOrganizerQueue, fetchPendingVenues, fetchSnapQueue, rejectDraft, resolveReport, reviewOrganizer, setSnapStatus, setVenueStatus,
-  type AdminDraft, type AdminSnap, type OpenReport, type OrganizerRequest, type OrganizerStatus, type PendingVenue, type SnapStatus,
+  approveDraft, deleteStory, fetchOpenDrafts, fetchOpenReports, fetchOrganizerQueue, fetchPendingVenues, fetchSnapQueue, fetchStoryQueue, rejectDraft, resolveReport, reviewOrganizer, setSnapStatus, setStoryStatus, setVenueStatus,
+  type AdminDraft, type AdminSnap, type AdminStory, type OpenReport, type OrganizerRequest, type OrganizerStatus, type PendingVenue, type SnapStatus,
 } from './adminApi';
 import { NewEventSheet } from './NewEventSheet';
 import { useIsAdmin } from './useIsAdmin';
 
-type Tab = 'drafts' | 'organizers' | 'shots' | 'venues' | 'reports';
-type Data = { drafts: AdminDraft[]; organizers: OrganizerRequest[]; shots: AdminSnap[]; venues: PendingVenue[]; reports: OpenReport[] };
+type Tab = 'drafts' | 'organizers' | 'shots' | 'stories' | 'venues' | 'reports';
+type Data = { drafts: AdminDraft[]; organizers: OrganizerRequest[]; shots: AdminSnap[]; stories: AdminStory[]; venues: PendingVenue[]; reports: OpenReport[] };
 const snapStatusLabels: Record<SnapStatus, string> = { visible: 'Sichtbar', hidden: 'Ausgeblendet', removed: 'Entfernt' };
 const shotReasonLabel = (id: string) => shotReportReasons.find((item) => item.id === id)?.label ?? id;
 const organizerStatusLabels: Record<OrganizerStatus, string> = { pending: 'Antrag offen', approved: 'Freigegeben', rejected: 'Abgelehnt', suspended: 'Gesperrt' };
@@ -43,8 +43,8 @@ export default function AdminScreen() {
   useEffect(() => {
     if (!allowed) return;
     let active = true;
-    Promise.all([fetchOpenDrafts(), fetchOrganizerQueue(), fetchSnapQueue().catch(() => []), fetchPendingVenues(), fetchOpenReports()])
-      .then(([drafts, organizers, shots, venues, reports]) => { if (active) { setData({ drafts, organizers, shots, venues, reports }); setError(null); } })
+    Promise.all([fetchOpenDrafts(), fetchOrganizerQueue(), fetchSnapQueue().catch(() => []), fetchStoryQueue().catch(() => []), fetchPendingVenues(), fetchOpenReports()])
+      .then(([drafts, organizers, shots, stories, venues, reports]) => { if (active) { setData({ drafts, organizers, shots, stories, venues, reports }); setError(null); } })
       .catch((failure: unknown) => { if (active) setError(failure instanceof Error ? failure.message : 'Laden hat nicht geklappt.'); });
     return () => { active = false; };
   }, [allowed, revision]);
@@ -72,8 +72,9 @@ export default function AdminScreen() {
 
   const counts: Record<Tab, number> = { drafts: data?.drafts.length ?? 0, organizers: data?.organizers.filter((item) => item.status === 'pending').length ?? 0,
     shots: data?.shots.filter((item) => item.reportCount > 0 || item.status !== 'visible').length ?? 0,
+    stories: data?.stories.filter((item) => item.reportCount > 0 || item.status !== 'visible').length ?? 0,
     venues: data?.venues.length ?? 0, reports: data?.reports.length ?? 0 };
-  const labels: Record<Tab, string> = { drafts: 'Entwürfe', organizers: 'Veranstalter', shots: 'Shots', venues: 'Orte', reports: 'Meldungen' };
+  const labels: Record<Tab, string> = { drafts: 'Entwürfe', organizers: 'Veranstalter', shots: 'Shots', stories: 'Storys', venues: 'Orte', reports: 'Meldungen' };
 
   return <View style={styles.screen}>
     <Backdrop />
@@ -155,6 +156,27 @@ export default function AdminScreen() {
             {shot.status !== 'visible' && <Button label="Wieder zeigen" size="sm" variant="secondary" onPress={() => void run(shot.id, () => setSnapStatus(shot.id, 'visible'))} loading={busy === shot.id} style={styles.flex} />}
             {shot.status === 'visible' && <Button label="Ausblenden" size="sm" variant="secondary" onPress={() => void run(shot.id, () => setSnapStatus(shot.id, 'hidden'))} loading={busy === shot.id} style={styles.flex} />}
             {shot.status !== 'removed' && <Button label="Entfernen" size="sm" onPress={() => void run(shot.id, () => setSnapStatus(shot.id, 'removed'))} disabled={!!busy} style={styles.flex} />}
+          </View>
+        </View>)}
+      </>}
+
+      {data && tab === 'stories' && <>
+        <Text style={styles.small}>Story-Bilder der Veranstalter in Entdecken, gemeldete zuerst. Sie blenden sich nicht automatisch aus: Hier prüfen und entscheiden. Wer gemeldet hat, siehst du nicht.</Text>
+        {data.stories.length === 0 && <Text style={styles.muted}>Noch keine Story-Bilder.</Text>}
+        {data.stories.map((story) => <View key={story.id} style={styles.card}>
+          <View style={styles.organizerHead}>
+            {story.url ? <Image source={{ uri: story.url }} accessibilityLabel="Story-Bild" style={styles.shot} /> : <View style={styles.shot} />}
+            <View style={styles.flex}>
+              <Text style={styles.cardTitle} numberOfLines={2}>{story.organizerName}</Text>
+              <Text style={styles.meta}>{[story.status === 'visible' ? 'Sichtbar' : 'Ausgeblendet', when.format(new Date(story.createdAt))].join(' · ')}</Text>
+              {story.caption && <Text style={styles.small} numberOfLines={3}>{story.caption}</Text>}
+              {story.reportCount > 0 && <Text style={styles.small}>{story.reportCount} Meldung{story.reportCount === 1 ? '' : 'en'}: {story.reasons.map(shotReasonLabel).join(', ')}</Text>}
+            </View>
+          </View>
+          <View style={styles.actions}>
+            {story.status === 'hidden' && <Button label="Wieder zeigen" size="sm" variant="secondary" onPress={() => void run(story.id, () => setStoryStatus(story.id, 'visible'))} loading={busy === story.id} style={styles.flex} />}
+            {story.status === 'visible' && <Button label="Ausblenden" size="sm" variant="secondary" onPress={() => void run(story.id, () => setStoryStatus(story.id, 'hidden'))} loading={busy === story.id} style={styles.flex} />}
+            <Button label="Entfernen" size="sm" onPress={() => void run(story.id, () => deleteStory(story))} disabled={!!busy} style={styles.flex} />
           </View>
         </View>)}
       </>}

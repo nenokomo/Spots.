@@ -11,7 +11,9 @@ import { formatBerlinInput, parseBerlinDateTime, parseBerlinEnd } from '../../ut
 import { geocodeAddress } from '../organizer/geocode';
 import { saveOrganizerEvent, searchPublicVenues, type EventCategory, type MyOrganizer, type OrganizerEvent, type PublicVenueChoice } from '../organizer/organizerApi';
 import { normalizeWebsite } from '../organizer/signup';
+import { EventShotsCard } from './EventShotsCard';
 import { useStudio } from './StudioContext';
+import { TicketsCard } from './TicketsCard';
 import { StudioImageField } from './StudioImageField';
 import { studio } from './theme';
 import { AreaBanner, Card, Input, Message, SectionTitle, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
@@ -214,6 +216,9 @@ function Editor({ organizer, event, reload }: { organizer: MyOrganizer; event: O
           trackColor={{ true: studio.accent, false: studio.panelHigh }} thumbColor={approved && live ? studio.onAccent : undefined} />
       </View>
     </Card>}
+
+    {event && <TicketsCard eventId={event.id} />}
+    {event && <EventShotsCard eventId={event.id} />}
 
     <Message error={error} />
     <StudioButton label="Speichern" loading={busy} onPress={() => void save()} />

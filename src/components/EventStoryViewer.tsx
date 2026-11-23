@@ -4,8 +4,10 @@ import { AccessibilityInfo, Animated, Easing, Image, PanResponder, Platform, Pre
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 import { colors, squircle } from '../constants/theme';
 import type { SpotEvent } from '../types/events';
+import { reportStoryItem } from '../services/content';
 import { eventStoryPage, remoteImageUri, type StoryPage } from '../utils/stories';
 import { Icon } from './Icon';
+import { ReportPanel } from './ReportPanel';
 import { SaveEventButton } from './SaveEventButton';
 
 export const STORY_SLIDE_MS = 6000;
@@ -53,6 +55,8 @@ export function StoryViewer({ pages: events, initialId, onClose, onAction, onSee
   const native = Platform.OS !== 'web';
   const [position, setPosition] = useState({ id: initialId, slide: 0, run: 0 });
   const [paused, setPaused] = useState(false);
+  // Story-Bild, das gerade gemeldet wird; die Story pausiert solange.
+  const [reporting, setReporting] = useState<string | null>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
   // Feed position: -index × height. Never reset, so switching stories causes no jump.
   const [feed] = useState(() => new Animated.Value(-Math.max(0, events.findIndex((item) => item.id === initialId)) * height));
@@ -162,7 +166,7 @@ export function StoryViewer({ pages: events, initialId, onClose, onAction, onSee
   useEffect(() => {
     if (!eventId) return;
     if (reduceMotion) { bar.progress.setValue(1); return; }
-    if (paused) return;
+    if (paused || reporting) return;
     let active = true;
     const base = elapsed.current.key === bar.key ? elapsed.current.share : 0;
     const startedAt = Date.now();
@@ -175,7 +179,7 @@ export function StoryViewer({ pages: events, initialId, onClose, onAction, onSee
       animation.stop();
       elapsed.current = { key: bar.key, share: Math.min(1, base + (Date.now() - startedAt) / STORY_SLIDE_MS) };
     };
-  }, [eventId, bar, paused, reduceMotion, native]);
+  }, [eventId, bar, paused, reporting, reduceMotion, native]);
 
   // The story after the next one: start loading its image early.
   const laterUri = index >= 0 && events[index + 2]?.media[0] ? remoteImageUri(events[index + 2].media[0].source) : null;
@@ -245,9 +249,12 @@ export function StoryViewer({ pages: events, initialId, onClose, onAction, onSee
       <Animated.View pointerEvents="none" style={[styles.cover, styles.backdrop, { opacity: Animated.multiply(appear, pullAmount.interpolate({ inputRange: [0, 240], outputRange: [1, 0], extrapolate: 'clamp' })) }]} />
       <Animated.View {...gesture.panHandlers} style={[styles.fill, { opacity: appear, transform: [{ scale: appear.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) }] }]}>
         {/* Keyed by event: when the next story becomes the current one, it keeps its already decoded images. */}
-        <StoryCard key={event.id} page={event} insets={insets} slide={slide} bar={bar} onAction={onAction} style={currentStyle} />
+        <StoryCard key={event.id} page={event} insets={insets} slide={slide} bar={bar} onAction={onAction} onReport={setReporting} style={currentStyle} />
         {upcoming && <StoryCard key={upcoming.id} page={upcoming} insets={insets} slide={0} bar={null} onAction={onAction} style={upcomingStyle} />}
       </Animated.View>
+      {reporting && <ReportPanel title="Bild melden" question="Warum soll dieses Bild weg?"
+        sentText="Das Spots-Team prüft das Bild." bottomInset={insets.bottom}
+        onSend={(reason) => reportStoryItem(reporting, reason)} onDone={() => setReporting(null)} />}
     </View>
   );
 }
@@ -259,11 +266,13 @@ type CardProps = {
   /** Progress of the visible slide; null for the waiting next story (bars empty, buttons inactive). */
   bar: { key: string; progress: Animated.Value } | null;
   onAction: (page: StoryPage) => void;
+  /** Report the visible picture (organizer stories only). */
+  onReport?: (storyItemId: string) => void;
   style: Animated.WithAnimatedValue<object>;
 };
 
 /** One story page. All its pictures stay mounted and decoded; only the visible one changes. */
-const StoryCard = memo(function StoryCard({ page, insets, slide, bar, onAction, style }: CardProps) {
+const StoryCard = memo(function StoryCard({ page, insets, slide, bar, onAction, onReport, style }: CardProps) {
   const media = page.media;
   const current = media[Math.min(slide, media.length - 1)];
   const label = page.actionLabel;
@@ -293,6 +302,11 @@ const StoryCard = memo(function StoryCard({ page, insets, slide, bar, onAction, 
           ))}
         </View>
       </View>
+
+      {bar && onReport && current?.storyItemId && <Pressable accessibilityRole="button" accessibilityLabel="Dieses Bild melden" hitSlop={8}
+        onPress={() => onReport(current.storyItemId!)} style={[styles.report, { top: insets.top + 24 }]}>
+        <Text style={styles.reportText}>Melden</Text>
+      </Pressable>}
 
       <View pointerEvents="box-none" style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 14) + 12 }]}>
         {current?.placeholder && <Text style={styles.symbol}>{current.test ? 'TEST · Symbolbild, nur in der Entwicklung' : page.placeholderNote}</Text>}
@@ -333,6 +347,8 @@ const styles = StyleSheet.create({
   segments: { flexDirection: 'row', gap: 4 },
   segment: { flex: 1, height: 3, borderRadius: 2, backgroundColor: '#ffffff40', overflow: 'hidden' },
   segmentFill: { width: '100%', height: '100%', borderRadius: 2, backgroundColor: colors.text, transformOrigin: 'left' },
+  report: { position: 'absolute', right: 12, height: 32, paddingHorizontal: 12, borderRadius: 16, justifyContent: 'center', backgroundColor: '#00000066' },
+  reportText: { color: colors.text, fontSize: 13, fontWeight: '600' },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 18, gap: 8 },
   symbol: { color: '#ebebf5cc', fontSize: 11 },
   caption: { color: colors.text, fontSize: 16, lineHeight: 21, fontWeight: '600' },

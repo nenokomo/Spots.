@@ -21,9 +21,14 @@ export function createAccountActions(client: SupabaseClient) {
     return { email: checkedEmail(email), password: checkedPassword(password) };
   }
   return {
-    /** Ohne organizer: privates Konto. Mit organizer: Veranstalter-Konto; die Datenbank legt den Club an (SQL 28). */
-    async register(email: string, password: string, redirectTo: string, organizer?: Record<string, string | null>) {
-      const options = organizer
+    /**
+     * Ohne organizer: privates Konto. Mit organizer: Veranstalter-Konto; die Datenbank legt den Club an (SQL 28).
+     * 'invited': Veranstalter-Konto ohne eigenen Club, für Team-Mitglieder mit Einladungscode (SQL 35).
+     */
+    async register(email: string, password: string, redirectTo: string, organizer?: Record<string, string | null> | 'invited') {
+      const options = organizer === 'invited'
+        ? { emailRedirectTo: redirectTo, data: { account_type: 'organizer' } }
+        : organizer
         ? { emailRedirectTo: redirectTo, data: { account_type: 'organizer', organizer } }
         : { emailRedirectTo: redirectTo };
       const { data, error } = await client.auth.signUp({ ...credentials(email, password), options });

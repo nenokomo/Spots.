@@ -11,6 +11,8 @@ export type StoryMedia = {
   caption?: string | null;
   /** Verknüpftes Event dieses Bilds, z. B. „Sa., 21.11. · Techno Night“. */
   detail?: string | null;
+  /** Story-Bild eines Veranstalters: kann gemeldet werden (SQL 34). */
+  storyItemId?: string;
 };
 
 /**
@@ -82,7 +84,7 @@ export function organizerCover(organizer: Pick<ExploreOrganizer, 'story' | 'avat
  */
 export function organizerStoryPage(organizer: ExploreOrganizer, today: string): StoryPage {
   const media: StoryMedia[] = organizer.story.length > 0
-    ? organizer.story.map((item) => ({ kind: 'image', source: { uri: item.url }, placeholder: false, caption: item.caption,
+    ? organizer.story.map((item) => ({ kind: 'image', source: { uri: item.url }, placeholder: false, caption: item.caption, storyItemId: item.id,
         detail: item.event ? `${eventDayLabel(item.event.startsAt, today)} · ${item.event.title}` : null }))
     : [{ kind: 'image', source: organizer.avatarUrl ? { uri: organizer.avatarUrl } : organizerFallback(), placeholder: !organizer.avatarUrl }];
   const next = organizer.nextEvent;

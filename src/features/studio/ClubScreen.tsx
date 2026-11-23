@@ -11,6 +11,7 @@ import { normalizeSocial, normalizeWebsite, phonePattern } from '../organizer/si
 import { useStudio } from './StudioContext';
 import { StudioImageField } from './StudioImageField';
 import { studio } from './theme';
+import { TeamCard } from './TeamCard';
 import { AreaBanner, Card, Input, Message, Pill, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
 
 function ProfileForm({ organizer, reload }: { organizer: MyOrganizer; reload: () => void }) {
@@ -95,7 +96,7 @@ function ContactForm({ organizer }: { organizer: MyOrganizer }) {
   </Card>;
 }
 
-function AccountCard() {
+function AccountCard({ member }: { member: boolean }) {
   const { session } = useAccountSession();
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -109,7 +110,9 @@ function AccountCard() {
     <Text style={studioStyles.muted}>Angemeldet als {session?.user.email}</Text>
     <StudioButton variant="secondary" label="Abmelden" disabled={busy} onPress={() => void act(() => createAccountActions(getAccountClient()).signOut())} />
     {confirm ? <>
-      <Text style={studioStyles.body}>Euer Konto wird endgültig gelöscht. Der Club und seine Events werden ausgeblendet, nicht gelöscht. Ansprechperson und Telefon werden gelöscht. Das lässt sich nicht rückgängig machen.</Text>
+      <Text style={studioStyles.body}>{member
+        ? 'Dein Konto wird endgültig gelöscht. Der Club und seine Events bleiben bestehen. Das lässt sich nicht rückgängig machen.'
+        : 'Euer Konto wird endgültig gelöscht. Der Club und seine Events werden ausgeblendet, nicht gelöscht. Ansprechperson und Telefon werden gelöscht. Das lässt sich nicht rückgängig machen.'}</Text>
       <StudioButton variant="danger" label="Konto endgültig löschen" loading={busy} onPress={() => void act(() => createAccountActions(getAccountClient()).deleteAccount())} />
       <StudioButton variant="ghost" label="Abbrechen" disabled={busy} onPress={() => setConfirm(false)} />
     </> : <StudioButton variant="ghost" label="Konto löschen" disabled={busy} onPress={() => setConfirm(true)} />}
@@ -154,9 +157,11 @@ export default function ClubScreen() {
       <View style={styles.privateDivider}><View style={styles.privateLine} /><Text style={styles.privateLabel}>Privat · nicht auf eurer Seite</Text><View style={styles.privateLine} /></View>
       <SectionTitle>Ansprechperson</SectionTitle>
       <ContactForm organizer={organizer} />
+      <SectionTitle>Team</SectionTitle>
+      <TeamCard key={`team-${organizer.id}`} organizer={organizer} />
     </>}
     <SectionTitle>Konto</SectionTitle>
-    <AccountCard />
+    <AccountCard member={organizer?.role === 'editor'} />
   </StudioPage>;
 }
 
