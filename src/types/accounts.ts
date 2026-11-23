@@ -3,6 +3,8 @@ export type PublicOrganizer = {
   id: string; slug: string; displayName: string; biography: string | null;
   city: string | null; avatarUrl: string | null; websiteUrl: string | null;
   isPublished: boolean; createdAt: string; updatedAt: string;
+  /** Kurzes Motto und Titelbild der Veranstalterseite (SQL 37). Fehlen, wenn der Club nichts eingetragen hat. */
+  motto?: string | null; coverUrl?: string | null;
 };
 export type PrivateUserProfile = { id: string; displayName: string; createdAt: string };
 export type OrganizerMembership = { organizerId: string; userId: string; role: 'owner' | 'editor'; createdAt: string };
