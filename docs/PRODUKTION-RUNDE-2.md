@@ -1,6 +1,6 @@
 # Produktions-Runde 2 – Konten, Veranstalter, Shots, Storys
 
-Stand: 23.11.2026 (Jacint). **Teil A ist am 23.11. ausgeführt (Protokoll unten). Teile B bis D sind offen.**
+Stand: 23.11.2026 (Jacint). **Teile A und B sind am 23.11. ausgeführt (Protokoll unten). Teile C und D sind offen.**
 Jeder Schritt in der Produktion (`yhnxdeypkbzyjappuzmv`) braucht die ausdrückliche Freigabe von Jacint **und** Noyan in dem Chat, in dem er ausgeführt wird. Secrets und Vault fasst Claude nicht an.
 
 Bisher in Produktion: SQL 20–24 (Ticketmaster mit Zeitplan, Orte, Admin, Partner-Anfragen), Goabase-Zeitplan, Team-Anmeldung. Diese Runde bringt alles, was in Spots-Test seit dem 13.11. dazugekommen ist: SQL 15, 17–19, 25–40 und die Function `cleanup-snaps`.
@@ -101,5 +101,10 @@ Dann: den Modus für die Produktion im Code von „team“ auf „full“ stelle
 | 23:13 | A9 | Neue Spalten bei allen 661 Events leer. |
 | 23:14 | A19 | `live_snaps.author_id` für Gäste nicht lesbar; Entdecken-Liste antwortet ohne Fehler (0 Veranstalter in Produktion). |
 | 23:14 | Abschluss | Alle 53 Funktionen mit gleicher Prüfsumme wie in den Dateien (Zeilenenden vereinheitlicht). |
+| 23:20 | B1 | Freigabe Jacint („alle Teile einrichten“). Function `cleanup-snaps` Version 1 bereitgestellt, `verify_jwt = false`, gleicher Inhalt wie Version 2 in Spots-Test (Prüfwert der Dateien `62889e7a…`). Aufruf ohne Schlüssel: 401. |
+| 23:22 | B2 | SQL 31 eingespielt: Zeitplan `spots-cleanup-snaps` (Minute 43) aktiv, Prüfsumme der Funktion `snaps_cleanup_tick` gleich wie in der Datei. Events weiterhin 661. |
 
-**Noch offen:** Teil B (Function `cleanup-snaps` und SQL 31) braucht eine eigene Freigabe; Teil C (Weiterleitungen, „Confirm email“, SMTP) macht Jacint im Dashboard; Teil D (Konten für alle) ist eine eigene Entscheidung.
+**Noch offen:**
+- B3: ersten Lauf des Aufräum-Zeitplans prüfen (nächste Minute 43 nach dem Einrichten).
+- Teil C macht Jacint im Dashboard (Weiterleitungen, „Confirm email“); SMTP folgt mit dem eigenen Mailserver.
+- Teil D (Konten für alle) bewusst **nicht** umgesetzt: Voraussetzungen fehlen noch (Mailserver, geprüfte und verlinkte Rechtstexte, Schema der echten App). Mit dem eingebauten Mailversand von Supabase kämen Bestätigungsmails nur bei Team-Adressen an, Registrierungen wären also für alle anderen kaputt.
