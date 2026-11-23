@@ -28,7 +28,7 @@ const features = [
   { icon: 'pin', title: 'Deine Veranstalterseite', text: 'Ein Profil mit allen kommenden Events, Beiträgen und Infos. Ein Link für deine Bio, der immer aktuell ist.' },
   { icon: 'edit', title: 'Events selbst pflegen', text: 'Anlegen, ändern, absagen. Jede Änderung ist sofort in der App – auch eine kurzfristige Line-up-Änderung um 22 Uhr.' },
   { icon: 'chart', title: 'Dashboard & Statistiken', text: 'Aufrufe, Merkungen, Ticket-Klicks und Routen pro Event. Du siehst, was ankommt, und planst die nächste Nacht besser.' },
-  { icon: 'camera', title: 'Live Snaps', text: 'Zeig, wie voll der Floor gerade ist. Deine Gäste und dein Team teilen die Stimmung – 24 Stunden, dann ist sie wieder weg.' },
+  { icon: 'camera', title: 'Live Shots', text: 'Deine Gäste zeigen, wie voll der Floor gerade ist. Jeden Shot sieht man nur einmal, nach 24 Stunden ist er wieder weg.' },
   { icon: 'ticket', title: 'Tickets & Einlass', text: 'Verlinke deinen Ticketshop oder verkaufe direkt über Spots: digitale Tickets, QR-Einlass, Kontingente, Rabattcodes.' },
   { icon: 'users', title: 'Team-Zugänge', text: 'Booker, Social-Media, Türsteher: Gib deinem Team eigene Zugänge, ohne Passwörter zu teilen.' },
   { icon: 'megaphone', title: 'Hervorgehobene Events', text: 'Mehr Sichtbarkeit für deine große Nacht – klar als hervorgehoben gekennzeichnet, ohne den Radar für Gäste zu verfälschen.' },
@@ -41,7 +41,7 @@ const faq = [
   { q: 'Mein Club taucht schon in Spots auf – wie kommt das?', a: 'Spots zeigt auch Events aus öffentlichen Quellen, zum Beispiel von Ticketanbietern, und die Clubs einer Stadt als Orte auf der Karte. Sobald du freigeschaltet bist, übernimmst du dein Profil und pflegst alles selbst.' },
   { q: 'Wer sieht meine Statistiken?', a: 'Nur du und die Leute, denen du einen Team-Zugang gibst. Wir zeigen dir zusammengefasste Zahlen pro Event – keine Daten über einzelne Gäste.' },
   { q: 'Was ist mit privaten Partys und Adressen?', a: 'Du entscheidest, was öffentlich ist. Private Adressen zeigen wir nie ohne deine Freigabe – bei Bedarf erscheint nur ein ungefährer Ort.' },
-  { q: 'Wie werden Live Snaps moderiert?', a: 'Gäste und dein Team können unpassende Snaps melden, wir prüfen jede Meldung. Gemeldete Inhalte werden schnell ausgeblendet, und nach 24 Stunden verschwinden Snaps ohnehin automatisch.' },
+  { q: 'Wie werden Live Shots moderiert?', a: 'Gäste und dein Team können unpassende Shots melden, wir prüfen jede Meldung. Gemeldete Inhalte werden schnell ausgeblendet, und nach 24 Stunden verschwinden Shots ohnehin automatisch.' },
   { q: 'Brauche ich technisches Wissen?', a: 'Nein. Wenn du einen Instagram-Post absetzen kannst, kannst du auch ein Event in Spots anlegen.' },
   { q: 'Gibt es Spots nur in Karlsruhe?', a: 'Wir starten in Karlsruhe und wachsen Stadt für Stadt. Du veranstaltest woanders? Schreib uns trotzdem – Veranstalter aus der Region nehmen wir gern schon jetzt auf.' },
 ];
@@ -109,12 +109,12 @@ const jsonLd = [
     <div class="wrap guest__in">
       <div class="guest__phones" data-reveal>
         <Phone label="Beispielansicht der App: Radar mit einer laufenden Party und deren Vorschau."><RadarScreen preview /></Phone>
-        <Phone class="guest__snap" label="Beispielansicht der App: Live Snap von einer vollen Tanzfläche." time="01:12"><SnapScreen /></Phone>
+        <Phone class="guest__snap" label="Beispielansicht der App: Live Shot eines Gastes von einer vollen Tanzfläche." time="01:12"><SnapScreen /></Phone>
       </div>
       <div class="guest__copy">
         <p class="eyebrow" data-reveal>So sehen dich deine Gäste</p>
         <h2 class="h2 h2--sm" data-reveal style="--i:1">Ein pinker Punkt.<br />Mitten in ihrer Nacht.</h2>
-        <p class="lead" data-reveal style="--i:2">Läuft dein Event, leuchtet es auf dem Radar. Ein Tipp zeigt Musik, Uhrzeit und Entfernung, Live Snaps zeigen die Stimmung auf deinem Floor. Mit einem weiteren Tipp ist die Route gestartet – oder das Ticket gekauft.</p>
+        <p class="lead" data-reveal style="--i:2">Läuft dein Event, leuchtet es auf dem Radar. Ein Tipp zeigt Musik, Uhrzeit und Entfernung, Live Shots zeigen die Stimmung auf deinem Floor. Mit einem weiteren Tipp ist die Route gestartet – oder das Ticket gekauft.</p>
         <ul class="ticks" data-reveal style="--i:3">
           <li>Live-Status, solange deine Party läuft</li>
           <li>Filter nach Genre bringen dir die passenden Gäste</li>

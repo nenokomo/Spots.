@@ -4,7 +4,6 @@ import Phone from '../components/Phone.astro';
 import Icon from '../components/Icon.astro';
 import Faq from '../components/Faq.astro';
 import StoreButtons from '../components/StoreButtons.astro';
-import TodoBlock from '../components/TodoBlock.astro';
 import RadarScreen from '../components/screens/RadarScreen.astro';
 import ExploreScreen from '../components/screens/ExploreScreen.astro';
 import EventScreen from '../components/screens/EventScreen.astro';
@@ -14,28 +13,20 @@ import { site } from '../config/site';
 const genres = ['Techno', 'House', 'Hip-Hop', 'Konzerte', 'Clubnächte', 'Open Air', 'Drum & Bass', 'Studi-Partys', 'Festivals', 'Afterhour'];
 
 const steps = [
-  { title: 'Aufmachen', text: 'Der Radar scannt deine Umgebung und zeigt dir sofort, was gerade läuft und was später noch startet.' },
-  { title: 'Reinschauen', text: 'Tipp auf einen Spot: Musik, Uhrzeit, Eintritt. Live Snaps zeigen dir, wie voll es wirklich ist.' },
-  { title: 'Losgehen', text: 'Route starten, Ticket sichern, Leute einsammeln. Der Rest ist euer Abend.' },
+  { title: 'Aufmachen', text: 'Der Radar zeigt dir sofort, was gerade läuft.' },
+  { title: 'Reinschauen', text: 'Musik, Uhrzeit, Eintritt. Live Shots zeigen, wie voll es ist.' },
+  { title: 'Losgehen', text: 'Ticket sichern, Route starten. Der Rest ist euer Abend.' },
 ];
 
-const highlights = [
-  { icon: 'bolt', title: 'Sofort startklar', text: 'App auf, Radar läuft. Zum Stöbern brauchst du kein Konto und keine Anmeldung.' },
-  { icon: 'music', title: 'Dein Sound', text: 'Filter nach Techno, House, Hip-Hop, Konzerten und mehr. Du siehst nur, worauf du Lust hast.' },
-  { icon: 'pin', title: 'Jeder Club auf der Karte', text: 'Alle Clubs und Locations deiner Stadt – auch an Abenden, an denen dort nichts eingetragen ist.' },
-  { icon: 'heart', title: 'Merkliste', text: 'Speicher, was gut klingt. Am Wochenende weißt du schon, wo es hingeht.' },
-  { icon: 'lock', title: 'Privat statt Social', text: 'Keine Follower, keine Freundeslisten, kein Feed. Spots zeigt dir die Nacht, nicht dein Profil.' },
-  { icon: 'shield', title: 'Echte Events', text: 'Jedes Event kommt direkt vom Veranstalter oder aus einer geprüften Quelle. Keine Fake-Einträge.' },
-] as const;
-
 const faq = [
-  { q: 'Was kostet Spots?', a: 'Nichts. Spots ist für dich komplett kostenlos – ohne Abo und ohne versteckte Kosten.' },
-  { q: 'Brauche ich ein Konto?', a: 'Zum Entdecken nicht. Radar, Suche und Merkliste funktionieren sofort. Ein Konto brauchst du nur, wenn du selbst Live Snaps hochladen willst.' },
-  { q: 'Was passiert mit meinem Standort?', a: 'Dein Standort wird nur genutzt, um dir Events in deiner Nähe zu zeigen, solange du die App offen hast. Wir speichern ihn nicht und erstellen kein Bewegungsprofil. Du kannst Spots auch ohne Standortfreigabe nutzen und deine Stadt einfach auswählen.' },
-  { q: 'Was sind Live Snaps?', a: 'Fotos und kurze Videos direkt von einem Event, hochgeladen von Gästen und Veranstaltern. Sie zeigen dir, wie die Stimmung gerade ist, und verschwinden nach 24 Stunden automatisch. Unpassende Inhalte kannst du mit zwei Tipps melden.' },
-  { q: 'In welchen Städten gibt es Spots?', a: 'Wir starten in Karlsruhe – mit Clubs, Bars, Hallen und Studi-Partys. Konzerte findest du in ganz Deutschland. Weitere Städte kommen laufend dazu.' },
-  { q: 'Woher kommen die Events?', a: 'Direkt von den Veranstaltern, die ihre Events selbst eintragen, und aus geprüften Quellen wie Ticketanbietern. Bei jedem Event siehst du, woher es stammt.' },
-  { q: 'Gibt es Spots für iPhone und Android?', a: 'Ja, für beide. Die App gibt es auf Deutsch und Englisch.' },
+  { q: 'Was kostet Spots?', a: 'Nichts. Spots ist für dich kostenlos, ohne Abo.' },
+  { q: 'Brauche ich ein Konto?', a: 'Zum Entdecken nicht. Ein Konto brauchst du nur für Live Shots.' },
+  { q: 'Was passiert mit meinem Standort?', a: 'Wir nutzen ihn nur, um dir Events in deiner Nähe zu zeigen, und speichern ihn nicht. Du kannst auch einfach deine Stadt auswählen.' },
+  { q: 'Was sind Live Shots?', a: 'Fotos von Gästen direkt vom Event. Jeden Shot siehst du genau einmal, nach 24 Stunden ist er für alle weg. Unpassende Shots kannst du melden.' },
+  { q: 'Was ist der Unterschied zwischen Shots und Storys?', a: 'Storys kommen vom Veranstalter und bleiben. Shots kommen von Gästen, und jeden siehst du nur einmal.' },
+  { q: 'In welchen Städten gibt es Spots?', a: 'Wir starten in Karlsruhe. Konzerte findest du in ganz Deutschland, weitere Städte kommen dazu.' },
+  { q: 'Woher kommen die Events?', a: 'Direkt von den Veranstaltern und aus geprüften Quellen wie Ticketanbietern.' },
+  { q: 'Gibt es Spots für iPhone und Android?', a: 'Ja, für beide.' },
 ];
 
 const jsonLd = [
@@ -50,8 +41,8 @@ const rays = Array.from({ length: 32 }, (_, i) => ((i * 11.25) * Math.PI) / 180)
     <div class="wrap hero__in">
       <div class="hero__copy">
         <p class="eyebrow eyebrow--live" data-reveal>Live-Radar für die Nacht</p>
-        <h1 class="display" data-reveal style="--i:1"><span>Wo geht</span><span class="accent">heute</span><span>was?</span></h1>
-        <p class="lead" data-reveal style="--i:2">Spots zeigt dir live auf der Karte, was heute Nacht in deiner Nähe läuft – mit echten Eindrücken von vor Ort. App auf, Abend klar.</p>
+        <h1 class="display" data-reveal style="--i:1"><span>Was geht</span><span class="accent">heute?</span></h1>
+        <p class="lead" data-reveal style="--i:2">Spots zeigt dir live auf der Karte, was heute Nacht in deiner Nähe läuft. App auf, Abend klar.</p>
         <div class="hero__cta" data-reveal style="--i:3">
           <StoreButtons />
           <p class="hero__note">Kostenlos · Ohne Konto startklar · iPhone &amp; Android</p>
@@ -83,7 +74,7 @@ const rays = Array.from({ length: 32 }, (_, i) => ((i * 11.25) * Math.PI) / 180)
       <div class="prob__copy">
         <p class="eyebrow" data-reveal>Freitag, 22:47 Uhr</p>
         <h2 class="h2" data-reveal style="--i:1">Der Gruppenchat weiß es auch nicht.</h2>
-        <p class="lead" data-reveal style="--i:2">Stories durchklicken, drei Club-Seiten checken, Leute anschreiben – und am Ende landet ihr doch wieder da, wo ihr immer landet. Dabei läuft zwei Straßen weiter genau euer Sound.</p>
+        <p class="lead" data-reveal style="--i:2">Stories durchklicken, Club-Seiten checken, Leute anschreiben. Am Ende landet ihr doch wieder da, wo ihr immer landet.</p>
         <p class="prob__punch" data-reveal style="--i:3">Spots beendet das Rätselraten.</p>
       </div>
       <ul class="chat" aria-label="Beispiel für einen Gruppenchat am Freitagabend">
@@ -127,11 +118,11 @@ const rays = Array.from({ length: 32 }, (_, i) => ((i * 11.25) * Math.PI) / 180)
         <div class="feat__copy" data-reveal>
           <p class="eyebrow">Live-Radar</p>
           <h3 class="h2 h2--sm">Deine Stadt. Live.</h3>
-          <p class="lead">Jede Party ein Punkt auf der Karte. Pink heißt: läuft gerade. So siehst du auf einen Blick, wo heute Nacht etwas geht – und was gleich noch startet.</p>
+          <p class="lead">Jede Party ein Punkt auf der Karte. Pink heißt: läuft gerade.</p>
           <ul class="ticks">
-            <li>Laufende Partys in Echtzeit, im Umkreis, den du wählst</li>
-            <li>Ein Tipp auf den Punkt zeigt Musik, Uhrzeit und Entfernung</li>
-            <li>Funktioniert mit deinem Standort oder jeder Stadt, die du aussuchst</li>
+            <li>Laufende Partys in Echtzeit</li>
+            <li>Musik, Uhrzeit und Entfernung mit einem Tipp</li>
+            <li>Mit deinem Standort oder in jeder Stadt</li>
           </ul>
         </div>
         <div class="feat__visual" data-reveal style="--i:1">
@@ -141,17 +132,18 @@ const rays = Array.from({ length: 32 }, (_, i) => ((i * 11.25) * Math.PI) / 180)
 
       <article class="feat feat--flip">
         <div class="feat__copy" data-reveal>
-          <p class="eyebrow">Live Snaps</p>
-          <h3 class="h2 h2--sm">Erst gucken. Dann hin.</h3>
-          <p class="lead">Fotos und kurze Videos direkt von der Tanzfläche, hochgeladen von Gästen und Veranstaltern. Du siehst, wie voll es ist, bevor du in der Schlange stehst.</p>
+          <p class="eyebrow">Live Shots</p>
+          <h3 class="h2 h2--sm">Einmal gucken. Dann hin.</h3>
+          <p class="lead">Fotos direkt von der Tanzfläche, gepostet von Gästen, während die Party läuft. Jeden Shot siehst du genau einmal.</p>
+          <p class="shotnote"><b>Shots sind keine Storys.</b> Storys kommen vom Veranstalter und bleiben. Ein Shot ist nach einmal Ansehen weg.</p>
           <ul class="ticks">
-            <li>Echte Stimmung statt Werbefotos</li>
-            <li>Nach 24 Stunden automatisch wieder weg</li>
-            <li>Melden mit zwei Tipps, jede Meldung wird geprüft</li>
+            <li>Nur von Gästen vor Ort</li>
+            <li>Nach 24 Stunden für alle weg</li>
+            <li>Melden mit zwei Tipps</li>
           </ul>
         </div>
         <div class="feat__visual" data-reveal style="--i:1">
-          <Phone label="Beispielansicht der App: Live Snap von einer vollen Tanzfläche, aufgenommen vor drei Minuten." time="01:12"><SnapScreen /></Phone>
+          <Phone label="Beispielansicht der App: Live Shot eines Gastes von einer vollen Tanzfläche, vor drei Minuten gepostet, mit dem Hinweis, dass man jeden Shot nur einmal sieht." time="01:12"><SnapScreen /></Phone>
         </div>
       </article>
 
@@ -159,72 +151,43 @@ const rays = Array.from({ length: 32 }, (_, i) => ((i * 11.25) * Math.PI) / 180)
         <div class="feat__copy" data-reveal>
           <p class="eyebrow">Entdecken</p>
           <h3 class="h2 h2--sm">Das Wochenende steht in zwei Minuten.</h3>
-          <p class="lead">Such nach Genre, Datum oder Stadt und merk dir, was gut klingt. Am Freitag musst du nur noch entscheiden, wer vorglüht.</p>
+          <p class="lead">Such nach Genre, Datum oder Stadt und merk dir, was gut klingt. <b>Dazu alle Veranstalter deiner Stadt</b> mit Profil und Storys, auch wenn dort gerade nichts läuft.</p>
           <ul class="ticks">
             <li>Filter für Musik, Tag und Entfernung</li>
             <li>Kalender für die nächsten Wochen</li>
-            <li>Merkliste für alles, was du nicht verpassen willst</li>
+            <li>Merkliste für später</li>
           </ul>
         </div>
         <div class="feat__visual" data-reveal style="--i:1">
-          <Phone label="Beispielansicht der App: Entdecken mit Suche, Filtern für Techno und Samstag und kommenden Events in Karlsruhe." time="17:30"><ExploreScreen /></Phone>
+          <Phone label="Beispielansicht der App: Entdecken mit Suche, Filtern, dem nächsten Event und den Storys der Veranstalter in Karlsruhe." time="17:30"><ExploreScreen /></Phone>
         </div>
       </article>
 
       <article class="feat feat--flip">
         <div class="feat__copy" data-reveal>
           <p class="eyebrow">Event-Seite</p>
-          <h3 class="h2 h2--sm">Alles Wichtige. Ein Blick.</h3>
-          <p class="lead">Was, wann, wo, welche Musik, was kostet der Eintritt. Mit einem Tipp startest du die Route oder holst dir dein Ticket.</p>
+          <h3 class="h2 h2--sm">Ticket sichern. Route starten.</h3>
+          <p class="lead">Alles Wichtige auf einer Seite. Darunter die zwei Knöpfe, auf die es ankommt.</p>
           <ul class="ticks">
-            <li>Tickets direkt beim Veranstalter</li>
-            <li>Route in Apple Maps oder Google Maps</li>
-            <li>Veranstalter-Profil mit allen kommenden Events</li>
+            <li><b>Tickets kaufen</b> mit einem Tipp</li>
+            <li><b>Route starten</b> in Apple Maps oder Google Maps</li>
+            <li>Profil des Veranstalters mit allen Events</li>
           </ul>
         </div>
-        <div class="feat__visual" data-reveal style="--i:1">
-          <Phone label="Beispielansicht der App: Event-Seite einer Techno-Party mit Beginn, Ende, Entfernung, Live Snaps und Buttons für Tickets und Route."><EventScreen /></Phone>
+        <div class="feat__visual feat__visual--acts" data-reveal style="--i:1">
+          <Phone label="Beispielansicht der App: Eventseite einer Techno-Party mit Flyer, Veranstalter, Uhrzeit und Musikrichtung. Hervorgehoben sind die Knöpfe „Tickets kaufen“ und „Route starten“."><EventScreen /></Phone>
+          <div class="act act--route" aria-hidden="true">
+            <span class="act__map"><i></i></span>
+            <div><small>Route</small><b>0,4 km · 5 Min. zu Fuß</b></div>
+            <span class="act__go act__go--icon"><Icon name="route" /></span>
+          </div>
+          <div class="act act--ticket" aria-hidden="true">
+            <span class="act__icon"><Icon name="ticket" /></span>
+            <div><small>Tickets</small><b>Abendkasse · 12 €</b></div>
+            <span class="act__go">Kaufen</span>
+          </div>
         </div>
       </article>
-    </div>
-  </section>
-
-  <!-- Weitere Highlights -->
-  <section class="section section--line hl">
-    <div class="wrap">
-      <div class="head">
-        <p class="eyebrow" data-reveal>Und sonst so</p>
-        <h2 class="h2 h2--sm" data-reveal style="--i:1">Gebaut für spontane Nächte.</h2>
-      </div>
-      <ul class="hl__grid">
-        {highlights.map((h, i) => (
-          <li class="card card--row" data-reveal style={`--i:${i % 3}`}>
-            <span class="hl__icon"><Icon name={h.icon} /></span>
-            <h3 class="h3">{h.title}</h3>
-            <p>{h.text}</p>
-          </li>
-        ))}
-      </ul>
-      <TodoBlock title="Stimmen von Nutzerinnen und Nutzern">Hier kommen echte Bewertungen aus dem App Store bzw. Zitate hin – erst, wenn es sie gibt.</TodoBlock>
-    </div>
-  </section>
-
-  <!-- Karlsruhe -->
-  <section class="section section--line city" id="staedte">
-    <svg class="city__fan" viewBox="-300 -300 600 600" aria-hidden="true">
-      {rays.map((a) => <line x1={Math.cos(a) * 40} y1={Math.sin(a) * 40} x2={Math.cos(a) * 300} y2={Math.sin(a) * 300} />)}
-      {[40, 110, 180, 250].map((r) => <circle r={r} />)}
-    </svg>
-    <div class="wrap city__in">
-      <p class="eyebrow eyebrow--live" data-reveal>Start in Karlsruhe</p>
-      <h2 class="h2" data-reveal style="--i:1">Die Fächerstadt<br />hat jetzt einen <span class="accent">Radar.</span></h2>
-      <p class="lead" data-reveal style="--i:2">Wir starten da, wo wir selbst feiern gehen. Clubs, Bars, Hallen und Studi-Partys – ganz Karlsruhe auf einer Karte. Konzerte findest du schon in ganz Deutschland, weitere Städte folgen.</p>
-      <ul class="city__tags" data-reveal style="--i:3">
-        <li class="on">Karlsruhe</li>
-        <li>Konzerte deutschlandweit</li>
-        <li>{site.contactEmail ? <a href={`mailto:${site.contactEmail}?subject=Spots%20in%20meiner%20Stadt`}>Deine Stadt fehlt? Schreib uns</a> : <a href="/#download">Deine Stadt fehlt? Schreib uns</a>}</li>
-      </ul>
-      <TodoBlock title="Nächste Städte">Liste der Städte, die als Nächstes dazukommen – erst eintragen, wenn sie feststehen.</TodoBlock>
     </div>
   </section>
 
@@ -244,7 +207,7 @@ const rays = Array.from({ length: 32 }, (_, i) => ((i * 11.25) * Math.PI) / 180)
   <section class="section on-magenta cta" id="download">
     <div class="wrap cta__in">
       <h2 class="display" data-reveal><span>Heute schon</span><span>was vor?</span></h2>
-      <p class="cta__text" data-reveal style="--i:1">Hol dir Spots und finde in Sekunden raus, wo deine Nacht anfängt.</p>
+      <p class="cta__text" data-reveal style="--i:1">Hol dir Spots und finde raus, wo deine Nacht anfängt.</p>
       <div data-reveal style="--i:2"><StoreButtons tone="ink" /></div>
     </div>
   </section>
@@ -305,6 +268,22 @@ const rays = Array.from({ length: 32 }, (_, i) => ((i * 11.25) * Math.PI) / 180)
   .feat:last-child { padding-bottom: 0; }
   .feat__copy { display: grid; gap: 1.25rem; justify-items: start; }
   .feat__copy .ticks { margin-top: 0.5rem; }
+  .shotnote { padding: 0.9rem 1.1rem; border-radius: var(--radius-sm); border: 1px solid rgb(226 60 196 / 0.4); background: rgb(201 34 171 / 0.1); color: var(--text-dim); font-size: 1rem; line-height: 1.5; }
+  .shotnote b { color: var(--text); }
+  .feat__copy .lead b, .feat__copy .ticks b { color: var(--text); font-weight: 700; }
+  /* Eventseite: „Tickets kaufen“ und „Route starten“ als schwebende Knöpfe am Handy */
+  .act { position: absolute; z-index: 3; display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.8rem 0.7rem 0.7rem; max-width: min(18.5rem, 86vw); border-radius: 18px; background: rgb(24 22 28 / 0.95); border: 1px solid rgb(255 74 184 / 0.5); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.85), 0 0 36px -8px rgb(201 34 171 / 0.6); }
+  .act small { display: block; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--magenta-hi); }
+  .act b { display: block; font-size: 0.9375rem; line-height: 1.25; white-space: nowrap; }
+  .act__icon { display: grid; place-items: center; flex: none; width: 2.6rem; height: 2.6rem; border-radius: 50%; background: rgb(201 34 171 / 0.22); color: var(--magenta-hi); }
+  .act__icon :global(svg) { width: 1.2rem; height: 1.2rem; }
+  .act__map { position: relative; flex: none; width: 2.6rem; height: 2.6rem; border-radius: 12px; overflow: hidden; background: repeating-linear-gradient(0deg, rgb(255 255 255 / 0.12) 0 1px, rgb(0 0 0 / 0) 1px 9px), repeating-linear-gradient(90deg, rgb(255 255 255 / 0.12) 0 1px, rgb(0 0 0 / 0) 1px 9px), #1d1a22; }
+  .act__map i { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--magenta-hi); box-shadow: 0 0 0 4px rgb(242 90 211 / 0.3); }
+  .act__go { flex: none; margin-left: 0.25rem; padding: 0.5rem 0.95rem; border-radius: 999px; background: linear-gradient(135deg, #a62d9e, #5d2a92); border: 1px solid rgb(255 255 255 / 0.16); font-size: 0.8125rem; font-weight: 700; color: #fff; }
+  .act__go--icon { display: grid; place-items: center; padding: 0; width: 2.4rem; height: 2.4rem; }
+  .act__go--icon :global(svg) { width: 1.1rem; height: 1.1rem; }
+  .act--route { left: max(0px, calc(50% - var(--pw) / 2 - 5rem)); top: 13%; }
+  .act--ticket { right: max(0px, calc(50% - var(--pw) / 2 - 5rem)); top: 76%; }
   .feat__visual { position: relative; display: grid; place-items: center; --pw: clamp(240px, 70vw, 300px); isolation: isolate; }
   .feat__visual::before { content: ''; position: absolute; z-index: -1; width: min(125%, 30rem); aspect-ratio: 1; border-radius: 50%; border: 1px solid rgb(226 60 196 / 0.28); box-shadow: 0 0 0 clamp(2.5rem, 7vw, 4.5rem) rgb(226 60 196 / 0.035), inset 0 0 0 clamp(2.5rem, 7vw, 4.5rem) rgb(226 60 196 / 0.03); }
   @media (min-width: 900px) {
@@ -313,25 +292,6 @@ const rays = Array.from({ length: 32 }, (_, i) => ((i * 11.25) * Math.PI) / 180)
     .feat__copy { max-width: 33rem; }
     .feat--flip .feat__copy { justify-self: end; }
   }
-
-  /* Highlights */
-  .hl__grid { display: grid; gap: 1rem; margin-bottom: 1.5rem; }
-  .hl__icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: rgb(201 34 171 / 0.16); color: var(--magenta-hi); margin-bottom: 1.25rem; }
-  .hl__icon :global(svg) { width: 1.3rem; height: 1.3rem; }
-  @media (min-width: 640px) { .hl__grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (min-width: 980px) { .hl__grid { grid-template-columns: repeat(3, 1fr); gap: 1.25rem; } }
-
-  /* Karlsruhe */
-  .city { overflow: clip; }
-  .city__in { display: grid; gap: 1.5rem; justify-items: start; position: relative; }
-  .city__fan { position: absolute; right: -32%; top: 50%; translate: 0 -50%; width: min(120vw, 62rem); max-width: none; fill: none; stroke: rgb(243 238 230 / 0.07); stroke-width: 0.8; -webkit-mask: radial-gradient(circle, #000 20%, transparent 70%); mask: radial-gradient(circle, #000 20%, transparent 70%); }
-  .city__fan circle { stroke: rgb(226 60 196 / 0.28); }
-  .city__tags { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.5rem; }
-  .city__tags li { min-height: 44px; display: inline-flex; align-items: center; padding: 0.4rem 1.1rem; border-radius: 999px; border: 1px solid var(--line-strong); font-weight: 600; font-size: 0.9375rem; }
-  .city__tags .on { background: var(--magenta); border-color: transparent; color: #fff; }
-  .city__tags a { transition: color 0.2s var(--ease); }
-  .city__tags li:has(a):hover { border-color: var(--text); }
-  @media (min-width: 900px) { .city__fan { right: -12%; } .city .lead { max-width: 31em; } }
 
   /* FAQ */
   .faqs { display: grid; gap: 1rem; }
