@@ -29,10 +29,10 @@ Produktion ist unverändert. Alles nur in Spots-Test (`nfomkdvotqtlyymomksb`), P
 - PGlite: `tests/organizer-profile-posts.test.cjs` (5/5), `tests/hide-author-columns.test.cjs` (4/4) und die bisherigen Story-, Shots- und Statistik-Tests. App-Tests 101/101, Lint, Typecheck.
 - Web gegen Spots-Test (Gast) nach SQL 40: Entdecken zeigt den Club mit Story, Veranstalterseite lädt, keine Konsolenfehler.
 - **Nicht geprüft:** Beitrag mit Bildern wirklich anlegen (braucht ein angemeldetes Club-Konto und eine Oberfläche), Titelbild hochladen, Verlauf mit echten Zahlen.
+- Volle Testreihe vor dem Merge nach `main`: 237/237 (23.11.), Typecheck und Lint ohne Fehler.
 
 ## Offen
 
-- Volle Testreihe vor dem Merge nach `main` (Expo dabei aus).
 - Oberflächen für Motto, Titelbild, Beiträge und Verlauf (Noyan, nach `design/studio`).
 - Dateien gelöschter Beiträge, die ein anderes Team-Mitglied hochgeladen hat, bleiben im privaten Bucket liegen (nicht mehr lesbar); Aufräumliste dafür fehlt.
 - Zählung: fester täglicher Löschlauf für die Prüfwerte (bisher nur beim nächsten Zählen).

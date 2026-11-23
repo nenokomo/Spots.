@@ -37,7 +37,7 @@ Spots Studio hat bewusst einen eigenen Look (`src/features/studio/theme.ts`: Gra
 
 ## Geprüft
 
-- **226/226 Tests** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`), Expo-Lint und Typecheck ohne Fehler.
+- **237/237 Tests** (`node --test tests/*.test.cjs` mit `SPOTS_PGLITE_MODULE`), Expo-Lint und Typecheck ohne Fehler.
 - Handy (15.11./19.11., iPhone, Expo Go gegen Spots-Test): Registrieren + Bestätigen, Merkliste mit Konto, Konto löschen, Club-Registrierung, Studio, Club-Event mit eigener Adresse auf Radar und Entdecken, Startseite bei jedem Start, Passwort vergessen (19.11.), Veranstalter-Story posten und in Entdecken ansehen. Expo dafür mit den Spots-Test-Variablen im Terminal starten (sonst Produktion).
 
 ## Nicht geprüft / bekannte Probleme
@@ -47,7 +47,7 @@ Spots Studio hat bewusst einen eigenen Look (`src/features/studio/theme.ts`: Gra
 - Kartenposition von Club-Events kommt aus OpenStreetMap (Nominatim) und kann etwas daneben liegen; die Adresse steht auf der Eventseite. Datenschutz: Event-Adressen gehen beim Speichern an Nominatim.
 - Statistik im Studio noch nicht auf dem Handy geprüft.
 - Radar: Events ohne Endzeit (meist Ticketmaster-Konzerte) gelten vier Stunden ab Beginn als laufend – eine Annahme, kein bestätigtes Ende.
-- Motto, Titelbild, Beiträge anlegen und Statistik-Verlauf: Datenbank und Datenzugriff fertig (Branch `backend/profil-beitraege-zahlen`, [docs/FORTSCHRITT-profil-beitraege-zahlen.md](docs/FORTSCHRITT-profil-beitraege-zahlen.md)), Oberflächen offen für Noyan; mit einem Club-Konto noch nicht ausprobiert.
+- Motto, Titelbild, Beiträge anlegen und Statistik-Verlauf: Datenbank und Datenzugriff fertig (in `main`, [docs/FORTSCHRITT-profil-beitraege-zahlen.md](docs/FORTSCHRITT-profil-beitraege-zahlen.md)), Oberflächen offen für Noyan; mit einem Club-Konto noch nicht ausprobiert.
 - Produktion: pro App-Start 2–3 erwartete 400-Antworten (organizer_id-Abfrage), bis SQL 15 dort eingespielt ist.
 
 ## Fehlt noch
