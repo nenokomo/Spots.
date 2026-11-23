@@ -1,6 +1,6 @@
 # Produktions-Runde 2 – Konten, Veranstalter, Shots, Storys
 
-Stand: 23.11.2026 (Jacint). **Nur ein Plan. Nichts davon ist ausgeführt.**
+Stand: 23.11.2026 (Jacint). **Teile A und B sind am 23.11. ausgeführt (Protokoll unten). Teile C und D sind offen.**
 Jeder Schritt in der Produktion (`yhnxdeypkbzyjappuzmv`) braucht die ausdrückliche Freigabe von Jacint **und** Noyan in dem Chat, in dem er ausgeführt wird. Secrets und Vault fasst Claude nicht an.
 
 Bisher in Produktion: SQL 20–24 (Ticketmaster mit Zeitplan, Orte, Admin, Partner-Anfragen), Goabase-Zeitplan, Team-Anmeldung. Diese Runde bringt alles, was in Spots-Test seit dem 13.11. dazugekommen ist: SQL 15, 17–19, 25–40 und die Function `cleanup-snaps`.
@@ -89,4 +89,22 @@ Dann: den Modus für die Produktion im Code von „team“ auf „full“ stelle
 
 ## Protokoll
 
-(wird während der Runde ausgefüllt: Datum, Schritt, Ergebnis, Prüfwerte)
+**23.11.2026, Jacint mit Claude.** Freigabe im Chat: Jacint bestätigt „ja, alle drei“ (CSV-Kopien gespeichert, Noyan einverstanden, erster Schritt nur lesen) und danach „A1 bis A19 am Stück“.
+
+| Zeit | Schritt | Ergebnis |
+|---|---|---|
+| 23:02 | V2 | Free Plan: keine Sicherungen im Tarif. Ersatz: Jacint hat `events` und `venues` als CSV exportiert. |
+| 23:03 | V3, V5 (nur lesen) | 661 Events (Ticketmaster 615, Goabase 46), 437 veröffentlicht und für Gäste lesbar; Prüfwert `018d9bdd6aeb30102c5d9519352790a0`, IDs für Gäste `b7cae971…`. 1 Konto, 1 Admin, keine Speicherbereiche. Zeitpläne Goabase (2 h) und Ticketmaster (stündlich) zuletzt erfolgreich → Vault-Einträge vorhanden (Werte nicht angesehen). |
+| 23:06–23:14 | A1–A19 | SQL 15, 17, 18, 19, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 36, 37, 38, 39, 40 eingespielt. Nach **jedem** Schritt: 661 Events, Prüfwert unverändert (ohne die neuen leeren Spalten `organizer_id`, `street`, `house_number`, `postcode`), für Gäste weiterhin 437 lesbar mit gleichen IDs. Keine Datei abgebrochen. |
+| 23:08 | A3, A7 | Speicherbereiche `live-snaps` und `organizer-media` nicht öffentlich, `organizer-public` öffentlich (wie geplant). |
+| 23:09 | A8 | Auslöser für neue Konten aktiv; bestehendes Team-Konto unverändert (1 Konto). |
+| 23:13 | A9 | Neue Spalten bei allen 661 Events leer. |
+| 23:14 | A19 | `live_snaps.author_id` für Gäste nicht lesbar; Entdecken-Liste antwortet ohne Fehler (0 Veranstalter in Produktion). |
+| 23:14 | Abschluss | Alle 53 Funktionen mit gleicher Prüfsumme wie in den Dateien (Zeilenenden vereinheitlicht). |
+| 23:20 | B1 | Freigabe Jacint („alle Teile einrichten“). Function `cleanup-snaps` Version 1 bereitgestellt, `verify_jwt = false`, gleicher Inhalt wie Version 2 in Spots-Test (Prüfwert der Dateien `62889e7a…`). Aufruf ohne Schlüssel: 401. |
+| 23:22 | B2 | SQL 31 eingespielt: Zeitplan `spots-cleanup-snaps` (Minute 43) aktiv, Prüfsumme der Funktion `snaps_cleanup_tick` gleich wie in der Datei. Events weiterhin 661. |
+
+**Noch offen:**
+- B3: ersten Lauf des Aufräum-Zeitplans prüfen (nächste Minute 43 nach dem Einrichten).
+- Teil C macht Jacint im Dashboard (Weiterleitungen, „Confirm email“); SMTP folgt mit dem eigenen Mailserver.
+- Teil D (Konten für alle) bewusst **nicht** umgesetzt: Voraussetzungen fehlen noch (Mailserver, geprüfte und verlinkte Rechtstexte, Schema der echten App). Mit dem eingebauten Mailversand von Supabase kämen Bestätigungsmails nur bei Team-Adressen an, Registrierungen wären also für alle anderen kaputt.

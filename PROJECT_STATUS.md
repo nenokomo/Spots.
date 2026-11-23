@@ -29,7 +29,7 @@ Spots Studio hat bewusst einen eigenen Look (`src/features/studio/theme.ts`: Gra
 
 ## Daten und Backend
 
-- **Produktion** `yhnxdeypkbzyjappuzmv` (Stand 13.11.): SQL 20–24 (Ticketmaster mit Cron alle 6 h, Orte, Admin, Partner-Anfragen). Goabase-Cron alle 2 h. Adressbuch Baden-Württemberg geladen, 1 Admin. **Ohne** SQL 15, 17–19, 25–32 (Konten, Snaps, Speicher, Veranstalter, Event-Adressen, Shots) und ohne Function `cleanup-snaps`. Protokoll: [docs/FORTSCHRITT-produktion.md](docs/FORTSCHRITT-produktion.md).
+- **Produktion** `yhnxdeypkbzyjappuzmv` (Stand 23.11.): SQL 15, 17–30, 32–40 eingespielt (Prüfsummen gleich, Events unverändert, Protokoll in [docs/PRODUKTION-RUNDE-2.md](docs/PRODUKTION-RUNDE-2.md)), dazu 20–24 (Ticketmaster, Orte, Admin, Partner-Anfragen) und Goabase-Zeitplan. App läuft dort weiter nur mit Team-Anmeldung. Function `cleanup-snaps` und Aufräum-Zeitplan (SQL 31) seit 23.11. eingerichtet. **Noch nicht:** Weiterleitungen, Mailserver, Konten für alle. Free Plan: keine automatischen Sicherungen.
 - **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15–40 eingespielt (Prüfsummen identisch mit den Dateien). Ticketmaster-Cron aktiv; Function `cleanup-snaps` (Version 2, Shots und verwaiste Bilder) + stündlicher Aufräum-Job (SQL 31), läuft seit dem 20.11. ohne Fehler.
 - Neu in Etappe 1/2: **25** Konto löschen + Merkliste; **26** Antrag/Freigabe + datensparsame Statistik (Tagessummen, Hash mit Tagessalz); **27** öffentlicher Bucket `organizer-public` (Logos/Flyer) + Ort aus dem Adressbuch für Club-Events; **28** Kontoart bei der Registrierung (Trigger auf `auth.users`), Club-Adresse, Ansprechperson/Telefon privat; **29** Straße/Nr./PLZ an Events, Ende Pflicht für Club-Events (bestehende Zeilen unangetastet).
 - Etappe 3 (Shots, [docs/FORTSCHRITT-shots.md](docs/FORTSCHRITT-shots.md)): **19** Galerien; **30** Gäste-Shots sofort sichtbar, Team-Moderation, Aufräumen nur durch den Server; **31** stündlicher Aufräum-Job; **32** Gäste-Shots nur mit Konto sichtbar (Club-Story für alle); **33** Veranstalter-Story für Entdecken (bleibt, bis der Club löscht, max. 30 Bilder) und Event-Story ab dem Anlegen des Events (Studio: „Entdecken-Story“, im Event-Editor „Event-Story“). App: „Shot posten“ mit Handy-Kamera (nur mit Konto), Gäste sehen einen Hinweis mit Anmelde-Link, Melden über das Konto, Admin-Reiter „Shots“.
@@ -48,14 +48,13 @@ Spots Studio hat bewusst einen eigenen Look (`src/features/studio/theme.ts`: Gra
 - Statistik im Studio noch nicht auf dem Handy geprüft.
 - Radar: Events ohne Endzeit (meist Ticketmaster-Konzerte) gelten vier Stunden ab Beginn als laufend – eine Annahme, kein bestätigtes Ende.
 - Motto, Titelbild, Beiträge anlegen und Statistik-Verlauf: Datenbank und Datenzugriff fertig (in `main`, [docs/FORTSCHRITT-profil-beitraege-zahlen.md](docs/FORTSCHRITT-profil-beitraege-zahlen.md)), Oberflächen offen für Noyan; mit einem Club-Konto noch nicht ausprobiert.
-- Produktion: pro App-Start 2–3 erwartete 400-Antworten (organizer_id-Abfrage), bis SQL 15 dort eingespielt ist.
 
 ## Fehlt noch
 
 - Eigener Mailserver (Domain, SMTP), deutsche Mailtexte eintragen.
 - Studio: mehrere Clubs pro Konto; Oberflächen für Beiträge, Motto/Titelbild und Verlauf.
 - Shots: Live-Kamera und Videos (Development Build).
-- Konten und Veranstalter in Produktion: Schrittliste in [docs/PRODUKTION-RUNDE-2.md](docs/PRODUKTION-RUNDE-2.md), jeder Schritt mit Freigabe von Jacint und Noyan.
+- Produktion: Datenbank, Function und Aufräum-Zeitplan eingerichtet; offen sind Dashboard-Einstellungen (Teil C) und Konten für alle (Teil D, erst mit Mailserver und Rechtstexten), siehe [docs/PRODUKTION-RUNDE-2.md](docs/PRODUKTION-RUNDE-2.md).
 - Rechtliches: Entwürfe in [docs/entwuerfe/](docs/entwuerfe/README.md) (am 23.11. mit dem Code abgeglichen) prüfen lassen; Links zu den Texten in die App. Ticketverkauf über Spots (Idee: Zahlungsdienst mit Marktplatz, Club bleibt Verkäufer) ist nur besprochen, nichts gebaut.
 - Release-Grundlagen (`eas.json`, Bundle-ID, Schema `spots`, Icons, Maps-Key), Englisch als zweite Sprache.
 
