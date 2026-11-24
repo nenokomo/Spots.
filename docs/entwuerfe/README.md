@@ -43,6 +43,22 @@ Stand: 11.11.2026 · Grundlage: Code und Doku im Repo vom selben Tag (nur gelese
 10. **Profil → „Eventdaten: Goabase“** anpassen, sobald Ticketmaster und OpenStreetMap dazukommen.
 11. **Standort-Systemtext** in `app.json` gibt es nur auf Deutsch.
 
+## Nachtrag 23.11.2026 (Jacint)
+
+Datenschutzerklärung und Nutzungsbedingungen sind mit dem Code vom 23.11. abgeglichen: Konten mit Kontoart, Konto löschen, Merkliste im Konto, Veranstalter-Registrierung und Spots Studio, Team-Einladungen, Shots (sofort sichtbar, nur mit Konto), Event-Story, Veranstalter-Story, Beiträge, Ticketarten, Meldungen, Prüfbereich des Teams, anonyme Zählung, Adresssuche über Nominatim. Diese Teile sind fertig gebaut, laufen aber nur in der Testumgebung (`[TEST]`). Mails, App-Texte und die Liste oben („Was im Code geprüft wurde“) sind noch Stand 11.11.
+
+**Stand der Auffälligkeiten von oben**
+- Erledigt: 1 (Konto löschen gibt es in der App), 5 (`author_id` ist seit SQL 40 nicht mehr abrufbar; ebenso `created_by` bei Story-Bildern).
+- Weiter offen: 2 (Links zu den Rechtstexten in der App), 3 (Melden ohne Konto nur per E-Mail), 4 (Nutzer blockieren), 6 (EXIF-Daten in Fotos), 7 bis 11.
+
+**Neu aufgefallen**
+- Gäste können eigene Shots in der App nicht löschen (die Datenbank erlaubt es, der Knopf fehlt).
+- Betroffene werden nicht benachrichtigt, wenn ein Inhalt ausgeblendet oder entfernt wird (DSA Art. 17).
+- Die Prüfwerte der anonymen Zählung werden nur gelöscht, wenn wieder gezählt wird; ein fester täglicher Löschlauf fehlt.
+- Logos, Flyer, Titel- und Story-Bilder liegen in einem öffentlichen Speicherbereich: Wer die Adresse kennt, kann sie abrufen, bis die Datei gelöscht ist.
+- Der Besitzer eines Clubs sieht die E-Mail-Adressen seiner Team-Mitglieder.
+- Neue Rechtsfragen dazu stehen in `rechtsfragen.md` (Nachtrag).
+
 ## Offene Angaben ([OFFEN])
 
 **Firma und Kontakt** (alle Dateien)

@@ -24,12 +24,11 @@ Produktion ist unverändert. Alles nur in Spots-Test (`nfomkdvotqtlyymomksb`).
 
 - PGlite: `tests/story-moderation.test.cjs` (7/7) und die bisherigen Shots-/Story-Tests. App-Tests 99/99, Lint, Typecheck.
 - Web gegen Spots-Test (Gast): Story öffnen → „Melden“ → Grund wählen → Hinweis zum Anmelden, keine Konsolenfehler.
-- **Function `cleanup-snaps` Version 2 in Spots-Test bereitgestellt (19.11., mit OK von Jacint):** gleiche Einstellungen wie Version 1 (`verify_jwt = false`, Schutz über den geheimen Schlüssel). Startet fehlerfrei, Aufruf ohne Schlüssel wird mit 401 abgelehnt. Zum Zeitpunkt des Bereitstellens 0 verwaiste Bilder.
+- **Function `cleanup-snaps` Version 2 in Spots-Test bereitgestellt (19.11., mit OK von Jacint):** gleiche Einstellungen wie Version 1 (`verify_jwt = false`, Schutz über den geheimen Schlüssel). Startet fehlerfrei, Aufruf ohne Schlüssel wird mit 401 abgelehnt. Zum Zeitpunkt des Bereitstellens 0 verwaiste Bilder. Geprüft am 23.11.: läuft seit dem 20.11. stündlich mit Antwort 200, kein fehlgeschlagener Lauf.
 - **Handy (19.11., Jacint, Expo Go gegen Spots-Test):** alles getestet, passt (Meldung von Jacint; einzelne Schritte nicht protokolliert).
 
 ## Offen
 
-- Ersten stündlichen Lauf der neuen Function prüfen (Minute 43): Antwort 200 in `net._http_response`, Log `cleanup: storage`.
 - Volle Testreihe vor dem Merge nach `main`: 226/226 (19.11.).
 - Design für Noyan: Melde-Knopf in der Story, Studio-Karten (Team, Tickets, Bilder), Admin-Reiter „Storys“.
 - Datenschutz-Entwurf: Einladungscodes, Meldungen zu Story-Bildern, E-Mail-Anzeige für den Club-Besitzer ergänzen.

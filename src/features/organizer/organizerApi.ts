@@ -1,5 +1,6 @@
 import { getAccountClient } from '../accounts/client';
 import { ORGANIZER_PUBLIC_BUCKET, toStoryItems, type OrganizerStoryItem } from '../../services/organizerStories';
+import { postImageUrls } from '../../services/organizers';
 import type { OrganizerSignupData } from './signup';
 
 // Veranstalter-Bereich (SQL 15, 17, 26, 27). Alle Aufrufe laufen mit der Sitzung des Kontos;
@@ -16,10 +17,14 @@ export type MyOrganizer = {
   street: string | null; houseNumber: string | null; postcode: string | null;
   avatarUrl: string | null; websiteUrl: string | null; socialUrl: string | null; isPublished: boolean;
   reviewStatus: ReviewStatus; reviewNote: string | null; role: 'owner' | 'editor';
+  /** Kurzes Motto und Titelbild der Veranstalterseite (SQL 37). */
+  motto: string | null; coverUrl: string | null;
 };
 export type OrganizerProfileInput = {
   displayName: string; biography: string | null; street: string; houseNumber: string; postcode: string; city: string;
   avatarUrl: string | null; websiteUrl: string | null; socialUrl: string | null;
+  /** Nur gespeichert, wenn angegeben (undefined = unverändert lassen). */
+  motto?: string | null; coverUrl?: string | null;
 };
 export type OrganizerContact = { contactName: string; phone: string };
 export type AccountType = 'private' | 'organizer';
@@ -34,17 +39,17 @@ export type OrganizerEventInput = Omit<OrganizerEvent, 'id'>;
 export type EventStats = { eventId: string; title: string; startsAt: string; isPublished: boolean; views: number; ticketClicks: number; saves: number; snaps: number };
 export type PublicVenueChoice = { id: string; name: string; city: string | null };
 
-const organizerFields = 'id,slug,display_name,biography,city,street,house_number,postcode,avatar_url,website_url,social_url,is_published,review_status,review_note';
+const organizerFields = 'id,slug,display_name,biography,city,street,house_number,postcode,avatar_url,website_url,social_url,is_published,review_status,review_note,motto,cover_url';
 type OrganizerRow = {
   id: string; slug: string; display_name: string; biography: string | null; city: string | null; street: string | null;
   house_number: string | null; postcode: string | null; avatar_url: string | null; website_url: string | null; social_url: string | null;
-  is_published: boolean; review_status: ReviewStatus; review_note: string | null;
+  is_published: boolean; review_status: ReviewStatus; review_note: string | null; motto: string | null; cover_url: string | null;
 };
 const toOrganizer = (row: OrganizerRow, role: 'owner' | 'editor'): MyOrganizer => ({
   id: row.id, slug: row.slug, displayName: row.display_name, biography: row.biography, city: row.city,
   street: row.street, houseNumber: row.house_number, postcode: row.postcode,
   avatarUrl: row.avatar_url, websiteUrl: row.website_url, socialUrl: row.social_url, isPublished: row.is_published,
-  reviewStatus: row.review_status, reviewNote: row.review_note, role,
+  reviewStatus: row.review_status, reviewNote: row.review_note, role, motto: row.motto, coverUrl: row.cover_url,
 });
 
 /** Welche Oberfläche? Die Kontoart steht fest seit der Registrierung (SQL 28). Ältere Konten sind privat. */
@@ -96,6 +101,8 @@ export async function updateOrganizerProfile(id: string, input: OrganizerProfile
     display_name: input.displayName.trim(), biography: input.biography?.trim() || null,
     street: input.street.trim(), house_number: input.houseNumber.trim(), postcode: input.postcode.trim(), city: input.city.trim(),
     avatar_url: input.avatarUrl, website_url: input.websiteUrl, social_url: input.socialUrl,
+    ...(input.motto !== undefined ? { motto: input.motto?.trim().slice(0, 120) || null } : {}),
+    ...(input.coverUrl !== undefined ? { cover_url: input.coverUrl } : {}),
   }).eq('id', id).select('id');
   if (error || data?.length !== 1) throw failure('Speichern des Profils');
 }
@@ -148,6 +155,37 @@ export async function saveOrganizerEvent(organizerId: string, input: OrganizerEv
   return data.id as string;
 }
 
+export type EventStatsDay = { eventId: string; day: string; views: number; ticketClicks: number; saves: number; snaps: number };
+
+/**
+ * Verlauf (SQL 38): Tageswerte der letzten Tage für alle Events des Clubs, aufsteigend nach Tag (JJJJ-MM-TT, Berliner Kalender).
+ * Nur Tage, an denen etwas gezählt wurde; „saves“ sind neu gemerkte Einträge ab dem Einspielen von SQL 38.
+ */
+export async function fetchEventStatsDaily(organizerId: string, days = 30): Promise<EventStatsDay[]> {
+  const { data, error } = await getAccountClient().rpc('spots_organizer_event_stats_daily', { p_organizer_id: organizerId, p_days: days });
+  if (error) throw failure('Laden des Verlaufs');
+  return ((data ?? []) as { event_id: string; day: string; views: number; ticket_clicks: number; saves: number; snaps: number }[])
+    .map((row) => ({ eventId: row.event_id, day: row.day, views: Number(row.views), ticketClicks: Number(row.ticket_clicks), saves: Number(row.saves), snaps: Number(row.snaps) }));
+}
+
+/** Summen pro Tag über alle Events, mit Nullen für Tage ohne Wert – fertig für ein Diagramm. `today` als JJJJ-MM-TT. */
+export function dailyTotals(rows: EventStatsDay[], today: string, days = 30): Omit<EventStatsDay, 'eventId'>[] {
+  const byDay = new Map<string, Omit<EventStatsDay, 'eventId'>>();
+  const end = new Date(`${today}T12:00:00Z`);
+  for (let offset = days - 1; offset >= 0; offset -= 1) {
+    const date = new Date(end);
+    date.setUTCDate(end.getUTCDate() - offset);
+    const day = date.toISOString().slice(0, 10);
+    byDay.set(day, { day, views: 0, ticketClicks: 0, saves: 0, snaps: 0 });
+  }
+  for (const row of rows) {
+    const total = byDay.get(row.day);
+    if (!total) continue;
+    total.views += row.views; total.ticketClicks += row.ticketClicks; total.saves += row.saves; total.snaps += row.snaps;
+  }
+  return [...byDay.values()];
+}
+
 export async function fetchEventStats(organizerId: string): Promise<EventStats[]> {
   const { data, error } = await getAccountClient().rpc('spots_organizer_event_stats', { p_organizer_id: organizerId });
   if (error) throw failure('Laden der Statistik');
@@ -169,7 +207,7 @@ export async function searchPublicVenues(query: string): Promise<PublicVenueChoi
 const imageTypes: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 export const maxImageBytes = 5 * 1024 * 1024;
 
-async function uploadPublicImage(organizerId: string, image: { uri: string; mimeType?: string | null }, kind: 'logo' | 'flyer' | 'story') {
+async function uploadPublicImage(organizerId: string, image: { uri: string; mimeType?: string | null }, kind: 'logo' | 'flyer' | 'story' | 'cover') {
   const mimeType = image.mimeType || 'image/jpeg';
   const extension = imageTypes[mimeType];
   if (!extension) throw new Error('Bitte ein JPG-, PNG- oder WebP-Bild wählen.');
@@ -184,7 +222,7 @@ async function uploadPublicImage(organizerId: string, image: { uri: string; mime
 }
 
 /** Lädt ein Bild in den öffentlichen Speicher (SQL 27, Ordner = Veranstalter) und liefert die feste Adresse. */
-export async function uploadOrganizerImage(organizerId: string, image: { uri: string; mimeType?: string | null }, kind: 'logo' | 'flyer'): Promise<string> {
+export async function uploadOrganizerImage(organizerId: string, image: { uri: string; mimeType?: string | null }, kind: 'logo' | 'flyer' | 'cover'): Promise<string> {
   return (await uploadPublicImage(organizerId, image, kind)).url;
 }
 
@@ -338,4 +376,80 @@ export async function setTicketSoldOut(ticketId: string, soldOut: boolean): Prom
 export async function deleteTicket(ticketId: string): Promise<void> {
   const { error } = await getAccountClient().from('ticket_types').delete().eq('id', ticketId);
   if (error) throw failure('Löschen des Tickets');
+}
+
+// ---------------------------------------------------------------------------------------------
+// Beiträge des Clubs (SQL 15, 19, 39): Text mit bis zu 10 Bildern. Bilder liegen im privaten Bucket
+// „organizer-media“ im Ordner des hochladenden Kontos; lesbar nur, solange der Beitrag lesbar ist.
+// ---------------------------------------------------------------------------------------------
+export type StudioPost = { id: string; body: string; isPublished: boolean; createdAt: string; images: string[] };
+export const maxPostImages = 10;
+const maxPostImageBytes = 10 * 1024 * 1024;
+const MEDIA_BUCKET = 'organizer-media';
+
+export async function fetchMyPosts(organizerId: string): Promise<StudioPost[]> {
+  const client = getAccountClient();
+  const { data, error } = await client.from('organizer_posts').select('id,body,is_published,created_at')
+    .eq('organizer_id', organizerId).order('created_at', { ascending: false }).order('id').limit(100);
+  if (error) throw failure('Laden der Beiträge');
+  const rows = (data ?? []) as { id: string; body: string; is_published: boolean; created_at: string }[];
+  const images = await postImageUrls(client, rows.map((row) => row.id));
+  return rows.map((row) => ({ id: row.id, body: row.body, isPublished: row.is_published, createdAt: row.created_at, images: images.get(row.id) ?? [] }));
+}
+
+/**
+ * Legt einen Beitrag an: erst als Entwurf, dann die Bilder, zuletzt sichtbar schalten. Scheitert ein Schritt,
+ * wird alles wieder entfernt, damit kein halber Beitrag stehen bleibt.
+ */
+export async function createPost(organizerId: string, input: { body: string; images: { uri: string; mimeType?: string | null }[]; publish: boolean }): Promise<string> {
+  const body = input.body.trim();
+  if (body.length < 1) throw new Error('Bitte einen Text für den Beitrag schreiben.');
+  if (input.images.length > maxPostImages) throw new Error(`Höchstens ${maxPostImages} Bilder pro Beitrag.`);
+  const client = getAccountClient();
+  const userId = await currentUserId();
+  const created = await client.from('organizer_posts').insert({ organizer_id: organizerId, body, is_published: false }).select('id').single();
+  if (created.error?.message?.includes('limit')) throw new Error('Ihr habt schon 100 Beiträge. Bitte zuerst einen alten löschen.');
+  if (created.error || !created.data) throw failure('Speichern des Beitrags');
+  const postId = created.data.id as string;
+  const uploaded: string[] = [];
+  try {
+    for (const [index, image] of input.images.entries()) {
+      const mimeType = image.mimeType || 'image/jpeg';
+      const extension = imageTypes[mimeType];
+      if (!extension) throw new Error('Bitte JPG-, PNG- oder WebP-Bilder wählen.');
+      const bytes = await fetch(image.uri).then((response) => response.arrayBuffer());
+      if (bytes.byteLength > maxPostImageBytes) throw new Error('Ein Bild ist größer als 10 MB.');
+      const path = `${userId}/post-${Date.now().toString(36)}-${Math.floor(Math.random() * 36 ** 6).toString(36)}.${extension}`;
+      const upload = await client.storage.from(MEDIA_BUCKET).upload(path, bytes, { contentType: mimeType, upsert: false });
+      if (upload.error) throw failure('Hochladen eines Bilds');
+      uploaded.push(path);
+      const media = await client.from('organizer_post_media').insert({ post_id: postId, storage_path: path, sort_order: index });
+      if (media.error) throw failure('Speichern eines Bilds');
+    }
+    if (input.publish) {
+      const published = await client.from('organizer_posts').update({ is_published: true }).eq('id', postId);
+      if (published.error) throw failure('Veröffentlichen des Beitrags');
+    }
+  } catch (error) {
+    await client.from('organizer_posts').delete().eq('id', postId);
+    if (uploaded.length) await client.storage.from(MEDIA_BUCKET).remove(uploaded).catch(() => {});
+    throw error;
+  }
+  return postId;
+}
+
+/** Sichtbar schalten oder zurückziehen (zurückgezogene Beiträge und ihre Bilder sieht nur noch der Club). */
+export async function setPostPublished(postId: string, isPublished: boolean): Promise<void> {
+  const { error } = await getAccountClient().from('organizer_posts').update({ is_published: isPublished }).eq('id', postId);
+  if (error) throw failure(isPublished ? 'Veröffentlichen' : 'Zurückziehen');
+}
+
+/** Endgültig löschen (SQL 39): Beitrag samt Bild-Zeilen, danach die Dateien, soweit sie dem eigenen Konto gehören. */
+export async function deletePost(postId: string): Promise<void> {
+  const client = getAccountClient();
+  const media = await client.from('organizer_post_media').select('storage_path').eq('post_id', postId);
+  const { data, error } = await client.from('organizer_posts').delete().eq('id', postId).select('id');
+  if (error || !data?.length) throw failure('Löschen des Beitrags');
+  const paths = ((media.data ?? []) as { storage_path: string }[]).map((row) => row.storage_path);
+  if (paths.length) await client.storage.from(MEDIA_BUCKET).remove(paths).catch(() => {});
 }
