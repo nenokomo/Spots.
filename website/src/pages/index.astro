@@ -37,7 +37,7 @@ const rays = Array.from({ length: 32 }, (_, i) => ((i * 11.25) * Math.PI) / 180)
 ---
 <Base title="Spots – Dein Radar für die Nacht | Partys, Clubs & Events in Karlsruhe" jsonLd={jsonLd}>
   <!-- Hero -->
-  <section class="hero">
+  <section class="hero" id="download">
     <div class="wrap hero__in">
       <div class="hero__copy">
         <p class="eyebrow eyebrow--live" data-reveal>Live-Radar für die Nacht</p>
@@ -202,15 +202,6 @@ const rays = Array.from({ length: 32 }, (_, i) => ((i * 11.25) * Math.PI) / 180)
       <Faq items={faq} />
     </div>
   </section>
-
-  <!-- Download -->
-  <section class="section on-magenta cta" id="download">
-    <div class="wrap cta__in">
-      <h2 class="display" data-reveal><span>Heute schon</span><span>was vor?</span></h2>
-      <p class="cta__text" data-reveal style="--i:1">Hol dir Spots und finde raus, wo deine Nacht anfängt.</p>
-      <div data-reveal style="--i:2"><StoreButtons tone="ink" /></div>
-    </div>
-  </section>
 </Base>
 
 <style>
@@ -298,9 +289,4 @@ const rays = Array.from({ length: 32 }, (_, i) => ((i * 11.25) * Math.PI) / 180)
   .faqs .head { margin-bottom: 1.5rem; }
   .inline { text-decoration: underline; text-underline-offset: 3px; color: var(--ink); font-weight: 600; }
   @media (min-width: 900px) { .faqs { grid-template-columns: 0.8fr 1.2fr; gap: 4rem; } .faqs .head { position: sticky; top: calc(var(--header-h) + 2rem); align-self: start; } }
-
-  /* Download */
-  .cta__in { display: grid; gap: 1.75rem; justify-items: start; }
-  .cta .display { font-size: clamp(3.4rem, 15.5vw, 11rem); }
-  .cta__text { font-size: clamp(1.125rem, 2.2vw, 1.5rem); font-weight: 600; max-width: 26em; }
 </style>
