@@ -15,10 +15,16 @@ test('account configuration rejects lookalike domains, missing configuration and
  assert(accountConfigurationError('https://yhnxdeypkbzyjappuzmv.supabase.co','sb_secret_placeholder'));
  assert.equal(accountConfigurationError('https://nfomkdvotqtlyymomksb.supabase.co','sb_publishable_fixture'),null);
 });
-test('Spots-Test has full accounts; production only the team login; sessions are kept per project',()=>{
+test('Spots-Test has full accounts; released production only the team login, development production everything; sessions are kept per project',()=>{
  assert.equal(accountMode('https://nfomkdvotqtlyymomksb.supabase.co'),'full');
  assert.equal(accountMode('https://yhnxdeypkbzyjappuzmv.supabase.co'),'team');
  assert.equal(accountMode('https://example.supabase.co'),null);
+ assert.equal(accountMode('https://yhnxdeypkbzyjappuzmv.supabase.co',false),'team');
+ assert.equal(accountMode('https://yhnxdeypkbzyjappuzmv.supabase.co',true),'full');
+ assert.equal(accountMode('https://nfomkdvotqtlyymomksb.supabase.co',false),'full');
+ assert.equal(accountMode('https://example.supabase.co',true),null);
+ // Die App darf den Entwicklungsmodus nur aus __DEV__ ableiten, nie fest einschalten.
+ assert.match(fs.readFileSync(path.join(__dirname,'..','src/features/accounts/client.ts'),'utf8'),/accountMode\(url, __DEV__\)/);
  assert.equal(accountConfigurationError('https://yhnxdeypkbzyjappuzmv.supabase.co','sb_publishable_fixture'),null);
  assert.equal(accountProject(' https://yhnxdeypkbzyjappuzmv.supabase.co '),'yhnxdeypkbzyjappuzmv');
  assert.notEqual(accountProject('https://yhnxdeypkbzyjappuzmv.supabase.co'),accountProject('https://nfomkdvotqtlyymomksb.supabase.co'));

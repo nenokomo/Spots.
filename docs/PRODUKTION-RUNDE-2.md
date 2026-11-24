@@ -65,6 +65,19 @@ Nach **jedem** Schritt: (1) Prüfsummen der neuen Funktionen mit der Datei vergl
 | C2 | Authentication → Sign In / Providers: „Confirm email“ an. Neue Registrierungen bleiben **aus**, bis Teil D freigegeben ist. |
 | C3 | SMTP mit eigenem Absender und die deutschen Mailtexte (Bestätigung, Passwort vergessen, E-Mail ändern). Ohne C3 kein Teil D. |
 
+## Stufe 1 – Spots Studio nur für das Team (Entwicklungsmodus)
+
+Der App-Code behandelt die Produktion im Entwicklungsmodus (`npx expo start`) wie Spots-Test: alle Kontofunktionen. Die veröffentlichte App bleibt bei „team“. Die Kontoart steht bei der Registrierung fest (SQL 28), deshalb braucht das Studio ein neues Club-Konto. Die Schritte 2–4 sind noch **nicht ausgeführt**.
+
+| Schritt | Wer | Was |
+|---|---|---|
+| 1 | Jacint + Noyan | Beide stimmen den Schritten 2–4 ausdrücklich zu. |
+| 2 | Jacint | Zweite E-Mail-Adresse nehmen, die im Supabase-Team ist und noch kein Spots-Konto hat (eingebauter Mailversand: nur Team-Adressen, 2 Mails pro Stunde). |
+| 3 | Jacint | „Confirm email“ an, Registrierungen kurz öffnen, Club in der App registrieren, Mail bestätigen, Registrierungen wieder aus. Ohne C1 kann nach dem Mail-Link eine Fehlerseite erscheinen; ob die Adresse bestätigt ist, zeigt die Anmeldung in der App. |
+| 4 | Jacint | Mit dem Team-Konto den Club unter `/admin` freigeben, dann als Club anmelden. |
+
+Achtung: Das sind echte Daten. Freigegebene Events sehen alle, die die Produktion nutzen – dort keine Test-Events anlegen (dafür Spots-Test). „Konto löschen“ ist im Entwicklungsmodus aktiv; nicht beim Admin-Konto benutzen.
+
 ## Teil D – Konten für alle freischalten (eigene Entscheidung, nicht Teil dieser Runde)
 
 Erst wenn alles davor steht **und**:
