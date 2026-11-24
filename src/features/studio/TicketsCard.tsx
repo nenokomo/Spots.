@@ -44,8 +44,8 @@ export function TicketsCard({ eventId }: { eventId: string }) {
   const full = (tickets?.length ?? 0) >= maxTickets;
 
   return <Card>
-    <Text style={studioStyles.heading}>Tickets</Text>
-    <Text style={studioStyles.muted}>Zeigt Preise und Ticketarten auf der Eventseite. Der Verkauf läuft über euren Link oder an der Abendkasse, nicht über Spots.</Text>
+    <Text style={studioStyles.heading}>Ticketarten</Text>
+    <Text style={studioStyles.muted}>Preise und Ticketarten für die Eventseite, z. B. „Abendkasse 12 €“. Der Verkauf läuft über euren Link oder an der Abendkasse, nicht über Spots.</Text>
     {tickets === null && <Text style={studioStyles.muted}>Lädt …</Text>}
     {tickets?.map((ticket) => <View key={ticket.id} style={styles.row}>
       <View style={styles.copy}>

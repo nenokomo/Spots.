@@ -31,15 +31,14 @@ export function EventShotsCard({ eventId }: { eventId: string }) {
   }
 
   return <Card>
-    <Text style={studioStyles.heading}>Bilder zu diesem Event</Text>
-    <Text style={studioStyles.muted}>Eure Event-Story und die Shots von Gästen der letzten 24 Stunden. Unpassende Bilder könnt ihr ausblenden.</Text>
+    <Text style={studioStyles.muted}>Eure Story und die SHOTS von Gästen der letzten 24 Stunden. Unpassende Bilder könnt ihr ausblenden. Neue Bilder postet ihr im Reiter „Story“.</Text>
     {shots === null && <Text style={studioStyles.muted}>Lädt …</Text>}
     {shots?.length === 0 && <Text style={studioStyles.muted}>Gerade keine Bilder.</Text>}
     {shots?.map((shot) => <View key={shot.id} style={styles.row}>
       {shot.url ? <Image source={{ uri: shot.url }} style={styles.thumb} resizeMode="cover" accessibilityLabel={shot.byOrganizer ? 'Bild der Event-Story' : 'Shot von einem Gast'} /> : <View style={styles.thumb} />}
       <View style={styles.side}>
         <Text style={studioStyles.body}>{shot.byOrganizer ? 'Event-Story' : 'Shot von einem Gast'} · {timeFormat.format(new Date(shot.createdAt))} Uhr</Text>
-        {shot.teamLocked ? <Pill tone="red" label="Vom Spots-Team gesperrt" /> : shot.hidden ? <Pill tone="amber" label="Ausgeblendet" /> : <Pill tone="lime" label="Sichtbar" />}
+        {shot.teamLocked ? <Pill tone="red" label="Vom Spots-Team gesperrt" /> : shot.hidden ? <Pill tone="amber" label="Ausgeblendet" /> : <Pill tone="accent" label="Sichtbar" />}
         {!shot.teamLocked && <StudioButton small variant={shot.hidden ? 'secondary' : 'danger'} label={shot.hidden ? 'Wieder zeigen' : 'Ausblenden'}
           loading={busy === shot.id} disabled={!!busy} onPress={() => void toggle(shot)} />}
       </View>

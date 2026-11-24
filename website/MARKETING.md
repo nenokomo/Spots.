@@ -8,13 +8,13 @@ Stand: 11.11.2026 · Zielmarkt zum Start: Karlsruhe · Website: `/` für Gäste,
 
 ## Elevator Pitch (30 Sekunden)
 
-> Kennst du das: Freitag, 23 Uhr, ihr wollt raus – und keiner weiß, wo was geht? Stories, Club-Seiten, Gruppenchat, am Ende landet ihr wieder da, wo ihr immer seid. Spots löst genau das. Du machst die App auf und siehst auf einer Karte, welche Partys gerade laufen und was gleich noch startet. Ein Tipp zeigt Musik, Uhrzeit und Eintritt, Live Snaps von der Tanzfläche zeigen dir, wie voll es ist. Für Clubs heißt das: Sie erreichen Leute genau in dem Moment, in dem die entscheiden, wohin – kostenlos. Wir starten in Karlsruhe.
+> Kennst du das: Freitag, 23 Uhr, ihr wollt raus – und keiner weiß, wo was geht? Stories, Club-Seiten, Gruppenchat, am Ende landet ihr wieder da, wo ihr immer seid. Spots löst genau das. Du machst die App auf und siehst auf einer Karte, welche Partys gerade laufen und was gleich noch startet. Ein Tipp zeigt Musik, Uhrzeit und Eintritt, Live Shots von der Tanzfläche zeigen dir, wie voll es ist. Für Clubs heißt das: Sie erreichen Leute genau in dem Moment, in dem die entscheiden, wohin – kostenlos. Wir starten in Karlsruhe.
 
 ## Claims und Slogans
 
-1. **„Wo geht heute was?“** ⭐ Favorit – genau die Frage, die jeder am Abend stellt. Kurz, umgangssprachlich, sofort verständlich. Steht als Headline auf der Startseite.
+1. **„Was geht heute?“** ⭐ Favorit – genau die Frage, die jeder am Abend stellt. Kurz, umgangssprachlich, sofort verständlich. Steht als Headline auf der Startseite.
 2. **„Dein Radar für die Nacht.“** ⭐ Favorit als Unterzeile – erklärt das Produkt in vier Wörtern und trägt das Radar-Motiv. Steht im Seitentitel, in der Fußzeile und im App-Store-Untertitel.
-3. „Erst gucken. Dann hin.“ – stark für Live Snaps und Social-Ads.
+3. „Erst gucken. Dann hin.“ – stark für Live Shots und Social-Ads.
 4. „App auf. Abend klar.“ – gut für Story-Ads mit wenig Text.
 5. Für Veranstalter: **„Dein Event. Auf ihrem Radar.“** ⭐ – Headline der Veranstalter-Seite.
 
@@ -77,7 +77,7 @@ Viele Grüße
 > ⬇️ App laden
 
 **TikTok:**
-> Wo geht heute was? 📡 Live-Radar für Partys in Karlsruhe. App ⬇️
+> Was geht heute? 📡 Live-Radar für Partys in Karlsruhe. App ⬇️
 
 (Link in Bio: Startseite. In einer Story-Highlight „Für Clubs“ auf `/veranstalter/` verlinken.)
 
@@ -85,7 +85,7 @@ Viele Grüße
 
 1. **„22:47 Uhr, Gruppenchat“** (Reel, 10 s) – Screen-Recording eines echten Gruppenchats („Was geht heute?“ … „kp“), dann Schnitt auf Spots: Radar scannt Karlsruhe, pinke Punkte poppen auf, Tipp auf eine Party. Text-Overlay: „Wo geht heute was? → App auf.“ Endkarte mit Store-Buttons.
 2. **„Karlsruhe bei Nacht, von oben“** (Karussell, 5 Bilder) – Bild 1: Fächerstadt-Grundriss als Radar, Bild 2–4: je ein Partner-Club mit Logo und „Jeden Fr. auf dem Radar“ (nur mit Zustimmung), Bild 5: „Deine Stadt fehlt? Sag's uns.“ Fördert Shares der Clubs selbst.
-3. **„Erst gucken. Dann hin.“** (TikTok/Reel, Live Snaps) – Zwei Clubs, zwei Live Snaps im Split-Screen: „Hier ist es um 23:30 noch leer, da drüben schon voll.“ Zeigt das stärkste Feature in fünf Sekunden. Nur mit echten Snaps und Einverständnis der Clubs und erkennbaren Personen.
+3. **„Erst gucken. Dann hin.“** (TikTok/Reel, Live Shots) – Zwei Clubs, zwei Live Shots im Split-Screen: „Hier ist es um 23:30 noch leer, da drüben schon voll.“ Zeigt das stärkste Feature in fünf Sekunden. Nur mit echten Snaps und Einverständnis der Clubs und erkennbaren Personen.
 
 ## Die ersten 10 Veranstalter gewinnen
 

@@ -1,5 +1,6 @@
 ---
-// Live Snap im Vollbild. Statt eines Fotos: Lichtkegel und eine gezeichnete Menge.
+// Live Shot im Vollbild, wie in der App: ein einziger Balken (niemand sieht, wie viele es sind), „SHOTS · Von Gästen“
+// und der Hinweis, dass man jeden Shot nur einmal sieht. Statt eines Fotos: Lichtkegel und eine gezeichnete Menge.
 const heads = [[14, 86, 15], [52, 72, 17], [92, 90, 14], [128, 68, 18], [170, 84, 16], [206, 66, 17], [246, 88, 15], [286, 74, 17], [318, 92, 14]];
 const arms = [[40, 70, 30, 22], [118, 62, 132, 8], [198, 60, 184, 14], [262, 78, 280, 30], [300, 70, 292, 20]];
 ---
@@ -16,14 +17,12 @@ const arms = [[40, 70, 30, 22], [118, 62, 132, 8], [198, 60, 184, 14], [262, 78,
       ))}
     </g>
   </svg>
-  <div class="snap__bars"><span></span><span></span><span></span><span></span></div>
+  <div class="snap__bars"><span></span></div>
   <div class="snap__head">
-    <span class="fly fly--1"></span>
-    <div><b>Tiefgang</b><small>Kellerclub · vor 3 Min.</small></div>
-    <span class="snap__live">LIVE</span>
+    <div><b>SHOTS</b><small>Von Gästen · vor 3 Min.</small></div>
+    <span class="snap__once">1× sichtbar</span>
   </div>
   <div class="snap__foot">
-    <span class="snap__cap">Mainfloor · gerade richtig voll</span>
-    <div class="snap__cta">Zum Event</div>
+    <span class="snap__cap">Jeden SHOT siehst du nur einmal</span>
   </div>
 </div>

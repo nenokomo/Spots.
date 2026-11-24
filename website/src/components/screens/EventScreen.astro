@@ -1,25 +1,27 @@
 ---
+// Eventseite wie in der App: Flyer oben, darauf das runde Veranstalterbild mit Story-Ring, Titel, Uhrzeit in Rosa,
+// Musikrichtungen, Veranstalter-Karte, „Über das Event“ und unten die feste Leiste mit „Tickets kaufen“ und Merken.
 import Icon from '../Icon.astro';
 ---
-<div class="scr">
-  <div class="ev__poster"><span class="fly fly--1"><i>Tief<br />gang</i></span></div>
-  <div class="ev__btn" style="left:4.6cqw"><Icon name="back" /></div>
-  <div class="ev__btn" style="right:17.5cqw"><Icon name="share" /></div>
-  <div class="ev__btn" style="right:4.6cqw"><Icon name="heart" /></div>
-  <div class="ev__sheet">
-    <div class="kick">Live · Techno · Club</div>
-    <div class="ev__title">Tiefgang</div>
-    <div class="facts">
-      <div><small>Heute</small><b>23:00</b></div>
-      <div><small>Ende</small><b>05:00</b></div>
-      <div><small>Entfernung</small><b>0,4 km</b></div>
-    </div>
-    <div class="ev__snaps">
-      <span class="snapdot"><span class="fly fly--2"></span></span>
-      <span class="snapdot"><span class="fly fly--4"></span></span>
-      <span class="snapdot"><span class="fly fly--1"></span></span>
-      12 Live Snaps von heute Nacht
-    </div>
+<div class="scr evp">
+  <div class="evp__poster">
+    <span class="fly fly--1 evp__blur"></span>
+    <span class="fly fly--1 evp__flyer"><i>Tief<br />gang</i></span>
   </div>
-  <div class="ev__bar"><div class="ev__cta"><Icon name="ticket" />Tickets</div><div class="ev__cta ev__cta--2"><Icon name="route" />Route</div></div>
+  <div class="ev__btn" style="left:4.6cqw"><Icon name="back" /></div>
+  <div class="ev__btn" style="right:4.6cqw"><Icon name="share" /></div>
+  <div class="evp__body">
+    <span class="evp__ring"><span class="fly fly--2"></span></span>
+    <div class="evp__title">Tiefgang</div>
+    <div class="evp__when">Heute · 23:00–05:00 Uhr</div>
+    <div class="evp__tags"><span>Techno</span><span>Club</span></div>
+    <div class="evp__org">
+      <span class="fly fly--2"></span>
+      <div><small>Veranstalter</small><b>Kellerclub</b></div>
+      <span class="evp__profile">Profil<Icon name="arrow" /></span>
+    </div>
+    <div class="evp__h">Über das Event</div>
+    <p class="evp__text">Zwei Floors, Techno bis zum Morgen. Einlass ab 23 Uhr.</p>
+  </div>
+  <div class="evp__bar"><div class="evp__buy"><Icon name="ticket" />Tickets kaufen</div><div class="evp__save"><Icon name="heart" /></div></div>
 </div>

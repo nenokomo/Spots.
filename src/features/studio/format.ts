@@ -10,8 +10,8 @@ export function isUpcoming(event: Pick<OrganizerEvent, 'startsAt' | 'endsAt'>, n
   return end >= now;
 }
 
-export function eventState(event: Pick<OrganizerEvent, 'status' | 'isPublished'>): { label: string; tone: 'lime' | 'amber' | 'red' | 'muted' } {
+export function eventState(event: Pick<OrganizerEvent, 'status' | 'isPublished'>): { label: string; tone: 'accent' | 'amber' | 'red' | 'muted' } {
   if (event.status === 'cancelled') return { label: 'Abgesagt', tone: 'red' };
   if (event.status === 'postponed') return { label: 'Verschoben', tone: 'amber' };
-  return event.isPublished ? { label: 'Live in Spots', tone: 'lime' } : { label: 'Entwurf', tone: 'muted' };
+  return event.isPublished ? { label: 'Live in Spots', tone: 'accent' } : { label: 'Entwurf', tone: 'muted' };
 }

@@ -42,7 +42,7 @@ export function TeamCard({ organizer }: { organizer: MyOrganizer }) {
     {members?.map((member) => <View key={member.userId} style={styles.row}>
       <View style={styles.copy}>
         <Text style={studioStyles.body} numberOfLines={1}>{member.email}</Text>
-        <Pill label={member.role === 'owner' ? 'Besitzer' : 'Mitglied'} tone={member.role === 'owner' ? 'lime' : 'muted'} />
+        <Pill label={member.role === 'owner' ? 'Besitzer' : 'Mitglied'} tone={member.role === 'owner' ? 'accent' : 'muted'} />
       </View>
       {member.role === 'editor' && <StudioButton small variant="danger" label="Entfernen" loading={busy === member.userId} disabled={!!busy}
         onPress={() => void run(member.userId, () => removeMember(organizer.id, member.userId))} />}
@@ -85,5 +85,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   copy: { flex: 1, gap: 6, minWidth: 0 },
   invite: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: studio.radiusSmall, borderWidth: 1, borderColor: studio.line, backgroundColor: studio.bg },
-  code: { ...studioType.heading, color: studio.lime, letterSpacing: 1.5, fontVariant: ['tabular-nums'] },
+  code: { ...studioType.heading, color: studio.accent, letterSpacing: 1.5, fontVariant: ['tabular-nums'] },
 });
