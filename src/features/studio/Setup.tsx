@@ -1,15 +1,12 @@
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { fetchEventStats, registerOrganizer, reviewLabels, submitOrganizer, type EventStats, type MyOrganizer } from '../organizer/organizerApi';
+import { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { registerOrganizer, reviewLabels, submitOrganizer, type MyOrganizer } from '../organizer/organizerApi';
 import { emptyOrganizerSignup, validateOrganizerSignup } from '../organizer/signup';
-import { EventCard } from './EventCard';
-import { isUpcoming } from './format';
+import { AccountCard } from './AccountCard';
 import { OrganizerSignupFields } from './OrganizerSignupFields';
-import { useStudio } from './StudioContext';
 import { RedeemInviteCard } from './TeamCard';
 import { studio, studioType } from './theme';
-import { Card, Kpi, Message, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
+import { Card, Message, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
 
 const steps = ['Registriert', 'Prüfung durch Spots', 'Live in Spots'] as const;
 
@@ -29,7 +26,8 @@ function ReviewSteps({ organizer }: { organizer: MyOrganizer }) {
   </View>;
 }
 
-function StatusCard({ organizer, reload }: { organizer: MyOrganizer; reload: () => void }) {
+/** Stand der Freigabe durch das Spots-Team, mit „Antrag stellen“. Steht nur bis zur Freigabe oben im Reiter „Events“. */
+export function ReviewCard({ organizer, reload }: { organizer: MyOrganizer; reload: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const status = organizer.reviewStatus;
@@ -50,8 +48,11 @@ function StatusCard({ organizer, reload }: { organizer: MyOrganizer; reload: () 
   </Card>;
 }
 
-/** Konto ist Veranstalter, aber der Club fehlt (Angaben bei der Registrierung ungültig): hier nachholen. */
-function CompleteSignup({ reload }: { reload: () => void }) {
+/**
+ * Konto ist Veranstalter, aber der Club fehlt noch (Angaben bei der Registrierung ungültig oder Team-Mitglied ohne Code):
+ * Club anlegen oder Einladungscode einlösen. Solange gibt es keine Reiter.
+ */
+export default function SetupScreen({ reload }: { reload: () => void }) {
   const [value, setValue] = useState(emptyOrganizerSignup);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,67 +64,24 @@ function CompleteSignup({ reload }: { reload: () => void }) {
     catch (failure) { setError(failure instanceof Error ? failure.message : 'Hat nicht geklappt.'); }
     finally { setBusy(false); }
   }
-  return <StudioPage title="Fast geschafft" subtitle="Ergänzt die Angaben zu eurem Club. Danach prüft das Spots-Team euer Profil.">
+  return <StudioPage title="Fast geschafft" subtitle="Ergänzt die Angaben zu eurem Club. Danach prüft das Spots-Team euer Profil." bottomInset={40}>
     <Card><OrganizerSignupFields value={value} onChange={setValue} editable={!busy} /></Card>
     <Message error={error} />
     <StudioButton label="Club anlegen und Antrag stellen" loading={busy} onPress={() => void save()} />
     <RedeemInviteCard onJoined={reload} />
-  </StudioPage>;
-}
-
-export default function OverviewScreen() {
-  const { organizer, events, error, reload } = useStudio();
-  const [stats, setStats] = useState<EventStats[] | null>(null);
-  const organizerId = organizer?.id;
-
-  useEffect(() => {
-    if (!organizerId) return;
-    let active = true;
-    fetchEventStats(organizerId).then((rows) => { if (active) setStats(rows); }).catch(() => { if (active) setStats([]); });
-    return () => { active = false; };
-  }, [organizerId, events]);
-
-  if (organizer === undefined) {
-    return <View style={styles.loading}>{error ? <Message error={error} /> : <ActivityIndicator color={studio.lime} />}</View>;
-  }
-  if (organizer === null) return <CompleteSignup reload={reload} />;
-
-  const upcoming = events.filter((event) => isUpcoming(event)).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-  const live = upcoming.filter((event) => event.isPublished && event.status === 'scheduled').length;
-  const sum = (key: 'views' | 'saves' | 'ticketClicks') => (stats ?? []).reduce((total, row) => total + row[key], 0);
-
-  return <StudioPage title={organizer.displayName} subtitle={[organizer.street && `${organizer.street} ${organizer.houseNumber ?? ''}`.trim(), organizer.city].filter(Boolean).join(', ')}>
-    <StatusCard organizer={organizer} reload={reload} />
-    <View style={studioStyles.row}>
-      <Kpi label="Kommende Events" value={upcoming.length} hint={`${live} davon live`} />
-      <Kpi label="Aufrufe" value={stats ? sum('views') : '–'} hint="alle Events" />
-      <Kpi label="Gemerkt" value={stats ? sum('saves') : '–'} hint="Merklisten mit Konto" />
-      <Kpi label="Ticket-Klicks" value={stats ? sum('ticketClicks') : '–'} hint="alle Events" />
-    </View>
-    <Card>
-      <Text style={studioStyles.heading}>Eure Story in Entdecken</Text>
-      <Text style={studioStyles.muted}>So sehen Leute in {organizer.city ?? 'eurer Stadt'} euren Club: Eindrücke von vergangenen Events und Vorfreude auf kommende.</Text>
-      <StudioButton small variant="secondary" icon="camera" label="Story bearbeiten" onPress={() => router.push('/studio/story')} />
-    </Card>
-    <SectionTitle action={<StudioButton small variant="ghost" icon="calendar" label="Neues Event" onPress={() => router.push({ pathname: '/studio/event/[id]', params: { id: 'new' } })} />}>Als Nächstes</SectionTitle>
-    {upcoming.length === 0 && <Card>
-      <Text style={studioStyles.heading}>Noch kein Event geplant</Text>
-      <Text style={studioStyles.muted}>Legt euer erstes Event an. Bis zur Freigabe bleibt es ein Entwurf.</Text>
-      <StudioButton label="Event anlegen" icon="calendar" onPress={() => router.push({ pathname: '/studio/event/[id]', params: { id: 'new' } })} />
-    </Card>}
-    {upcoming.slice(0, 3).map((event) => <EventCard key={event.id} event={event} />)}
+    <SectionTitle>Konto</SectionTitle>
+    <AccountCard member={false} />
   </StudioPage>;
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.bg, padding: 24 },
   steps: { flexDirection: 'row', gap: 8 },
   step: { flex: 1, gap: 6 },
   dot: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: studio.line, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.bg },
-  dotDone: { backgroundColor: studio.lime, borderColor: studio.lime },
+  dotDone: { backgroundColor: studio.accent, borderColor: studio.accent },
   dotCurrent: { borderColor: studio.amber },
   dotLabel: { fontSize: 13, fontWeight: '800', color: studio.faint },
-  dotLabelDone: { color: studio.limeInk },
+  dotLabelDone: { color: studio.onAccent },
   stepLabel: { ...studioType.small, color: studio.faint },
   stepLabelActive: { color: studio.text },
 });

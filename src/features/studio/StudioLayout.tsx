@@ -7,7 +7,7 @@ import { useAccountType } from './useAccountType';
 
 /**
  * /studio: nur für Veranstalter-Konten. Private Konten und Abgemeldete landen in der Besucher-App.
- * Aufbau wie die Besucher-App: ein Stapel mit den Reitern ((tabs)), dem Event-Editor und der Entdecken-Story als eigenen Seiten darüber.
+ * Aufbau: die vier Reiter ((tabs): Events · Story · Einnahmen · Profil) und darüber nur die Seite eines Events.
  */
 export default function StudioLayout() {
   const account = useAccountSession();
@@ -15,7 +15,7 @@ export default function StudioLayout() {
   const type = useAccountType(userId);
 
   if (account.loading || (userId && type === null)) {
-    return <View style={styles.loading}><ActivityIndicator color={studio.lime} /></View>;
+    return <View style={styles.loading}><ActivityIndicator color={studio.accent} /></View>;
   }
   if (!userId || type !== 'organizer') return <Redirect href="/" />;
 
@@ -23,7 +23,6 @@ export default function StudioLayout() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: studio.bg } }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="event/[id]" />
-      <Stack.Screen name="story" />
     </Stack>
   </StudioProvider>;
 }
