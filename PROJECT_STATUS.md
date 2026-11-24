@@ -1,15 +1,15 @@
 # Projektstatus – Spots
 
-Stand: 15.11.2026 (abends). Diese Datei beschreibt nur den **aktuellen** Stand. Fahrplan bis zum Release: [docs/FAHRPLAN-RELEASE.md](docs/FAHRPLAN-RELEASE.md). Arbeitsprotokolle: [Konten](docs/FORTSCHRITT-konten.md) · [Veranstalter](docs/FORTSCHRITT-veranstalter.md) · [Produktion](docs/FORTSCHRITT-produktion.md). Frühere Runden: [Redesign bis 11.11.](docs/history/PROJECT_STATUS_REDESIGN_2026-11.md) · [ältere Geschichte](docs/history/PROJECT_STATUS_HISTORY.md) · [Dokumentationsindex](docs/README.md)
+Stand: 24.11.2026 (abends). Diese Datei beschreibt nur den **aktuellen** Stand. Fahrplan bis zum Release: [docs/FAHRPLAN-RELEASE.md](docs/FAHRPLAN-RELEASE.md). Arbeitsprotokolle: [Konten](docs/FORTSCHRITT-konten.md) · [Veranstalter](docs/FORTSCHRITT-veranstalter.md) · [Produktion](docs/FORTSCHRITT-produktion.md). Frühere Runden: [Redesign bis 11.11.](docs/history/PROJECT_STATUS_REDESIGN_2026-11.md) · [ältere Geschichte](docs/history/PROJECT_STATUS_HISTORY.md) · [Dokumentationsindex](docs/README.md)
 
 ## Branches
 
 | Branch | Inhalt | Zustand |
 |---|---|---|
-| `main` | Gemeinsamer Stand: Redesign, Ticketmaster, Adressbuch, Admin-Bereich, Team-Anmeldung in Produktion, **Etappe 1 (Konten für alle)** und **Etappe 2 (Veranstalter, Spots Studio)** | gepusht |
-| `backend/konten`, `backend/veranstalter`, `docs/fahrplan-release` | in `main` enthalten (15.11.) | gepusht |
+| `main` | Gemeinsamer Stand mit allem bisher Fertigen, inkl. neuem Studio-Design, Website und Kontofunktionen im Entwicklungsmodus | gepusht |
+| `design/studio` | Noyans laufender Design-Branch, zurzeit vollständig in `main` enthalten | gepusht |
 
-Neue Arbeit startet als eigener Branch von `main` (`backend/<thema>`, `design/<thema>`).
+Am 24.11. aufgeräumt: alle 27 Branches, die vollständig in `main` steckten, auf GitHub gelöscht. Neue Arbeit startet immer als eigener Branch vom aktuellen `main` (`git pull origin main`, dann `backend/<thema>` oder `design/<thema>`).
 
 ## Was die App kann
 
@@ -29,7 +29,7 @@ Spots Studio gehört zur Spots-Familie (`src/features/studio/theme.ts`: gleicher
 
 ## Daten und Backend
 
-- **Produktion** `yhnxdeypkbzyjappuzmv` (Stand 23.11.): SQL 15, 17–30, 32–40 eingespielt (Prüfsummen gleich, Events unverändert, Protokoll in [docs/PRODUKTION-RUNDE-2.md](docs/PRODUKTION-RUNDE-2.md)), dazu 20–24 (Ticketmaster, Orte, Admin, Partner-Anfragen) und Goabase-Zeitplan. App läuft dort weiter nur mit Team-Anmeldung. Function `cleanup-snaps` und Aufräum-Zeitplan (SQL 31) seit 23.11. eingerichtet. **Noch nicht:** Weiterleitungen, Mailserver, Konten für alle. Free Plan: keine automatischen Sicherungen.
+- **Produktion** `yhnxdeypkbzyjappuzmv` (Stand 23.11., am 24.11. nur lesend geprüft: Tabellen, Funktionen, Regeln und Auslöser wie in Spots-Test; drei Zeitpläne laufen ohne Fehler; 1 Konto = Admin, noch kein Veranstalter): SQL 15, 17–30, 32–40 eingespielt (Prüfsummen gleich, Events unverändert, Protokoll in [docs/PRODUKTION-RUNDE-2.md](docs/PRODUKTION-RUNDE-2.md)), dazu 20–24 (Ticketmaster, Orte, Admin, Partner-Anfragen) und Goabase-Zeitplan. App läuft dort weiter nur mit Team-Anmeldung. Function `cleanup-snaps` und Aufräum-Zeitplan (SQL 31) seit 23.11. eingerichtet. **Noch nicht:** Weiterleitungen, Mailserver, Konten für alle. Free Plan: keine automatischen Sicherungen.
 - **Spots-Test** `nfomkdvotqtlyymomksb`: SQL 15–40 eingespielt (Prüfsummen identisch mit den Dateien). Ticketmaster-Cron aktiv; Function `cleanup-snaps` (Version 2, Shots und verwaiste Bilder) + stündlicher Aufräum-Job (SQL 31), läuft seit dem 20.11. ohne Fehler.
 - Neu in Etappe 1/2: **25** Konto löschen + Merkliste; **26** Antrag/Freigabe + datensparsame Statistik (Tagessummen, Hash mit Tagessalz); **27** öffentlicher Bucket `organizer-public` (Logos/Flyer) + Ort aus dem Adressbuch für Club-Events; **28** Kontoart bei der Registrierung (Trigger auf `auth.users`), Club-Adresse, Ansprechperson/Telefon privat; **29** Straße/Nr./PLZ an Events, Ende Pflicht für Club-Events (bestehende Zeilen unangetastet).
 - Etappe 3 (Shots, [docs/FORTSCHRITT-shots.md](docs/FORTSCHRITT-shots.md)): **19** Galerien; **30** Gäste-Shots sofort sichtbar, Team-Moderation, Aufräumen nur durch den Server; **31** stündlicher Aufräum-Job; **32** Gäste-Shots nur mit Konto sichtbar (Club-Story für alle); **33** Veranstalter-Story für Entdecken (bleibt, bis der Club löscht, max. 30 Bilder) und Event-Story ab dem Anlegen des Events (Studio: beides im Reiter „Story“). App: „Shot posten“ mit Handy-Kamera (nur mit Konto), Gäste sehen einen Hinweis mit Anmelde-Link, Melden über das Konto, Admin-Reiter „Shots“.
