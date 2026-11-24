@@ -7,8 +7,8 @@ import { accountConfigurationError, accountMode, accountProject } from './config
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
 const key = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
 export const accountClientError = accountConfigurationError(url, key);
-/** team = Produktion: nur Anmelden für das Spots-Team. */
-export const accountClientMode = accountClientError ? null : accountMode(url);
+/** team = veröffentlichte App in Produktion: nur Anmelden für das Spots-Team. */
+export const accountClientMode = accountClientError ? null : accountMode(url, __DEV__);
 let client: SupabaseClient | undefined;
 
 /** One shared session for private users and organizer members; public event client stays unchanged. */
