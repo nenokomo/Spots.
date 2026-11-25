@@ -48,11 +48,9 @@ export type OrganizerPart = 'cover' | 'name' | 'about';
 export type OrganizerProfileEdit = {
   onEdit: (part: OrganizerPart) => void;
   onOpenEvent: (id: string) => void;
-  /** Direkt unter Name und Ort, über „Über uns“: z. B. der Bereich „Story in Entdecken“. */
-  afterHead?: ReactNode;
   /** Rechts oben statt „Teilen“, z. B. das Zahnrad für die Einstellungen. */
   toolbar?: ReactNode;
-  /** Unter der Seite. */
+  /** Unter „Vergangene Events“, z. B. der Bereich „Story in Entdecken“. */
   below?: ReactNode;
   /** Platz unter dem Inhalt, z. B. für die Tab-Leiste. */
   bottomInset?: number;
@@ -200,8 +198,6 @@ export function OrganizerProfileView({ organizer, events, posts: publicPosts, on
           </View>
           {groups.sounds.length > 0 && <View style={styles.sounds}>{groups.sounds.map((tag) => <Text key={tag} style={styles.sound}>{tag}</Text>)}</View>}
         </View>
-
-        {edit?.afterHead && <View style={styles.body}>{edit.afterHead}</View>}
 
         <View style={styles.body}>
           {/* About: the organizer's own words, first sentence as motto. Im Studio reagiert die ganze Karte. */}

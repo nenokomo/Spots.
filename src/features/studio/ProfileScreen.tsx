@@ -31,8 +31,8 @@ export function profileChecklist(organizer: Pick<MyOrganizer, 'avatarUrl' | 'cov
 
 /**
  * Tab „Profil“ (docs/STUDIO-UMBAU-PLAN.md): **die Veranstalterseite, wie Gäste sie sehen** (OrganizerProfileView der Besucher-App).
- * Titelbild, Profilbild (Logo), Name und „Über uns“ lassen sich antippen und ändern. Direkt unter dem Namen steht gut
- * sichtbar der Bereich „Story in Entdecken“. Events öffnen die Eventseite im Studio. Ganz unten nur, was dem Profil noch fehlt.
+ * Titelbild, Profilbild (Logo), Name und „Über uns“ lassen sich antippen und ändern. Events öffnen die Eventseite im Studio.
+ * Unter „Vergangene Events“ steht der Bereich „Story in Entdecken“ (Wunsch Noyan), ganz unten nur, was dem Profil noch fehlt.
  * Zahnrad oben rechts → Einstellungen (Team, Ansprechperson, Konto). Nach unten ziehen lädt neu.
  */
 export default function ProfileScreen() {
@@ -58,11 +58,13 @@ export default function ProfileScreen() {
   const done = checklist.filter((item) => item.done).length;
   const incomplete = done < checklist.length;
 
-  const below = !approved || incomplete ? <View style={styles.below}>
-    <View style={styles.ownHead}>
+  // Unter „Vergangene Events“: zuerst die Story in Entdecken, danach – nur solange etwas fehlt – „Nur für euch“.
+  const below = <View style={styles.below}>
+    <ExploreStory organizer={organizer} events={events} story={story} />
+    {(!approved || incomplete) && <View style={styles.ownHead}>
       <Text style={styles.ownTitle}>Nur für euch</Text>
       <Text style={studioStyles.muted}>Das sehen Gäste nicht.</Text>
-    </View>
+    </View>}
     {!approved && <Card>
       <Pill label={reviewLabels[status]} tone={status === 'pending' ? 'amber' : status === 'draft' ? 'muted' : 'red'} />
       <Text style={studioStyles.muted}>Gäste sehen euer Profil, sobald Spots euch freigegeben hat.</Text>
@@ -73,13 +75,12 @@ export default function ProfileScreen() {
       <View>{checklist.filter((item) => !item.done).map((item) => <Check key={item.label} done={false} label={item.label}
         onPress={item.part ? () => setPart(item.part ?? null) : undefined} />)}</View>
     </Card>}
-  </View> : undefined;
+  </View>;
 
   return <>
     <OrganizerProfileView organizer={toPublicOrganizer(organizer)} events={guestEvents(events, organizer.id)} posts={posts}
       edit={{
         onEdit: setPart, onOpenEvent: (id) => openEvent(id), below, refresh, bottomInset: tabBarContentInset(insets.bottom),
-        afterHead: <ExploreStory organizer={organizer} events={events} story={story} />,
         toolbar: <IconButton icon="sliders" accessibilityLabel="Einstellungen" onPress={() => router.push('/studio/settings')} />,
       }} />
     <ProfilePartSheet part={part} organizer={organizer} onClose={() => setPart(null)} reload={reload} />
@@ -89,6 +90,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   below: { gap: studio.gap },
   // „Nur für euch“: deutlich abgesetzt von dem, was Gäste sehen.
-  ownHead: { gap: 2, paddingTop: 24, borderTopWidth: 1, borderTopColor: studio.accentLine },
+  ownHead: { gap: 2, marginTop: 24, paddingTop: 24, borderTopWidth: 1, borderTopColor: studio.accentLine },
   ownTitle: { fontSize: 24, lineHeight: 29, fontWeight: '800', letterSpacing: -0.4, color: studio.text },
 });

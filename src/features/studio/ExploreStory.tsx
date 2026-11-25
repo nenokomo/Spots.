@@ -19,7 +19,7 @@ type Picked = { uri: string; mimeType?: string | null };
 /**
  * „Story in Entdecken“ (SQL 33): die dauerhaften Bilder des Veranstalters. Gäste sehen sie in Entdecken, wenn sie nach
  * Veranstaltern in ihrer Stadt schauen; die Bilder bleiben, bis man sie löscht.
- * Ein eigener, gut sichtbarer Bereich oben im Profil (wie die Highlights bei Instagram): ein Streifen mit „Hinzufügen“
+ * Ein eigener Bereich im Profil, unter „Vergangene Events“: ein Streifen mit „Hinzufügen“
  * und allen Bildern. Ein Bild antippen zeigt es groß mit „Löschen“; „Ansehen“ zeigt die Story, wie Gäste sie sehen.
  * Nicht zu verwechseln mit der Story eines Events (24 Stunden, Profilbild mit „+“ auf der Eventseite).
  */
@@ -140,7 +140,7 @@ export function ExploreStory({ organizer, events, story }: { organizer: MyOrgani
 
 const styles = StyleSheet.create({
   pressed: { opacity: 0.8 },
-  box: { gap: 12, marginTop: 20, padding: 16, borderRadius: studio.radius, backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, ...squircle },
+  box: { gap: 12, padding: 16, borderRadius: studio.radius, backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, ...squircle },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   headCopy: { flex: 1, gap: 4 },
   title: { fontSize: 20, lineHeight: 25, fontWeight: '800', letterSpacing: -0.3, color: studio.text },

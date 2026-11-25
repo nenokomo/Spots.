@@ -172,10 +172,10 @@ test('the page is the form: creating and editing use the guest event page, parts
   assert.match(page, /applyLabel="Speichern"/, 'saved event: a part is saved right away');
   assert.ok(!fs.existsSync(path.join(__dirname, '../src/app/studio/edit')), 'no separate step pages');
   assert.ok(!fs.existsSync(path.join(__dirname, '../src/app/studio/page.tsx')), 'no separate form page for the profile');
-  // Profil: die Veranstalterseite der Gäste; „Story in Entdecken“ steht als eigener Bereich oben.
+  // Profil: die Veranstalterseite der Gäste; „Story in Entdecken“ steht als eigener Bereich unter „Vergangene Events“.
   const profile = read('src/features/studio/ProfileScreen.tsx');
   assert.match(profile, /<OrganizerProfileView organizer=\{toPublicOrganizer\(organizer\)\} events=\{guestEvents\(events, organizer\.id\)\}/);
-  assert.match(profile, /afterHead: <ExploreStory /, 'Story in Entdecken: its own visible area at the top of the profile');
+  assert.match(profile, /const below = <View style=\{styles\.below\}>\s*<ExploreStory organizer=\{organizer\}/, 'Story in Entdecken: its own area below the past events');
   assert.match(read('src/features/studio/ExploreStory.tsx'), /<Text style=\{styles\.title\}>Story in Entdecken<\/Text>/);
   assert.match(read('src/features/studio/ExploreStory.tsx'), /organizerStoryPage\(explore, today\)/, 'watching shows the story as guests see it');
   // Die Besucher-Seiten bleiben für Gäste, wie sie sind: Bearbeiten nur mit `edit`.
