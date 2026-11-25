@@ -66,6 +66,8 @@ export function share(part: number, total: number): string | null {
  */
 export function ticketInsight(views: number, ticketClicks: number, others: { views: number; ticketClicks: number }[] = []): string {
   if (views <= 0) return 'Noch hat niemand dieses Event in Spots gesehen.';
+  // Aus einer Handvoll Aufrufen lässt sich nichts ablesen: lieber das sagen als eine Quote aus drei Aufrufen.
+  if (views < 10) return views === 1 ? 'Erst 1 Aufruf. Für eine Aussage ist das noch zu wenig.' : `Erst ${count.format(views)} Aufrufe. Für eine Aussage ist das noch zu wenig.`;
   const base = `${share(ticketClicks, views)} der Aufrufe führten zu den Tickets.`;
   const basis = others.filter((row) => row.views >= 20);
   if (basis.length < 2) return base;

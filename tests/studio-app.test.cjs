@@ -119,6 +119,7 @@ test('ticket changes: unchanged types stay (keeps „ausverkauft“), the rest i
 test('checklist: flyer, description, tickets, published', () => {
   const open = form.eventChecklist(event({ imageUrl: null, description: ' ' }), 0);
   assert.deepEqual(plain(open.map((item) => [item.key, item.done, item.step])), [['flyer', false, 'event'], ['description', false, 'event'], ['tickets', false, 'tickets'], ['published', false, 'preview']]);
+  assert.equal(open.find((item) => item.key === 'published').label, 'Veröffentlichen', 'an open point reads as something to do');
   assert.ok(form.eventChecklist(event({ isPublished: true }), 1).every((item) => item.done));
   assert.equal(form.eventChecklist(event({ ticketUrl: 'https://t.example' }), null).find((item) => item.key === 'tickets').done, true);
 });
@@ -177,7 +178,7 @@ test('the page is the form: creating and editing use the guest event page, parts
   const profile = read('src/features/studio/ProfileScreen.tsx');
   assert.match(profile, /<OrganizerProfileView organizer=\{toPublicOrganizer\(organizer\)\} events=\{guestEvents\(events, organizer\.id\)\}/);
   assert.match(profile, /const below = <View style=\{styles\.below\}>\s*<ExploreStory organizer=\{organizer\}/, 'Story in Entdecken: its own area below the past events');
-  assert.match(read('src/features/studio/ExploreStory.tsx'), /<Text style=\{styles\.title\}>Story in Entdecken<\/Text>/);
+  assert.match(read('src/features/studio/ExploreStory.tsx'), /style=\{styles\.title\}>Story in Entdecken<\/Text>/);
   assert.match(read('src/features/studio/ExploreStory.tsx'), /organizerStoryPage\(explore, today\)/, 'watching shows the story as guests see it');
   // Die Besucher-Seiten bleiben für Gäste, wie sie sind: Bearbeiten nur mit `edit`.
   const guestEvent = read('src/screens/EventDetailScreen.tsx');
@@ -217,6 +218,12 @@ test('defaults from the last event: times, place, kind, genre and door tickets; 
   assert.deepEqual(plain(fresh.genres), ['House']);
   assert.equal(fresh.placeMode, 'own');
   assert.deepEqual(plain(fresh.prices.map((row) => [row.id ?? null, row.name, row.price])), [[null, 'Abendkasse', '12']], 'door prices again, as new rows');
+  // Ein einmaliger anderer Ort (z. B. eine private Adresse) wandert nicht ins nächste Event, wenn es einen eigenen Ort gibt.
+  const elsewhere = form.freshForm(organizer, { event: event({ venueName: 'Haus von jemand', street: 'Nebenweg', houseNumber: '5', postcode: '76131' }), tickets: [] });
+  assert.equal(elsewhere.placeMode, 'own');
+  assert.equal(elsewhere.place.street, '');
+  const nomad = { ...organizer, street: null, houseNumber: null, postcode: null };
+  assert.equal(form.freshForm(nomad, { event: event({ venueName: 'Halle 7', street: 'Hafenweg', houseNumber: '3', postcode: '76189' }), tickets: [] }).place.name, 'Halle 7', 'without an own address the last place is the default');
   // Ein Ticket-Link gehört zu genau einem Event: nichts davon übernehmen.
   const online = form.freshForm(organizer, { event: event({ ticketUrl: 'https://t.example/alt' }), tickets: [ticket({ name: 'Early Bird', priceCents: 800 })] });
   assert.equal(online.ticketUrl, '');
@@ -262,6 +269,8 @@ test('numbers: one sentence of insight, a comparison only with enough data', () 
   const status = load('src/utils/eventStatus.ts', { './events': load('src/utils/events.ts') });
   const format = load('src/features/studio/format.ts', { '../../utils/eventStatus': status, '../../utils/events': load('src/utils/events.ts') });
   assert.equal(format.ticketInsight(0, 0), 'Noch hat niemand dieses Event in Spots gesehen.');
+  assert.equal(format.ticketInsight(1, 0), 'Erst 1 Aufruf. Für eine Aussage ist das noch zu wenig.');
+  assert.equal(format.ticketInsight(7, 3), 'Erst 7 Aufrufe. Für eine Aussage ist das noch zu wenig.', 'no quota from a handful of views');
   assert.equal(format.ticketInsight(340, 15), '4 % der Aufrufe führten zu den Tickets.');
   assert.equal(format.ticketInsight(340, 15, [{ views: 500, ticketClicks: 10 }]), '4 % der Aufrufe führten zu den Tickets.', 'one other event is no basis');
   const others = [{ views: 500, ticketClicks: 10 }, { views: 300, ticketClicks: 6 }, { views: 5, ticketClicks: 5 }];

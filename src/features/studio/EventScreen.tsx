@@ -288,7 +288,6 @@ function NewEvent({ organizer, seed, dateHint, reload }: { organizer: MyOrganize
       onApply={(next: EventForm) => { setForm(next); setPart(null); }} />
     <ConfirmSheet visible={leaving} title="Event verwerfen?" text="Eure Eingaben sind noch nicht gespeichert." confirmLabel="Verwerfen" cancelLabel="Weiter bearbeiten" danger
       onConfirm={() => { setLeaving(false); goBack(); }} onClose={() => setLeaving(false)} />
-    <NewEventIntro />
   </>;
 }
 
@@ -314,10 +313,16 @@ export function NewEventScreen() {
   // Die Events kommen nach Beginn sortiert, das späteste zuerst.
   const source = template ?? events.find((item) => item.status !== 'cancelled') ?? null;
   const { tickets } = useEventTickets(source?.id ?? null);
-  if (organizer === undefined || (source && tickets === null)) return <View style={styles.loading}><ActivityIndicator color={studio.accent} /></View>;
-  if (!organizer) return <StudioPage title="Neues Event" onBack={goBack}><Text style={studioStyles.muted}>Bitte zuerst euer Profil anlegen.</Text></StudioPage>;
-  const seed = template ? initialForm(organizer, template, tickets ?? [], true) : freshForm(organizer, source ? { event: source, tickets: tickets ?? [] } : null);
-  return <NewEvent key={template?.id ?? 'neu'} organizer={organizer} seed={seed} dateHint={suggestedDate(source)} reload={reload} />;
+  if (organizer === null) return <StudioPage title="Neues Event" onBack={goBack}><Text style={studioStyles.muted}>Bitte zuerst euer Profil anlegen.</Text></StudioPage>;
+  // Das Titelbild steht sofort da und überdeckt auch das kurze Laden der Vorgaben vom letzten Event.
+  const ready = organizer !== undefined && !(source && tickets === null);
+  return <>
+    {ready
+      ? <NewEvent key={template?.id ?? 'neu'} organizer={organizer} dateHint={suggestedDate(source)} reload={reload}
+          seed={template ? initialForm(organizer, template, tickets ?? [], true) : freshForm(organizer, source ? { event: source, tickets: tickets ?? [] } : null)} />
+      : <View style={styles.loading}><ActivityIndicator color={studio.accent} /></View>}
+    <NewEventIntro />
+  </>;
 }
 
 const styles = StyleSheet.create({

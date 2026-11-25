@@ -50,7 +50,8 @@ Betrifft Noyans Design (`src/features/studio/`, `src/components/Icon.tsx`, `src/
 - Typecheck und Expo-Lint ohne Fehler.
 - `node --test tests/*.test.cjs`: 116 bestanden, 0 fehlgeschlagen, 29 SQL-Tests übersprungen (auf diesem Rechner ist kein PGlite eingerichtet; an der SQL wurde nichts geändert). `tests/studio-app.test.cjs` hat 15 Tests (Formular-Logik, Vorgaben, was fehlt, Platzhalter, Erkenntnis-Satz, Aufbau).
 - Probe-Bündel für iOS und Web gebaut (`expo export`), beide ohne Fehler.
-- **Nicht geprüft: die Oberfläche selbst.** Kein Handy-Test durch die KI. Vor allem ansehen: das ＋ neben der Leiste; Event anlegen auf der leeren Seite; die Sheets pro Teil (Datum und Uhrzeit auf iOS in der Zeile, auf Android der Dialog); „Verwalten“ und „Mehr“; Story in Entdecken am Profilbild; ob Eventseite und Veranstalterseite für **Gäste** unverändert aussehen.
+- **Im Handy-Format angesehen (Web-Vorschau 375 × 812, mit Noyans Veranstalter-Konto):** Start-Tab, das Plus mit Titelbild und leerer Eventseite, die Sheets für Titel und Tickets, eine gespeicherte Eventseite mit „Verwalten“ und „Mehr“, Zahlen, Profil mit „Story in Entdecken“; dazu Eventseite und Veranstalterseite als Gast (unverändert, ohne Stifte). Dabei behoben: verschachtelte Knöpfe im Web (ungültiges HTML), Ort eines neuen Events startet „Bei euch“ statt mit dem letzten (evtl. privaten) Ort, Titelbild „Neues Event“ erscheint sofort, Symbolbild abgedunkelt, inerter Knopf „Profil“ entfernt, gewählte Chips dezenter, Vorauswahl und Grammatik in Zahlen, Titel bei „Story in Entdecken“ bricht nicht mehr um. Gespeichert oder gepostet wurde dabei nichts.
+- **Nicht geprüft:** ein echtes Gerät. Die Web-Vorschau zeigt nicht die Datums- und Zeitauswahl von iOS und Android (dort ein Textfeld), keine Kamera, keine Sicherheitsabstände am Rand, kein echtes Wischen. Speichern, Veröffentlichen und Story posten wurden nicht ausgelöst.
 
 ## Offen
 

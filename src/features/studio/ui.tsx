@@ -274,9 +274,10 @@ const styles = StyleSheet.create({
   pillDot: { width: 6, height: 6, borderRadius: 3 },
   pillLabel: { ...studioType.label, fontSize: 11, letterSpacing: 0.6 },
   chip: { maxWidth: 260, minHeight: 44, paddingHorizontal: 16, justifyContent: 'center', borderRadius: 999, borderWidth: 1, borderColor: studio.line, backgroundColor: studio.panelHigh },
-  chipActive: { backgroundColor: studio.accent, borderColor: studio.accent },
-  chipLabel: { ...studioType.small, color: studio.text },
-  chipLabelActive: { color: studio.onAccent, fontWeight: '700' },
+  // Gewählt: zarter Rosa-Ton mit Rand. Voll gefüllt ist nur die Hauptaktion eines Bildschirms.
+  chipActive: { backgroundColor: studio.accentSoft, borderColor: studio.accent },
+  chipLabel: { ...studioType.small, color: studio.muted },
+  chipLabelActive: { color: studio.text, fontWeight: '700' },
   check: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 },
   checkDot: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: studio.faint },
   checkDotDone: { backgroundColor: studio.accent, borderColor: studio.accent },

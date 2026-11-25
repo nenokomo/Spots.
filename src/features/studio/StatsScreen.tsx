@@ -31,7 +31,7 @@ function History({ days, metric }: { days: Omit<EventStatsDay, 'eventId'>[]; met
   return <View style={styles.history}>
     <View style={styles.readout}>
       <Text style={styles.readoutValue}>{count.format(picked ? picked[metric] : total)}</Text>
-      <Text style={studioStyles.muted}>{picked ? labelOf(picked.day) : `${metrics[metric]} in ${DAYS} Tagen`}</Text>
+      <Text style={studioStyles.muted}>{picked ? labelOf(picked.day) : `${metrics[metric]} · letzte ${DAYS} Tage`}</Text>
     </View>
     <View style={styles.bars}>
       {days.map((day) => {
@@ -50,14 +50,14 @@ function History({ days, metric }: { days: Omit<EventStatsDay, 'eventId'>[]; met
 }
 
 /** Ein Event im Vergleich: Aufrufe und wie viele davon zu den Tickets gegangen sind. Tippen öffnet die Eventseite. */
-function CompareRow({ row, image, last }: { row: EventStats; image: string | null; last: boolean }) {
+function CompareRow({ row, state, image, last }: { row: EventStats; state: string; image: string | null; last: boolean }) {
   const quota = share(row.ticketClicks, row.views);
   return <Pressable accessibilityRole="button" accessibilityLabel={`${row.title} öffnen`} onPress={() => openEvent(row.eventId)}
     style={({ pressed }) => [styles.row, !last && styles.rowLine, pressed && styles.pressed]}>
     {image ? <Image source={{ uri: image }} style={styles.thumb} /> : <View style={[styles.thumb, styles.thumbEmpty]}><Icon name="calendar" size={16} color={studio.faint} /></View>}
     <View style={styles.rowCopy}>
       <Text numberOfLines={1} style={styles.rowName}>{row.title}</Text>
-      <Text style={studioStyles.muted}>{dayFormat.format(new Date(row.startsAt))}{row.isPublished ? '' : ' · Entwurf'}</Text>
+      <Text style={studioStyles.muted}>{dayFormat.format(new Date(row.startsAt))}{state}</Text>
     </View>
     <View style={styles.rowNumbers}>
       <Text style={styles.rowValue}>{count.format(row.views)}</Text>
@@ -92,9 +92,13 @@ export default function StatsScreen() {
 
   if (!organizer) return null;
   const rows = [...(stats.rows ?? [])].sort((a, b) => b.startsAt.localeCompare(a.startsAt));
-  // Vorgewählt: das nächste Event, sonst das letzte. „Alle“ bleibt als Summe wählbar.
-  const upcoming = [...rows].reverse().find((row) => isUpcoming({ startsAt: row.startsAt, endsAt: events.find((event) => event.id === row.eventId)?.endsAt ?? null }, now));
-  const selectedId = choice ?? upcoming?.eventId ?? rows[0]?.eventId ?? 'all';
+  // Vorgewählt: das nächste veröffentlichte Event, sonst das letzte veröffentlichte, sonst das neueste. „Alle“ bleibt wählbar.
+  const eventOf = (id: string) => events.find((event) => event.id === id);
+  const live = rows.filter((row) => row.isPublished && eventOf(row.eventId)?.status !== 'cancelled');
+  const upcoming = [...live].reverse().find((row) => isUpcoming({ startsAt: row.startsAt, endsAt: eventOf(row.eventId)?.endsAt ?? null }, now));
+  const selectedId = choice ?? upcoming?.eventId ?? live[0]?.eventId ?? rows[0]?.eventId ?? 'all';
+  /** „Entwurf“ oder „Abgesagt“ hinter dem Datum; veröffentlichte Events brauchen keinen Zusatz. */
+  const stateOf = (row: EventStats) => eventOf(row.eventId)?.status === 'cancelled' ? ' · Abgesagt' : row.isPublished ? '' : ' · Entwurf';
   const selected = rows.find((row) => row.eventId === selectedId) ?? null;
   const sum = (key: 'views' | 'saves' | 'ticketClicks' | 'snaps') => selected ? selected[key] : rows.reduce((total, row) => total + row[key], 0);
   const days = dailyTotals((daily ?? []).filter((row) => !selected || row.eventId === selected.eventId), dayKey(new Date(now)), DAYS);
@@ -112,7 +116,7 @@ export default function StatsScreen() {
         style={({ pressed }) => [styles.picker, pressed && styles.pressed]}>
         <View style={styles.pickerCopy}>
           <Text numberOfLines={1} style={styles.pickerTitle}>{selected ? selected.title : 'Alle Events'}</Text>
-          {selected && <Text style={studioStyles.muted}>{dayFormat.format(new Date(selected.startsAt))}{selected.isPublished ? '' : ' · Entwurf'}</Text>}
+          {selected && <Text style={studioStyles.muted}>{dayFormat.format(new Date(selected.startsAt))}{stateOf(selected)}</Text>}
         </View>
         <Icon name="down" size={18} color={studio.muted} />
       </Pressable>
@@ -136,7 +140,7 @@ export default function StatsScreen() {
       {rows.length > 1 && <>
         <SectionTitle>Vergleich</SectionTitle>
         <Card style={styles.list}>
-          {rows.map((row, index) => <CompareRow key={row.eventId} row={row} image={flyer(row.eventId)} last={index === rows.length - 1} />)}
+          {rows.map((row, index) => <CompareRow key={row.eventId} row={row} state={stateOf(row)} image={flyer(row.eventId)} last={index === rows.length - 1} />)}
         </Card>
       </>}
 
@@ -150,7 +154,7 @@ export default function StatsScreen() {
 
     <StudioSheet visible={picking} title="Event wählen" onClose={() => setPicking(false)}>
       <MenuRow icon="chart" title="Alle Events" hint="Alles zusammen" onPress={() => choose('all')} />
-      {rows.map((row) => <MenuRow key={row.eventId} icon="calendar" title={row.title} hint={`${dayFormat.format(new Date(row.startsAt))}${row.isPublished ? '' : ' · Entwurf'}`} onPress={() => choose(row.eventId)} />)}
+      {rows.map((row) => <MenuRow key={row.eventId} icon="calendar" title={row.title} hint={`${dayFormat.format(new Date(row.startsAt))}${stateOf(row)}`} onPress={() => choose(row.eventId)} />)}
     </StudioSheet>
   </StudioPage>;
 }

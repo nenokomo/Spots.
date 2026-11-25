@@ -89,6 +89,10 @@ type ViewProps = {
   edit?: EventDetailEdit;
 };
 
+// Im Web darf ein Knopf keinen Knopf enthalten (ungültiges HTML). Bereiche, die Knöpfe der Gast-Ansicht umschließen,
+// bekommen dort deshalb keine Knopf-Rolle; antippen lassen sie sich trotzdem.
+const wrapperRole = () => Platform.OS === 'web' ? undefined : 'button' as const;
+
 /** Kleiner Stift: zeigt, dass sich dieser Teil antippen und ändern lässt. Der ganze Bereich reagiert, nicht nur der Stift. */
 function EditPen() {
   return <View pointerEvents="none" style={styles.pen}><Icon name="edit" size={15} color={colors.text} /></View>;
@@ -152,7 +156,7 @@ export function EventDetailView({ event, organizer, tickets, liveSnaps, address,
 
   /** Ein Abschnitt der Seite. Für Gäste Titel und Inhalt; im Studio reagiert der ganze Abschnitt und öffnet diesen Teil. */
   const section = (part: EventPart, title: string, editLabel: string, content: ReactNode) => edit
-    ? <Pressable accessibilityRole="button" accessibilityLabel={editLabel} onPress={() => edit.onEdit(part)} style={({ pressed }) => [styles.block, pressed && styles.pressed]}>
+    ? <Pressable accessibilityRole={wrapperRole()} accessibilityLabel={editLabel} onPress={() => edit.onEdit(part)} style={({ pressed }) => [styles.block, pressed && styles.pressed]}>
         <View style={styles.editRow}><SectionTitle title={title} style={[styles.blockTitle, styles.flex]} /><EditPen /></View>
         <View pointerEvents="none">{content}</View>
       </Pressable>
@@ -170,6 +174,7 @@ export function EventDetailView({ event, organizer, tickets, liveSnaps, address,
         <Image source={event.image} resizeMode="cover" blurRadius={event.imageIsPlaceholder ? 0 : 40} style={StyleSheet.absoluteFill} />
         {!event.imageIsPlaceholder && <Pressable accessibilityRole="button" accessibilityLabel="Eventbild groß anzeigen" onPress={() => setViewer(true)} style={[StyleSheet.absoluteFill, { top: insets.top + 56, bottom: 154 }]}><Image source={event.image} resizeMode="contain" style={StyleSheet.absoluteFill} accessibilityLabel={`Eventbild: ${event.title}`} /></Pressable>}
         <LinearGradient pointerEvents="none" colors={['#0a090cb3', '#0a090c00', '#0a090c00', '#0a090ccc', colors.background]} locations={[0, 0.2, 0.55, 0.85, 1]} style={StyleSheet.absoluteFill} />
+        {edit && event.imageIsPlaceholder && <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.posterDim]} />}
         <View style={[styles.toolbar, { paddingTop: insets.top + space.sm }]}>
           <IconButton icon={edit?.close ? 'close' : 'back'} accessibilityLabel={edit?.close ? 'Schließen' : 'Zurück'} onPress={onBack} />
           {edit?.title && <View style={styles.toolbarTitle}><Text accessibilityRole="header" numberOfLines={1} style={styles.toolbarTitleText}>{edit.title}</Text></View>}
@@ -202,7 +207,7 @@ export function EventDetailView({ event, organizer, tickets, liveSnaps, address,
         </View>
         <View style={styles.badges}>
           {ended && <View style={styles.endedBadge}><Text style={styles.endedText}>Beendet</Text></View>}
-          {event.imageIsPlaceholder && <Text style={styles.placeholderNote}>Symbolbild</Text>}
+          {event.imageIsPlaceholder && !edit && <Text style={styles.placeholderNote}>Symbolbild</Text>}
         </View>
         {edit
           ? <Pressable accessibilityRole="button" accessibilityLabel={edit.empty?.title ?? `Titel und Genre ändern: ${event.title}`} onPress={() => edit.onEdit('title')} style={({ pressed }) => [styles.editRow, pressed && styles.pressed]}>
@@ -231,14 +236,13 @@ export function EventDetailView({ event, organizer, tickets, liveSnaps, address,
             <View style={styles.profileButton}><Text style={styles.profileText}>Profil</Text><Icon name="chevron" size={13} color={colors.text} /></View>
           </PressableScale>
         </Link>}
-        {/* Studio: dieselbe Karte, aber ohne Sprung – das Profil bearbeitet man im Tab „Profil“. */}
+        {/* Studio: dieselbe Karte, aber ohne den Knopf „Profil“ – das Profil bearbeitet man im Tab „Profil“. */}
         {organizer && edit && <View style={styles.organizerCard}>
           <OrganizerAvatar organizer={organizer} size={44} />
           <View style={styles.organizerCopy}>
             <Text style={styles.organizerLabel}>Veranstalter</Text>
             <Text numberOfLines={1} style={styles.organizerName}>{organizer.displayName}</Text>
           </View>
-          <View style={styles.profileButton}><Text style={styles.profileText}>Profil</Text><Icon name="chevron" size={13} color={colors.text} /></View>
         </View>}
 
         {/* About tonight's event, first thing under the title. */}
@@ -380,6 +384,7 @@ const styles = StyleSheet.create({
   editRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 44 },
   pen: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff1f', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff33' },
   placeholder: { color: colors.faint },
+  posterDim: { backgroundColor: '#0a090ca6' },
   toolbarTitle: { alignSelf: 'center', justifyContent: 'center', height: 36, paddingHorizontal: space.lg, borderRadius: 18, backgroundColor: '#0a090cb3', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff40' },
   toolbarTitleText: { ...type.label, color: colors.text },
   flyerEdit: { position: 'absolute', right: space.lg, flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: space.md, borderRadius: 18, backgroundColor: '#0a090cb3', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff40' },

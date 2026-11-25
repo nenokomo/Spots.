@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState, type ReactNode } from 'react';
-import { Animated, Image, Modal, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Image, Modal, Platform, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventHero } from '../components/EventCards';
 import { EventCalendar } from '../components/EventCalendar';
@@ -58,6 +58,10 @@ export type OrganizerProfileEdit = {
   refresh?: { refreshing: boolean; onRefresh: () => void };
 };
 type ViewProps = { organizer: PublicOrganizer; events: SpotEvent[]; posts: PublicOrganizerPost[]; /** Ohne: kein Zurück-Pfeil (Tab). */ onBack?: () => void; edit?: OrganizerProfileEdit };
+
+// Im Web darf ein Knopf keinen Knopf enthalten (ungültiges HTML). Bereiche, die Knöpfe der Gast-Ansicht umschließen,
+// bekommen dort deshalb keine Knopf-Rolle; antippen lassen sie sich trotzdem.
+const wrapperRole = () => Platform.OS === 'web' ? undefined : 'button' as const;
 
 /** Kleiner Stift: zeigt, dass sich dieser Teil antippen und ändern lässt. Der ganze Bereich reagiert, nicht nur der Stift. */
 function EditPen() {
@@ -132,7 +136,7 @@ export function OrganizerProfileView({ organizer, events, posts: publicPosts, on
 
   /** Studio: Tippen öffnet die Eventseite im Studio; Merken und Ticket-Link der Karte bleiben den Gästen. */
   const eventNode = (event: SpotEvent, node: ReactNode, before?: () => void) => edit
-    ? <Pressable key={event.id} accessibilityRole="button" accessibilityLabel={`${event.title} öffnen`} onPress={() => { before?.(); edit.onOpenEvent(event.id); }}><View pointerEvents="none">{node}</View></Pressable>
+    ? <Pressable key={event.id} accessibilityRole={wrapperRole()} accessibilityLabel={`${event.title} öffnen`} onPress={() => { before?.(); edit.onOpenEvent(event.id); }}><View pointerEvents="none">{node}</View></Pressable>
     : node;
 
   async function share() {
@@ -202,7 +206,7 @@ export function OrganizerProfileView({ organizer, events, posts: publicPosts, on
         <View style={styles.body}>
           {/* About: the organizer's own words, first sentence as motto. Im Studio reagiert die ganze Karte. */}
           {edit && about
-            ? <Pressable accessibilityRole="button" accessibilityLabel="Über uns ändern" onPress={() => edit.onEdit('about')} style={({ pressed }) => pressed && styles.pressed}>{about}</Pressable>
+            ? <Pressable accessibilityRole={wrapperRole()} accessibilityLabel="Über uns ändern" onPress={() => edit.onEdit('about')} style={({ pressed }) => pressed && styles.pressed}>{about}</Pressable>
             : about}
 
           {/* Always the next upcoming event. */}

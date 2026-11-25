@@ -76,12 +76,10 @@ export function ExploreStory({ organizer, events, story }: { organizer: MyOrgani
 
   return <View style={styles.box}>
     <View style={styles.head}>
-      <View style={styles.headCopy}>
-        <Text style={styles.title}>Story in Entdecken</Text>
-        <Text style={studioStyles.muted}>{items.length > 0 ? 'So finden euch Gäste in Entdecken. Die Bilder bleiben, bis ihr sie löscht.' : 'Zeigt Gästen in Entdecken, wie es bei euch aussieht. Die Bilder bleiben, bis ihr sie löscht.'}</Text>
-      </View>
-      {visible.length > 0 && <StudioButton small variant="secondary" icon="eye" label="Ansehen" onPress={() => setViewing(true)} />}
+      <Text numberOfLines={1} style={styles.title}>Story in Entdecken</Text>
+      {visible.length > 0 && <StudioButton small variant="secondary" label="Ansehen" onPress={() => setViewing(true)} />}
     </View>
+    <Text style={studioStyles.muted}>{items.length > 0 ? 'So finden euch Gäste in Entdecken. Die Bilder bleiben, bis ihr sie löscht.' : 'Zeigt Gästen in Entdecken, wie es bei euch aussieht. Die Bilder bleiben, bis ihr sie löscht.'}</Text>
     {!picked && !selected && <Message error={story.error ?? error} />}
 
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip} style={styles.stripScroll}>
@@ -141,9 +139,8 @@ export function ExploreStory({ organizer, events, story }: { organizer: MyOrgani
 const styles = StyleSheet.create({
   pressed: { opacity: 0.8 },
   box: { gap: 12, padding: 16, borderRadius: studio.radius, backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, ...squircle },
-  head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  headCopy: { flex: 1, gap: 4 },
-  title: { fontSize: 20, lineHeight: 25, fontWeight: '800', letterSpacing: -0.3, color: studio.text },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  title: { flex: 1, fontSize: 19, lineHeight: 24, fontWeight: '800', letterSpacing: -0.3, color: studio.text },
   stripScroll: { marginHorizontal: -16 },
   strip: { gap: 8, paddingHorizontal: 16 },
   tile: { width: 92, height: 164, overflow: 'hidden', borderRadius: studio.radiusSmall, backgroundColor: studio.panelHigh },

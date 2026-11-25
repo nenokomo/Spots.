@@ -214,12 +214,12 @@ export function eventChecklist(event: Pick<OrganizerEvent, 'imageUrl' | 'descrip
     { key: 'flyer', label: 'Flyer', done: !!event.imageUrl, step: 'event' },
     { key: 'description', label: 'Beschreibung', done: !!event.description?.trim(), step: 'event' },
     { key: 'tickets', label: 'Tickets', done: !!event.ticketUrl || (ticketCount ?? 0) > 0, step: 'tickets' },
-    { key: 'published', label: 'Veröffentlicht', done: event.isPublished, step: 'preview' },
+    { key: 'published', label: event.isPublished ? 'Veröffentlicht' : 'Veröffentlichen', done: event.isPublished, step: 'preview' },
   ];
 }
 
 /**
- * Startwerte für ein neues Event. Mit einem früheren Event als Vorgabe (`last`): Uhrzeiten, Ort, Art, Genre und –
+ * Startwerte für ein neues Event. Mit einem früheren Event als Vorgabe (`last`): Uhrzeiten, Art, Genre und –
  * bei Abendkasse oder freiem Eintritt – die Tickets vom letzten Mal. Titel, Datum, Flyer, Text und der Ticket-Link
  * sind bei jedem Event neu.
  */
@@ -227,7 +227,10 @@ export function freshForm(organizer: MyOrganizer, last: { event: OrganizerEvent;
   if (!last) return initialForm(organizer, null);
   const online = ticketModeOf(last.event, last.tickets) === 'online';
   const base = initialForm(organizer, { ...last.event, ticketUrl: null }, online ? [] : last.tickets, true);
-  return { ...base, title: '', description: '', imageUrl: null, date: '', ticketUrl: '' };
+  // Ort: wer eine eigene Adresse hat, startet immer „Bei euch“ – ein einmaliger anderer Ort (z. B. eine private Adresse)
+  // soll nicht still ins nächste Event wandern. Ohne eigene Adresse ist der letzte Ort die beste Vorgabe.
+  const home = hasOwnPlace(ownPlace(organizer)) ? initialForm(organizer, null) : null;
+  return { ...base, ...(home ? { placeMode: home.placeMode, venue: home.venue, place: home.place } : {}), title: '', description: '', imageUrl: null, date: '', ticketUrl: '' };
 }
 
 /** Teile, ohne die sich das Event nicht speichern lässt (Titel, Zeit, vollständiger Ort, gültige Tickets). */
