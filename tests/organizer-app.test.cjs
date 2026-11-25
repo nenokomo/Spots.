@@ -73,7 +73,7 @@ test('studio: never sets is_published on organizers, events stay drafts before a
   const updateBlock = api.slice(api.indexOf('export async function updateOrganizerProfile'), api.indexOf('export async function submitOrganizer'));
   assert.ok(!updateBlock.includes('is_published'), 'profile update must not touch is_published');
   // Speichern (Schritte „Event anlegen/bearbeiten“) und die Eventseite (Veröffentlichen, Absagen): vor der Freigabe nie öffentlich.
-  for (const file of ['EventWizardScreen.tsx', 'EventScreen.tsx']) {
+  for (const file of ['saveEvent.ts', 'EventScreen.tsx']) {
     const source = fs.readFileSync(path.join(__dirname, '../src/features/studio', file), 'utf8');
     assert.match(source, /isPublished: status === 'scheduled' && approved && live/, file);
   }
@@ -113,7 +113,7 @@ test('event page address: street with number and postcode with city, nothing wit
 test('event editor: end time is required and an own address is turned into a map position', () => {
   const form = fs.readFileSync(path.join(__dirname, '../src/features/studio/eventForm.ts'), 'utf8');
   assert.match(form, /if \(!form\.endTime\.trim\(\)\) errors\.endTime = 'Bitte das Ende wählen\.'/);
-  const editor = fs.readFileSync(path.join(__dirname, '../src/features/studio/EventWizardScreen.tsx'), 'utf8');
+  const editor = fs.readFileSync(path.join(__dirname, '../src/features/studio/saveEvent.ts'), 'utf8');
   assert.match(editor, /await geocodeAddress\(place\)/);
 });
 

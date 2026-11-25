@@ -5,6 +5,7 @@ import { phonePattern } from '../organizer/signup';
 import { AccountCard } from './AccountCard';
 import { goBack } from './routes';
 import { useStudio } from './StudioContext';
+import { TeamCard } from './TeamCard';
 import { Card, Input, Message, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
 
 /** Ansprechperson für Rückfragen des Spots-Teams. Nicht öffentlich; ändern kann sie nur der Besitzer. */
@@ -39,11 +40,13 @@ function ContactForm({ organizer }: { organizer: MyOrganizer }) {
   </Card>;
 }
 
-/** /studio/settings (Zahnrad im Reiter „Profil“): was man selten braucht – Ansprechperson und Konto. */
+/** /studio/settings (Zahnrad im Tab „Profil“): was man selten braucht – Team, Ansprechperson und Konto. */
 export default function SettingsScreen() {
   const { organizer } = useStudio();
   if (!organizer) return null;
   return <StudioPage title="Einstellungen" onBack={goBack} bottomInset={40}>
+    <SectionTitle>Team</SectionTitle>
+    <TeamCard key={`team-${organizer.id}`} organizer={organizer} />
     <SectionTitle>Ansprechperson</SectionTitle>
     <ContactForm organizer={organizer} />
     <SectionTitle>Konto</SectionTitle>

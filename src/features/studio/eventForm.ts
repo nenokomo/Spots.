@@ -9,6 +9,12 @@ export const steps = ['event', 'when', 'where', 'tickets', 'preview'] as const;
 export type Step = typeof steps[number];
 export const stepLabels: Record<Step, string> = { event: 'Event', when: 'Wann', where: 'Wo', tickets: 'Tickets', preview: 'Vorschau' };
 
+/** Teile der Eventseite, die man einzeln bearbeitet (gleiche Namen wie `EventPart` der Eventseite). */
+export type FormPart = 'flyer' | 'title' | 'when' | 'description' | 'tickets' | 'place';
+export const partLabels: Record<FormPart, string> = { flyer: 'Flyer', title: 'Titel', when: 'Datum und Uhrzeit', description: 'Beschreibung', tickets: 'Tickets', place: 'Ort' };
+/** Welche Prüfung zu welchem Teil gehört. Flyer und Beschreibung haben keine Pflichtangaben. */
+export const stepOfPart: Record<FormPart, Step | null> = { flyer: null, title: 'event', when: 'when', description: null, tickets: 'tickets', place: 'where' };
+
 export const categoryLabels: Record<EventCategory, string> = { club: 'Clubnacht', concert: 'Konzert', event: 'Event' };
 
 /**
@@ -210,4 +216,41 @@ export function eventChecklist(event: Pick<OrganizerEvent, 'imageUrl' | 'descrip
     { key: 'tickets', label: 'Tickets', done: !!event.ticketUrl || (ticketCount ?? 0) > 0, step: 'tickets' },
     { key: 'published', label: 'Veröffentlicht', done: event.isPublished, step: 'preview' },
   ];
+}
+
+/**
+ * Startwerte für ein neues Event. Mit einem früheren Event als Vorgabe (`last`): Uhrzeiten, Ort, Art, Genre und –
+ * bei Abendkasse oder freiem Eintritt – die Tickets vom letzten Mal. Titel, Datum, Flyer, Text und der Ticket-Link
+ * sind bei jedem Event neu.
+ */
+export function freshForm(organizer: MyOrganizer, last: { event: OrganizerEvent; tickets: StudioTicket[] } | null): EventForm {
+  if (!last) return initialForm(organizer, null);
+  const online = ticketModeOf(last.event, last.tickets) === 'online';
+  const base = initialForm(organizer, { ...last.event, ticketUrl: null }, online ? [] : last.tickets, true);
+  return { ...base, title: '', description: '', imageUrl: null, date: '', ticketUrl: '' };
+}
+
+/** Teile, ohne die sich das Event nicht speichern lässt (Titel, Zeit, vollständiger Ort, gültige Tickets). */
+export function missingForSave(form: EventForm, options: { isNew: boolean; now?: number }): FormPart[] {
+  return (['title', 'when', 'place', 'tickets'] as const).filter((part) => Object.keys(validateStep(form, stepOfPart[part]!, options)).length > 0);
+}
+
+/** Zum Veröffentlichen gehört außerdem ein Flyer. */
+export function missingForPublish(form: EventForm, options: { isNew: boolean; now?: number }): FormPart[] {
+  return [...(form.imageUrl ? [] : ['flyer' as const]), ...missingForSave(form, options)];
+}
+
+/**
+ * Vorschlag für das Datum eines neuen Events: derselbe Wochentag wie beim letzten Event, der nächste freie Termin.
+ * Ohne früheres Event: heute. Nur ein Startwert der Auswahl – das Datum wählt immer der Veranstalter.
+ */
+export function suggestedDate(last: Pick<OrganizerEvent, 'startsAt'> | null, now: number = Date.now()): string {
+  const day = 86_400_000;
+  const toUtc = (text: string) => { const [date, month, year] = text.split('.').map(Number); return Date.UTC(year, month - 1, date); };
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const today = toUtc(formatBerlinInput(new Date(now)).date);
+  let next = last ? toUtc(formatBerlinInput(last.startsAt).date) + 7 * day : today;
+  while (next < today) next += 7 * day;
+  const date = new Date(next);
+  return `${pad(date.getUTCDate())}.${pad(date.getUTCMonth() + 1)}.${date.getUTCFullYear()}`;
 }

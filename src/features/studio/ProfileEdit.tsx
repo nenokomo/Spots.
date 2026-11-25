@@ -6,7 +6,7 @@ import { normalizeSocial, normalizeWebsite } from '../organizer/signup';
 import { StudioImageField } from './StudioImageField';
 import { Input, Message, StudioButton, StudioSheet, studioStyles } from './ui';
 
-const titles: Record<OrganizerPart, string> = { cover: 'Titelbild', logo: 'Logo', name: 'Name und Adresse', about: 'Über uns' };
+const titles: Record<OrganizerPart, string> = { cover: 'Titelbild', name: 'Name, Logo und Adresse', about: 'Über uns' };
 type Errors = Partial<Record<'name' | 'street' | 'postcode' | 'city' | 'website' | 'social', string>>;
 
 /** Die Felder eines Teils des Profils. Gespeichert wird immer das ganze Profil; die anderen Teile bleiben unverändert. */
@@ -47,8 +47,8 @@ function PartForm({ part, organizer, onDone }: { part: OrganizerPart; organizer:
 
   return <>
     {part === 'cover' && <StudioImageField label="Titelbild" organizerId={organizer.id} kind="cover" value={value.coverUrl} onChange={set('coverUrl')} disabled={busy} />}
-    {part === 'logo' && <StudioImageField label="Logo" organizerId={organizer.id} kind="logo" value={value.avatarUrl} onChange={set('avatarUrl')} disabled={busy} />}
     {part === 'name' && <>
+      <StudioImageField label="Logo" organizerId={organizer.id} kind="logo" value={value.avatarUrl} onChange={set('avatarUrl')} disabled={busy} />
       <Input label="Name" value={value.name} onChange={set('name')} maxLength={120} editable={!busy} error={errors.name} />
       <View style={studioStyles.row}>
         <View style={[studioStyles.flex, { flexGrow: 3 }]}><Input label="Straße" value={value.street} onChange={set('street')} maxLength={200} editable={!busy} error={errors.street} /></View>
@@ -72,7 +72,7 @@ function PartForm({ part, organizer, onDone }: { part: OrganizerPart; organizer:
 
 /**
  * Ein Teil des Profils bearbeiten: öffnet sich über den Stift an genau diesem Teil der Veranstalterseite
- * (Titelbild, Logo, Name und Adresse, Über uns). Nach dem Speichern zeigt die Seite sofort den neuen Stand.
+ * (Titelbild; Name, Logo und Adresse; Über uns). Nach dem Speichern zeigt die Seite sofort den neuen Stand.
  */
 export function ProfilePartSheet({ part, organizer, onClose, reload }: { part: OrganizerPart | null; organizer: MyOrganizer; onClose: () => void; reload: () => void }) {
   return <StudioSheet visible={part !== null} title={part ? titles[part] : ''} onClose={onClose}>

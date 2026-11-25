@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState, type ReactNode } from 'react';
-import { Animated, Image, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Image, Modal, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventHero } from '../components/EventCards';
 import { EventCalendar } from '../components/EventCalendar';
@@ -39,28 +39,31 @@ function splitBio(text: string) {
   return match ? { motto: match[1], rest: match[2]?.trim() ?? '' } : { motto: text.trim(), rest: '' };
 }
 
-/** Teile der Veranstalterseite, die ein Veranstalter im Studio ändern kann. */
-export type OrganizerPart = 'cover' | 'logo' | 'name' | 'about';
+/** Teile der Veranstalterseite, die ein Veranstalter im Studio ändern kann. Das Logo gehört zu „Name“. */
+export type OrganizerPart = 'cover' | 'name' | 'about';
 /**
- * Spots Studio: dieselbe Seite, wie Gäste sie sehen, mit einem Stift an jedem Teil, den der Veranstalter ändern kann.
- * Events öffnen dort die Eventseite im Studio; Merken und Tickets kaufen sind Sache der Gäste.
+ * Spots Studio: dieselbe Seite, wie Gäste sie sehen. Jeder Teil, den der Veranstalter ändern kann, lässt sich antippen
+ * (ein kleiner Stift zeigt es an). Events öffnen dort die Eventseite im Studio; Merken und Tickets kaufen sind Sache der Gäste.
  */
 export type OrganizerProfileEdit = {
   onEdit: (part: OrganizerPart) => void;
   onOpenEvent: (id: string) => void;
+  /** Statt des Profilbilds: das Profilbild mit „+“ für die Story in Entdecken. */
+  avatar?: ReactNode;
   /** Rechts oben statt „Teilen“, z. B. das Zahnrad für die Einstellungen. */
   toolbar?: ReactNode;
-  /** Unter der Seite, z. B. Story in Entdecken und Team. */
+  /** Unter der Seite. */
   below?: ReactNode;
   /** Platz unter dem Inhalt, z. B. für die Tab-Leiste. */
   bottomInset?: number;
+  /** Nach unten ziehen lädt neu. */
+  refresh?: { refreshing: boolean; onRefresh: () => void };
 };
 type ViewProps = { organizer: PublicOrganizer; events: SpotEvent[]; posts: PublicOrganizerPost[]; /** Ohne: kein Zurück-Pfeil (Tab). */ onBack?: () => void; edit?: OrganizerProfileEdit };
 
-function EditPen({ label, onPress }: { label: string; onPress: () => void }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={8} style={({ pressed }) => [styles.pen, pressed && styles.pressed]}>
-    <Icon name="edit" size={15} color={colors.text} />
-  </Pressable>;
+/** Kleiner Stift: zeigt, dass sich dieser Teil antippen und ändern lässt. Der ganze Bereich reagiert, nicht nur der Stift. */
+function EditPen() {
+  return <View pointerEvents="none" style={styles.pen}><Icon name="edit" size={15} color={colors.text} /></View>;
 }
 
 /**
@@ -138,47 +141,10 @@ export function OrganizerProfileView({ organizer, events, posts: publicPosts, on
     try { await Share.share({ title: `${organizer.displayName} · Spots`, message: `${organizer.displayName} auf Spots${website ? `\n${website}` : ''}` }); } catch { /* dismissed */ }
   }
 
-  return (
-    <View style={styles.screen}>
-      <Backdrop />
-      <Animated.ScrollView contentContainerStyle={{ paddingBottom: edit ? edit.bottomInset ?? space.xxxl : insets.bottom + (highlightTicket ? 110 : space.xxxl) }} showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}>
-        {/* Cover: the next flyer, blurred, fading into the page. */}
-        <View style={[styles.cover, { height: insets.top + 230 }]}>
-          {cover && <Image source={cover} resizeMode="cover" blurRadius={ownCover ? 0 : realFlyer ? 24 : 12} style={StyleSheet.absoluteFill} />}
-          <LinearGradient pointerEvents="none" colors={cover ? ['#0a090cb3', '#0a090c33', '#0a090ccc', colors.background] : ['#3a1530', '#1d1020', colors.background]} locations={cover ? [0, 0.3, 0.75, 1] : [0, 0.55, 1]} style={StyleSheet.absoluteFill} />
-          {edit && <Pressable accessibilityRole="button" accessibilityLabel={ownCover ? 'Titelbild ändern' : 'Titelbild hinzufügen'} onPress={() => edit.onEdit('cover')}
-            style={({ pressed }) => [styles.coverEdit, { top: insets.top + space.sm + 56 }, pressed && styles.pressed]}>
-            <Icon name="edit" size={14} color={colors.text} />
-            <Text style={styles.coverEditText}>{ownCover ? 'Titelbild' : 'Titelbild hinzufügen'}</Text>
-          </Pressable>}
-        </View>
-
-        {/* Identity on the cover's lower edge, left-aligned like the event title. */}
-        <View style={[styles.head, { marginTop: -(AVATAR / 2 + 34) }]}>
-          <Pressable disabled={!edit && !hasStories} accessibilityRole={edit || hasStories ? 'button' : 'image'} accessibilityLabel={edit ? 'Logo ändern' : hasStories ? `Storys von ${organizer.displayName} ansehen` : `Profilbild von ${organizer.displayName}`}
-            onPress={() => edit ? edit.onEdit('logo') : setStory(groups.stories[0].id)} hitSlop={6} style={({ pressed }) => [styles.ringWrap, pressed && styles.pressed]}>
-            {hasStories && !storiesWatched
-              ? <LinearGradient colors={[colors.pink, colors.accent, '#7a2bd6', colors.pink]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.ring, styles.ringGlow]}>{avatar}</LinearGradient>
-              : <View style={[styles.ring, hasStories ? styles.ringSeen : styles.ringPlain]}>{avatar}</View>}
-            {edit && <View pointerEvents="none" style={styles.avatarPen}><Icon name="edit" size={14} color={colors.text} /></View>}
-          </Pressable>
-          {edit
-            ? <View style={styles.editRow}><Text accessibilityRole="header" style={[styles.name, styles.flex]}>{organizer.displayName}</Text><EditPen label="Name und Adresse ändern" onPress={() => edit.onEdit('name')} /></View>
-            : <Text accessibilityRole="header" style={styles.name}>{organizer.displayName}</Text>}
-          <View style={styles.kindRow}>
-            <Text style={styles.kind}>Veranstalter</Text>
-            {organizer.city && <><View style={styles.kindDot} /><Icon name="pin" size={13} color={colors.pink} /><Text style={styles.kind}>{organizer.city}</Text></>}
-          </View>
-          {groups.sounds.length > 0 && <View style={styles.sounds}>{groups.sounds.map((tag) => <Text key={tag} style={styles.sound}>{tag}</Text>)}</View>}
-        </View>
-
-        <View style={styles.body}>
-          {/* About: the organizer's own words, first sentence as motto. */}
-          {(bio || website || edit) && <View style={styles.about}>
+  const about = (bio || website || edit) ? <View style={styles.about} pointerEvents={edit ? 'none' : 'auto'}>
             <LinearGradient pointerEvents="none" colors={['#c922ab2e', '#5d2a921f', '#ffffff05']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
             {edit
-              ? <View style={styles.editRow}><Text style={[styles.aboutLabel, styles.flex]}>Über uns</Text><EditPen label="Über uns ändern" onPress={() => edit.onEdit('about')} /></View>
+              ? <View style={styles.editRow}><Text style={[styles.aboutLabel, styles.flex]}>Über uns</Text><EditPen /></View>
               : <Text style={styles.aboutLabel}>Über uns</Text>}
             {edit && !bio && !website && <Text style={styles.bio}>Noch kein Text. Erzählt Gästen, wer ihr seid.</Text>}
             {bio && <>
@@ -195,7 +161,50 @@ export function OrganizerProfileView({ organizer, events, posts: publicPosts, on
               <Icon name="share" size={14} color={colors.pink} />
               <Text numberOfLines={1} style={styles.websiteText}>{website.replace(/^https:\/\/(www\.)?/, '').replace(/\/$/, '')}</Text>
             </Pressable>}
-          </View>}
+          </View> : null;
+
+  return (
+    <View style={styles.screen}>
+      <Backdrop />
+      <Animated.ScrollView contentContainerStyle={{ paddingBottom: edit ? edit.bottomInset ?? space.xxxl : insets.bottom + (highlightTicket ? 110 : space.xxxl) }} showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        refreshControl={edit?.refresh ? <RefreshControl refreshing={edit.refresh.refreshing} onRefresh={edit.refresh.onRefresh} tintColor={colors.pink} colors={[colors.pink]} /> : undefined}>
+        {/* Cover: the next flyer, blurred, fading into the page. */}
+        <View style={[styles.cover, { height: insets.top + 230 }]}>
+          {cover && <Image source={cover} resizeMode="cover" blurRadius={ownCover ? 0 : realFlyer ? 24 : 12} style={StyleSheet.absoluteFill} />}
+          <LinearGradient pointerEvents="none" colors={cover ? ['#0a090cb3', '#0a090c33', '#0a090ccc', colors.background] : ['#3a1530', '#1d1020', colors.background]} locations={cover ? [0, 0.3, 0.75, 1] : [0, 0.55, 1]} style={StyleSheet.absoluteFill} />
+          {edit && <Pressable accessibilityRole="button" accessibilityLabel={ownCover ? 'Titelbild ändern' : 'Titelbild hinzufügen'} onPress={() => edit.onEdit('cover')}
+            style={({ pressed }) => [styles.coverEdit, { top: insets.top + space.sm + 56 }, pressed && styles.pressed]}>
+            <Icon name="edit" size={14} color={colors.text} />
+            <Text style={styles.coverEditText}>{ownCover ? 'Titelbild' : 'Titelbild hinzufügen'}</Text>
+          </Pressable>}
+        </View>
+
+        {/* Identity on the cover's lower edge, left-aligned like the event title. */}
+        <View style={[styles.head, { marginTop: -(AVATAR / 2 + 34) }]}>
+          {edit?.avatar ?? <Pressable disabled={!hasStories} accessibilityRole={hasStories ? 'button' : 'image'} accessibilityLabel={hasStories ? `Storys von ${organizer.displayName} ansehen` : `Profilbild von ${organizer.displayName}`}
+            onPress={() => setStory(groups.stories[0].id)} hitSlop={6} style={({ pressed }) => [styles.ringWrap, pressed && styles.pressed]}>
+            {hasStories && !storiesWatched
+              ? <LinearGradient colors={[colors.pink, colors.accent, '#7a2bd6', colors.pink]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.ring, styles.ringGlow]}>{avatar}</LinearGradient>
+              : <View style={[styles.ring, hasStories ? styles.ringSeen : styles.ringPlain]}>{avatar}</View>}
+          </Pressable>}
+          {edit
+            ? <Pressable accessibilityRole="button" accessibilityLabel={`Name, Logo und Adresse ändern: ${organizer.displayName}`} onPress={() => edit.onEdit('name')} style={({ pressed }) => [styles.editRow, pressed && styles.pressed]}>
+                <Text accessibilityRole="header" style={[styles.name, styles.flex]}>{organizer.displayName}</Text><EditPen />
+              </Pressable>
+            : <Text accessibilityRole="header" style={styles.name}>{organizer.displayName}</Text>}
+          <View style={styles.kindRow}>
+            <Text style={styles.kind}>Veranstalter</Text>
+            {organizer.city && <><View style={styles.kindDot} /><Icon name="pin" size={13} color={colors.pink} /><Text style={styles.kind}>{organizer.city}</Text></>}
+          </View>
+          {groups.sounds.length > 0 && <View style={styles.sounds}>{groups.sounds.map((tag) => <Text key={tag} style={styles.sound}>{tag}</Text>)}</View>}
+        </View>
+
+        <View style={styles.body}>
+          {/* About: the organizer's own words, first sentence as motto. Im Studio reagiert die ganze Karte. */}
+          {edit && about
+            ? <Pressable accessibilityRole="button" accessibilityLabel="Über uns ändern" onPress={() => edit.onEdit('about')} style={({ pressed }) => pressed && styles.pressed}>{about}</Pressable>
+            : about}
 
           {/* Always the next upcoming event. */}
           {groups.highlight && <View style={styles.block}>
@@ -327,12 +336,11 @@ export default function OrganizerProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Spots Studio: Stifte an den Teilen, die der Veranstalter ändern kann.
-  editRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  pen: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentDeep, borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff40' },
-  coverEdit: { position: 'absolute', right: space.lg, flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: space.md, borderRadius: 17, backgroundColor: colors.accentDeep, borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff40' },
+  // Spots Studio: Bereiche zum Antippen. Die Stifte sind bewusst neutral – Rosa gehört der einen Hauptaktion.
+  editRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 44 },
+  pen: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff1f', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff33' },
+  coverEdit: { position: 'absolute', right: space.lg, flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: space.md, borderRadius: 18, backgroundColor: '#0a090cb3', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff40' },
   coverEditText: { ...type.label, fontSize: 13, color: colors.text },
-  avatarPen: { position: 'absolute', right: -2, bottom: -2, width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentDeep, borderWidth: 3, borderColor: colors.background },
   toolbarSpace: { width: 44, height: 44 },
   screen: { flex: 1, backgroundColor: colors.background },
   stateBack: { backgroundColor: colors.surface, marginLeft: space.lg, marginBottom: space.lg },

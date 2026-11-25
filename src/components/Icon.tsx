@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 export type IconName = 'radar' | 'search' | 'profile' | 'pin' | 'chevron' | 'down' | 'sliders' | 'clock' | 'locate' | 'close' | 'back' | 'calendar' | 'share' | 'ticket' | 'camera' | 'bookmark' | 'heart' | 'map' | 'grid' | 'headphones' | 'wave' | 'cocktail'
-  | 'plus' | 'check' | 'edit' | 'copy' | 'eye' | 'image' | 'trash' | 'users' | 'chart' | 'home' | 'info' | 'link';
+  | 'plus' | 'check' | 'edit' | 'copy' | 'eye' | 'image' | 'trash' | 'users' | 'chart' | 'home' | 'info' | 'link' | 'more';
 
 export function Icon({ name, size = 22, color = '#d4bcd8', filled = false }: { name: IconName; size?: number; color?: string; filled?: boolean }) {
   // Wrapped in a View so it stacks above absolutely positioned backdrops on web as it does natively.
@@ -42,6 +42,7 @@ export function Icon({ name, size = 22, color = '#d4bcd8', filled = false }: { n
       {name === 'chart' && <Path d="M5 20v-8M12 20V4M19 20v-5" />}
       {name === 'home' && <Path d="m4 11 8-7 8 7v9h-5v-6H9v6H4Z" />}
       {name === 'info' && <><Circle cx="12" cy="12" r="9" /><Path d="M12 11v5M12 7.8v.2" /></>}
+      {name === 'more' && <><Circle cx="5.5" cy="12" r="1.3" /><Circle cx="12" cy="12" r="1.3" /><Circle cx="18.5" cy="12" r="1.3" /></>}
       {name === 'link' && <Path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />}
     </Svg>
     </View>

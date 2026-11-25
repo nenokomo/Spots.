@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Image, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Image, Modal, Platform, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventDataState } from '../components/EventDataState';
 import { EventPhotoViewer } from '../components/EventPhotoViewer';
@@ -56,21 +56,28 @@ function StoryRing({ picture, label, story, watched, onPress, size = 76 }: { pic
 /** Teile der Eventseite, die ein Veranstalter im Studio ändern kann. */
 export type EventPart = 'flyer' | 'title' | 'when' | 'description' | 'tickets' | 'place';
 /**
- * Spots Studio: dieselbe Seite, wie Gäste sie sehen, mit einem Stift an jedem Teil, den der Veranstalter ändern kann.
+ * Spots Studio: dieselbe Seite, wie Gäste sie sehen. Jeder Teil, den der Veranstalter ändern kann, lässt sich antippen
+ * (ein kleiner Stift zeigt es an). Fehlt ein Teil noch, steht dort ein Platzhalter – so legt man ein Event auch an.
  * Was nur Gäste betrifft (Shots posten, Merken, Tickets kaufen), ersetzt das Studio durch eigene Inhalte.
  */
 export type EventDetailEdit = {
   onEdit: (part: EventPart) => void;
   /** Statt des runden Bilds: das Profilbild mit „+“ (Story ansehen / posten). */
   story: ReactNode;
+  /** Teile ohne Inhalt: der Text, der dort als Platzhalter steht (z. B. „Titel hinzufügen“). */
+  empty?: Partial<Record<'title' | 'when', string>>;
   /** Zeile unter dem Titel, z. B. „Entwurf“ oder „Abgesagt“. */
   notice?: ReactNode;
-  /** Unter der Seite, z. B. der Bereich „Nur für euch“. */
+  /** Unter der Seite. */
   below?: ReactNode;
   /** Inhalt der Leiste unten statt „Tickets kaufen“ und Merken. */
   bar: ReactNode;
-  /** Rechts oben statt „Teilen“, z. B. „Schließen“ in der Vorschau eines noch nicht gespeicherten Events. */
+  /** Rechts oben statt „Teilen“, z. B. das Menü „Mehr“. */
   toolbar?: ReactNode;
+  /** „Schließen“ statt Zurück-Pfeil (neues Event, das von unten eingeblendet wird). */
+  close?: boolean;
+  /** Nach unten ziehen lädt neu. */
+  refresh?: { refreshing: boolean; onRefresh: () => void };
 };
 type ViewProps = {
   event: SpotEvent; organizer: PublicOrganizer | null; tickets: TicketType[]; liveSnaps: LiveSnap[]; address: EventAddressLine | null;
@@ -80,10 +87,9 @@ type ViewProps = {
   edit?: EventDetailEdit;
 };
 
-function EditPen({ label, onPress }: { label: string; onPress: () => void }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={8} style={({ pressed }) => [styles.pen, pressed && styles.pressed]}>
-    <Icon name="edit" size={15} color={colors.text} />
-  </Pressable>;
+/** Kleiner Stift: zeigt, dass sich dieser Teil antippen und ändern lässt. Der ganze Bereich reagiert, nicht nur der Stift. */
+function EditPen() {
+  return <View pointerEvents="none" style={styles.pen}><Icon name="edit" size={15} color={colors.text} /></View>;
 }
 
 /**
@@ -142,23 +148,40 @@ export function EventDetailView({ event, organizer, tickets, liveSnaps, address,
     : point ? { label: 'Route anzeigen', icon: 'map' as const, a11y: 'Route zum Veranstaltungsort anzeigen', run: route }
     : null;
 
+  /** Ein Abschnitt der Seite. Für Gäste Titel und Inhalt; im Studio reagiert der ganze Abschnitt und öffnet diesen Teil. */
+  const section = (part: EventPart, title: string, editLabel: string, content: ReactNode) => edit
+    ? <Pressable accessibilityRole="button" accessibilityLabel={editLabel} onPress={() => edit.onEdit(part)} style={({ pressed }) => [styles.block, pressed && styles.pressed]}>
+        <View style={styles.editRow}><SectionTitle title={title} style={[styles.blockTitle, styles.flex]} /><EditPen /></View>
+        <View pointerEvents="none">{content}</View>
+      </Pressable>
+    : <View style={styles.block}>
+        <SectionTitle title={title} style={styles.blockTitle} />
+        {content}
+      </View>;
+
   return <View style={styles.screen}>
     <Backdrop />
-    <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}
+      refreshControl={edit?.refresh ? <RefreshControl refreshing={edit.refresh.refreshing} onRefresh={edit.refresh.onRefresh} tintColor={colors.pink} colors={[colors.pink]} /> : undefined}>
       {/* Poster: blurred fill behind, the complete flyer in front, fading into the page. */}
       <View style={[styles.poster, { height: posterHeight }]}>
         <Image source={event.image} resizeMode="cover" blurRadius={event.imageIsPlaceholder ? 0 : 40} style={StyleSheet.absoluteFill} />
         {!event.imageIsPlaceholder && <Pressable accessibilityRole="button" accessibilityLabel="Eventbild groß anzeigen" onPress={() => setViewer(true)} style={[StyleSheet.absoluteFill, { top: insets.top + 56, bottom: 154 }]}><Image source={event.image} resizeMode="contain" style={StyleSheet.absoluteFill} accessibilityLabel={`Eventbild: ${event.title}`} /></Pressable>}
         <LinearGradient pointerEvents="none" colors={['#0a090cb3', '#0a090c00', '#0a090c00', '#0a090ccc', colors.background]} locations={[0, 0.2, 0.55, 0.85, 1]} style={StyleSheet.absoluteFill} />
         <View style={[styles.toolbar, { paddingTop: insets.top + space.sm }]}>
-          <IconButton icon="back" accessibilityLabel="Zurück" onPress={onBack} />
+          <IconButton icon={edit?.close ? 'close' : 'back'} accessibilityLabel={edit?.close ? 'Schließen' : 'Zurück'} onPress={onBack} />
           {edit?.toolbar ?? <IconButton icon="share" accessibilityLabel="Event teilen" onPress={() => void share()} />}
         </View>
-        {edit && <Pressable accessibilityRole="button" accessibilityLabel={event.imageIsPlaceholder ? 'Flyer hinzufügen' : 'Flyer ändern'} onPress={() => edit.onEdit('flyer')}
-          style={({ pressed }) => [styles.flyerEdit, { top: insets.top + space.sm + 56 }, pressed && styles.pressed]}>
-          <Icon name="edit" size={14} color={colors.text} />
-          <Text style={styles.flyerEditText}>{event.imageIsPlaceholder ? 'Flyer hinzufügen' : 'Flyer'}</Text>
-        </Pressable>}
+        {edit && (event.imageIsPlaceholder
+          ? <Pressable accessibilityRole="button" accessibilityLabel="Flyer hinzufügen" onPress={() => edit.onEdit('flyer')} style={({ pressed }) => [styles.flyerAdd, { top: insets.top + space.sm + 64 }, pressed && styles.pressed]}>
+              <Icon name="image" size={26} color={colors.text} />
+              <Text style={styles.flyerAddText}>Flyer hinzufügen</Text>
+            </Pressable>
+          : <Pressable accessibilityRole="button" accessibilityLabel="Flyer ändern" onPress={() => edit.onEdit('flyer')} hitSlop={6}
+              style={({ pressed }) => [styles.flyerEdit, { top: insets.top + space.sm + 56 }, pressed && styles.pressed]}>
+              <Icon name="edit" size={14} color={colors.text} />
+              <Text style={styles.flyerEditText}>Flyer</Text>
+            </Pressable>)}
       </View>
 
       {/* Title block on the flyer's lower edge: organizer picture, title, one line for the time, genres. */}
@@ -179,10 +202,14 @@ export function EventDetailView({ event, organizer, tickets, liveSnaps, address,
           {event.imageIsPlaceholder && <Text style={styles.placeholderNote}>Symbolbild</Text>}
         </View>
         {edit
-          ? <View style={styles.editRow}><Text accessibilityRole="header" style={[styles.title, styles.flex]}>{event.title}</Text><EditPen label="Titel und Genre ändern" onPress={() => edit.onEdit('title')} /></View>
+          ? <Pressable accessibilityRole="button" accessibilityLabel={edit.empty?.title ?? `Titel und Genre ändern: ${event.title}`} onPress={() => edit.onEdit('title')} style={({ pressed }) => [styles.editRow, pressed && styles.pressed]}>
+              <Text accessibilityRole="header" style={[styles.title, styles.flex, !!edit.empty?.title && styles.placeholder]}>{edit.empty?.title ?? event.title}</Text><EditPen />
+            </Pressable>
           : <Text accessibilityRole="header" style={styles.title}>{event.title}</Text>}
         {edit
-          ? <View style={styles.editRow}><Text style={[styles.when, styles.flex]}>{when}</Text><EditPen label="Datum und Uhrzeit ändern" onPress={() => edit.onEdit('when')} /></View>
+          ? <Pressable accessibilityRole="button" accessibilityLabel={edit.empty?.when ?? `Datum und Uhrzeit ändern: ${when}`} onPress={() => edit.onEdit('when')} style={({ pressed }) => [styles.editRow, pressed && styles.pressed]}>
+              <Text style={[styles.when, styles.flex, !!edit.empty?.when && styles.placeholder]}>{edit.empty?.when ?? when}</Text><EditPen />
+            </Pressable>
           : <Text style={styles.when}>{when}</Text>}
         {tags.length > 0 && <View style={styles.tags}>{tags.map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}</View>}
         {edit?.notice}
@@ -212,18 +239,11 @@ export function EventDetailView({ event, organizer, tickets, liveSnaps, address,
         </View>}
 
         {/* About tonight's event, first thing under the title. */}
-        <View style={styles.block}>
-          {edit
-            ? <View style={styles.editRow}><SectionTitle title="Über das Event" style={[styles.blockTitle, styles.flex]} /><EditPen label="Beschreibung ändern" onPress={() => edit.onEdit('description')} /></View>
-            : <SectionTitle title="Über das Event" style={styles.blockTitle} />}
-          <Text style={[styles.description, !event.description && styles.descriptionEmpty]}>{event.description ?? 'Für dieses Event liegt noch keine Beschreibung vor.'}</Text>
-        </View>
+        {section('description', 'Über das Event', 'Beschreibung ändern',
+          <Text style={[styles.description, !event.description && styles.descriptionEmpty]}>{event.description ?? 'Für dieses Event liegt noch keine Beschreibung vor.'}</Text>)}
 
         {/* Tickets: ticket types with prices when known, and always a clear way to buy at the provider. */}
-        {!ended && <View style={styles.block}>
-          {edit
-            ? <View style={styles.editRow}><SectionTitle title="Tickets" style={[styles.blockTitle, styles.flex]} /><EditPen label="Tickets ändern" onPress={() => edit.onEdit('tickets')} /></View>
-            : <SectionTitle title="Tickets" style={styles.blockTitle} />}
+        {(!ended || edit) && section('tickets', 'Tickets', 'Tickets ändern',
           <View style={styles.ticketCard}>
             {tickets.length > 0
               ? tickets.map((ticket) => (
@@ -241,17 +261,11 @@ export function EventDetailView({ event, organizer, tickets, liveSnaps, address,
             {(ticketUrl ?? sourceUrl) && <Button label={ticketUrl ? 'Tickets kaufen' : 'Zu den Tickets'} icon="ticket"
               accessibilityLabel={ticketUrl ? (seller ? `Tickets bei ${seller} kaufen` : 'Tickets beim Anbieter kaufen') : `Tickets und Infos bei ${source}`}
               onPress={() => void open((ticketUrl ?? sourceUrl)!, true)} />}
-          </View>
-        </View>}
+          </View>)}
 
-        <View style={styles.block}>
-          {edit
-            ? <View style={styles.editRow}><SectionTitle title="Ort" style={[styles.blockTitle, styles.flex]} /><EditPen label="Ort ändern" onPress={() => edit.onEdit('place')} /></View>
-            : <SectionTitle title="Ort" style={styles.blockTitle} />}
-          {point
-            ? <PlacePreview coordinate={point} title={event.venue ?? event.location} street={address?.street} detail={address ? address.postcodeCity : placeDetail} onRoute={ended ? undefined : route} />
-            : <View style={styles.placeCard}><Icon name="pin" size={18} color={colors.pink} /><Text style={styles.placeText}>{place}</Text></View>}
-        </View>
+        {section('place', 'Ort', 'Ort ändern', point
+          ? <PlacePreview coordinate={point} title={event.venue ?? event.location} street={address?.street} detail={address ? address.postcodeCity : placeDetail} onRoute={ended ? undefined : route} />
+          : <View style={styles.placeCard}><Icon name="pin" size={18} color={colors.pink} /><Text style={styles.placeText}>{place}</Text></View>)}
 
         {!edit && <Shots snaps={snaps.visitors} live={live} ended={ended} now={now} eventId={event.id} eventTitle={event.title} />}
 
@@ -359,9 +373,12 @@ const styles = StyleSheet.create({
   link: { ...type.callout, color: colors.pink, paddingVertical: space.sm },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: space.md, paddingHorizontal: space.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  // Spots Studio: Stifte an den Teilen, die der Veranstalter ändern kann.
-  editRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  pen: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentDeep, borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff40' },
-  flyerEdit: { position: 'absolute', right: space.lg, flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: space.md, borderRadius: 17, backgroundColor: colors.accentDeep, borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff40' },
+  // Spots Studio: Bereiche zum Antippen. Die Stifte sind bewusst neutral – Rosa gehört der einen Hauptaktion unten.
+  editRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 44 },
+  pen: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff1f', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff33' },
+  placeholder: { color: colors.faint },
+  flyerEdit: { position: 'absolute', right: space.lg, flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: space.md, borderRadius: 18, backgroundColor: '#0a090cb3', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff40' },
   flyerEditText: { ...type.label, fontSize: 13, color: colors.text },
+  flyerAdd: { position: 'absolute', alignSelf: 'center', alignItems: 'center', justifyContent: 'center', gap: space.sm, width: 200, height: 120, borderRadius: radius.lg, backgroundColor: '#0a090cb3', borderWidth: 1.5, borderColor: '#ffffff59', borderStyle: 'dashed', ...squircle },
+  flyerAddText: { ...type.label, color: colors.text },
 });

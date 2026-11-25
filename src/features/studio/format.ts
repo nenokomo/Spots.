@@ -58,3 +58,22 @@ export function share(part: number, total: number): string | null {
   if (part > 0 && percent < 1) return 'unter 1 %';
   return `${Math.round(percent)} %`;
 }
+
+/**
+ * Ein Satz Erkenntnis für die Zahlen eines Events: welcher Anteil der Aufrufe zu den Tickets geführt hat und – wenn es
+ * genug andere Events mit Aufrufen gibt – ob das mehr oder weniger ist als sonst. Kein Vergleich ohne belastbare Basis
+ * (mindestens zwei andere Events mit je 20 Aufrufen).
+ */
+export function ticketInsight(views: number, ticketClicks: number, others: { views: number; ticketClicks: number }[] = []): string {
+  if (views <= 0) return 'Noch hat niemand dieses Event in Spots gesehen.';
+  const base = `${share(ticketClicks, views)} der Aufrufe führten zu den Tickets.`;
+  const basis = others.filter((row) => row.views >= 20);
+  if (basis.length < 2) return base;
+  const otherViews = basis.reduce((sum, row) => sum + row.views, 0);
+  const otherClicks = basis.reduce((sum, row) => sum + row.ticketClicks, 0);
+  const own = ticketClicks / views, usual = otherClicks / otherViews;
+  const usualText = share(otherClicks, otherViews);
+  if (own > usual * 1.15 && own - usual >= 0.01) return `${base} Das ist mehr als bei euren anderen Events (${usualText}).`;
+  if (own < usual * 0.85 && usual - own >= 0.01) return `${base} Das ist weniger als bei euren anderen Events (${usualText}).`;
+  return `${base} Das ist etwa so viel wie bei euren anderen Events (${usualText}).`;
+}

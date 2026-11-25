@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '../../components/Icon';
 import { Backdrop } from '../../components/Screen';
@@ -37,15 +37,18 @@ type PageProps = {
   fixedTop?: ReactNode;
   /** Bleibt unten stehen (z. B. „Weiter“), der Rest scrollt. */
   footer?: ReactNode; bottomInset?: number;
+  /** Nach unten ziehen lädt neu. */
+  onRefresh?: () => void; refreshing?: boolean;
 };
 
 /** Seite im Studio. Reiter-Seiten haben einen großen Titel, Unterseiten den Zurück-Pfeil oben links. */
-export function StudioPage({ title, subtitle, mark, onBack, trailing, children, fixedTop, footer, bottomInset = 120 }: PageProps) {
+export function StudioPage({ title, subtitle, mark, onBack, trailing, children, fixedTop, footer, bottomInset = 120, onRefresh, refreshing }: PageProps) {
   const insets = useSafeAreaInsets();
   return <View style={styles.page}>
     <Backdrop />
     {fixedTop && <View style={[styles.fixedTop, { paddingTop: insets.top + 8 }]}><View style={styles.fixedInner}>{fixedTop}</View></View>}
     <ScrollView style={styles.fill} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false}
+      refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={studio.accent} colors={[studio.accent]} /> : undefined}
       contentContainerStyle={[styles.pageContent, { paddingTop: fixedTop ? 16 : insets.top + 12, paddingBottom: footer ? 24 : insets.bottom + bottomInset }]}>
       {onBack && !fixedTop && <View style={styles.topBar}><RoundButton icon="back" label="Zurück" onPress={onBack} />{trailing}</View>}
       <View style={styles.header}>
@@ -240,14 +243,14 @@ const styles = StyleSheet.create({
   pageContent: { paddingHorizontal: studio.page, gap: studio.gap, maxWidth: 820, width: '100%', alignSelf: 'center' },
   fixedTop: { paddingHorizontal: studio.page, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: studio.line },
   fixedInner: { maxWidth: 820 - studio.page * 2, width: '100%', alignSelf: 'center', gap: 12 },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 40 },
-  round: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.panelHigh, borderWidth: 1, borderColor: studio.line },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 44 },
+  round: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.panelHigh, borderWidth: 1, borderColor: studio.line },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   headerCopy: { flex: 1, gap: 6 },
   markRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   mark: { ...studioType.mark, color: studio.text },
   badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
-  badgeText: { ...studioType.mark, fontSize: 10, lineHeight: 13, color: studio.text },
+  badgeText: { ...studioType.mark, fontSize: 11, lineHeight: 14, color: studio.text },
   title: { ...studioType.title, color: studio.text },
   titleSmall: { fontSize: 26, lineHeight: 31, fontWeight: '800', letterSpacing: -0.5, color: studio.text },
   subtitle: { ...studioType.body, color: studio.muted },
@@ -257,7 +260,7 @@ const styles = StyleSheet.create({
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 8 },
   section: { fontSize: 20, lineHeight: 25, fontWeight: '700', letterSpacing: -0.3, flexShrink: 1 },
   button: { minHeight: 52, borderRadius: 26, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, overflow: 'hidden' },
-  buttonSmall: { minHeight: 38, borderRadius: 19, paddingHorizontal: 14, alignSelf: 'flex-start' },
+  buttonSmall: { minHeight: 44, borderRadius: 22, paddingHorizontal: 16, alignSelf: 'flex-start' },
   primary: { borderWidth: 1, borderColor: '#ffffff26' },
   secondary: { backgroundColor: studio.panelHigh, borderWidth: 1, borderColor: studio.line },
   ghost: { backgroundColor: 'transparent' },
@@ -265,16 +268,16 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   buttonLabel: { fontSize: 16, fontWeight: '700' },
-  buttonLabelSmall: { fontSize: 13 },
+  buttonLabelSmall: { fontSize: 14 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   pillGlow: { boxShadow: '0 0 12px 0 #ff4ab84d' },
   pillDot: { width: 6, height: 6, borderRadius: 3 },
-  pillLabel: { ...studioType.label, fontSize: 10, letterSpacing: 0.6 },
-  chip: { maxWidth: 260, minHeight: 38, paddingHorizontal: 14, justifyContent: 'center', borderRadius: 999, borderWidth: 1, borderColor: studio.line, backgroundColor: studio.panelHigh },
+  pillLabel: { ...studioType.label, fontSize: 11, letterSpacing: 0.6 },
+  chip: { maxWidth: 260, minHeight: 44, paddingHorizontal: 16, justifyContent: 'center', borderRadius: 999, borderWidth: 1, borderColor: studio.line, backgroundColor: studio.panelHigh },
   chipActive: { backgroundColor: studio.accent, borderColor: studio.accent },
   chipLabel: { ...studioType.small, color: studio.text },
   chipLabelActive: { color: studio.onAccent, fontWeight: '700' },
-  check: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 34 },
+  check: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 },
   checkDot: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: studio.faint },
   checkDotDone: { backgroundColor: studio.accent, borderColor: studio.accent },
   checkLabel: { ...studioType.body, flex: 1, color: studio.text, fontWeight: '600' },
@@ -297,7 +300,7 @@ const styles = StyleSheet.create({
   grabber: { alignSelf: 'center', width: 36, height: 5, borderRadius: 3, backgroundColor: '#ffffff40', marginTop: 8 },
   sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: studio.page, paddingTop: 16, paddingBottom: 8 },
   sheetTitle: { flex: 1, fontSize: 22, lineHeight: 28, fontWeight: '700', letterSpacing: -0.3, color: studio.text },
-  sheetClose: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceHigh },
+  sheetClose: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceHigh },
   sheetContent: { paddingHorizontal: studio.page, paddingTop: 8, paddingBottom: 16, gap: 12 },
   field: { gap: 6 },
   fieldLabel: { ...studioType.label, color: studio.muted },
@@ -310,7 +313,7 @@ const styles = StyleSheet.create({
   picker: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   pickerValue: { ...studioType.body, fontSize: 16, flex: 1, color: studio.text },
   segmented: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 999, backgroundColor: '#ffffff0d', borderWidth: 1, borderColor: studio.line },
-  segment: { flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 999, overflow: 'hidden', paddingHorizontal: 8 },
+  segment: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 999, overflow: 'hidden', paddingHorizontal: 8 },
   segmentFill: { borderRadius: 999 },
   segmentLabel: { fontSize: 14, fontWeight: '600', color: studio.faint },
   segmentLabelActive: { color: studio.text },

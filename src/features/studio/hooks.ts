@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { onSnapsChanged } from '../../services/content';
-import { fetchEventShots, fetchEventStats, fetchTickets, type EventStats, type StudioShot, type StudioTicket } from '../organizer/organizerApi';
+import type { OrganizerStoryItem } from '../../services/organizerStories';
+import { fetchEventShots, fetchEventStats, fetchMyStoryItems, fetchTickets, type EventStats, type StudioShot, type StudioTicket } from '../organizer/organizerApi';
+import { useStudio } from './StudioContext';
 
 const message = (failure: unknown, fallback: string) => failure instanceof Error ? failure.message : fallback;
 
@@ -54,4 +56,30 @@ export function useEventStats(organizerId: string | null | undefined, refreshKey
     return () => { active = false; };
   }, [organizerId, refreshKey]);
   return { rows, error };
+}
+
+/**
+ * Nach unten ziehen lädt neu: die gemeinsamen Daten (Profil, Events) und, was die Seite zusätzlich zeigt (`extra`).
+ * Der Kreis dreht sich nur nach einem Ziehen, nicht beim ersten Laden.
+ */
+export function useStudioRefresh(extra?: () => void) {
+  const { loading, reload } = useStudio();
+  const [pulled, setPulled] = useState(false);
+  return { refreshing: pulled && loading, onRefresh: () => { setPulled(true); reload(); extra?.(); } };
+}
+
+/** Die dauerhaften Bilder für „Story in Entdecken“ (SQL 33). null = lädt. */
+export function useExploreStory(organizerId: string | null | undefined) {
+  const [items, setItems] = useState<OrganizerStoryItem[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
+  const reload = useCallback(() => setRevision((value) => value + 1), []);
+  useEffect(() => {
+    if (!organizerId) return;
+    let active = true;
+    fetchMyStoryItems(organizerId).then((rows) => { if (active) { setItems(rows); setError(null); } },
+      (failure: unknown) => { if (active) { setItems([]); setError(message(failure, 'Laden hat nicht geklappt.')); } });
+    return () => { active = false; };
+  }, [organizerId, revision]);
+  return { items, error, reload };
 }

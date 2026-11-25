@@ -3,9 +3,8 @@ import { publishedValue } from '../../services/eventSchema';
 import type { TicketType } from '../../services/content';
 import type { PublicOrganizer, PublicOrganizerPost } from '../../types/accounts';
 import type { SpotEvent } from '../../types/events';
-import type { EventPart } from '../../screens/EventDetailScreen';
 import type { MyOrganizer, OrganizerEvent, StudioPost, StudioTicket } from '../organizer/organizerApi';
-import type { Step } from './eventForm';
+import { eventTimes, genreText, resolvedPlace, ticketPlan, type EventForm } from './eventForm';
 
 // Spots Studio zeigt Eventseite und Veranstalterseite mit derselben Ansicht wie die Besucher-App
 // (src/screens/EventDetailScreen.tsx, OrganizerProfileScreen.tsx). Hier werden die eigenen Daten des Veranstalters –
@@ -44,5 +43,30 @@ export function guestEvents(events: OrganizerEvent[], organizerId: string): Spot
     .flatMap((event) => { const mapped = toSpotEvent(event, organizerId); return mapped ? [mapped] : []; });
 }
 
-/** Welcher Schritt von „Event anlegen/bearbeiten“ zu welchem Stift auf der Eventseite gehört. */
-export const partStep: Record<EventPart, Step> = { flyer: 'event', title: 'event', description: 'event', when: 'when', place: 'where', tickets: 'tickets' };
+/**
+ * Ein noch nicht gespeichertes Event aus den Eingaben, so wie Gäste es sehen würden. Fehlen Titel oder Zeit, steht dort
+ * ein Platzhalter (`empty`), den die Eventseite zum Antippen anbietet – so legt man ein Event direkt auf seiner Seite an.
+ * Die Kartenposition gibt es erst nach dem Speichern; bis dahin steht der Ort als Text da.
+ */
+export function formEvent(form: EventForm, organizer: MyOrganizer, now: number): { event: SpotEvent | null; tickets: TicketType[]; empty: { title?: string; when?: string } } {
+  const times = eventTimes(form);
+  const { venue, place } = resolvedPlace(form, organizer);
+  const plan = ticketPlan(form);
+  const title = form.title.trim();
+  const id = 'neu';
+  const event = toSpotEvent({
+    id, title: title || 'Titel hinzufügen', description: form.description.trim() || null,
+    // Ohne gewählte Zeit: ein Platzhalter in der Zukunft, damit die Seite das Event nicht als beendet zeigt.
+    startsAt: (times?.startsAt ?? new Date(now + 86_400_000)).toISOString(), endsAt: times?.endsAt.toISOString() ?? null,
+    venueId: venue?.id ?? null, venueName: venue ? venue.name : place.name,
+    street: venue ? null : place.street, houseNumber: venue ? null : place.houseNumber, postcode: venue ? null : place.postcode,
+    city: venue ? venue.city : place.city, latitude: null, longitude: null,
+    imageUrl: form.imageUrl, ticketUrl: plan.ticketUrl, genre: genreText(form), category: form.category, status: 'scheduled', isPublished: false,
+  }, organizer.id);
+  return {
+    event,
+    tickets: plan.desired.map((ticket, position) => ({ id: ticket.id ?? `neu-${position}`, eventId: id, name: ticket.name, description: null, priceCents: ticket.priceCents,
+      currency: 'EUR', externalUrl: ticket.externalUrl ?? null, salesEnd: null, soldOut: false })),
+    empty: { title: title ? undefined : 'Titel hinzufügen', when: times ? undefined : 'Datum und Uhrzeit wählen' },
+  };
+}

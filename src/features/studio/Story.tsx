@@ -26,8 +26,24 @@ export function Avatar({ organizer, size }: { organizer: Pick<MyOrganizer, 'disp
 }
 
 /**
- * Die Story eines Events (Entscheidung 25.11.): das runde Profilbild mit „+“. Der leuchtende Ring zeigt, dass gerade
- * eine Story läuft. Tippen öffnet zwei Punkte – „Storys ansehen“ und „Story posten“. Das ist der einzige Ort zum Posten.
+ * Rundes Profilbild mit „+“: die eine Geste für Storys im Studio – am Event die Story des Abends, im Profil die
+ * Story in Entdecken. Der leuchtende Ring zeigt, dass es gerade etwas zu sehen gibt.
+ */
+export function RingAvatar({ organizer, size, active, label, onPress }: { organizer: Pick<MyOrganizer, 'displayName' | 'avatarUrl'>; size: number; active: boolean; label: string; onPress: () => void }) {
+  const ringSize = size + 12;
+  const picture = <View style={[styles.gap, { borderRadius: (size + 6) / 2 }]}><Avatar organizer={organizer} size={size} /></View>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={6}
+    style={({ pressed }) => [{ width: ringSize, height: ringSize }, pressed && styles.pressed]}>
+    {active
+      ? <LinearGradient colors={[studio.pink, studio.accent, '#7a2bd6', studio.pink]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.ring, styles.ringGlow, { borderRadius: ringSize / 2 }]}>{picture}</LinearGradient>
+      : <View style={[styles.ring, styles.ringPlain, { borderRadius: ringSize / 2 }]}>{picture}</View>}
+    <View style={styles.plus}><Icon name="plus" size={15} color={studio.onAccent} /></View>
+  </Pressable>;
+}
+
+/**
+ * Die Story eines Events (Entscheidung 25.11.): das runde Profilbild mit „+“. Tippen öffnet zwei Punkte –
+ * „Storys ansehen“ und „Story posten“. Das ist der einzige Ort zum Posten.
  * `images` kommt von der Seite (useEventImages), damit Story und Bilderliste dieselben Daten zeigen.
  */
 export function EventStory({ organizer, event, images, size = 76 }: { organizer: MyOrganizer; event: OrganizerEvent; images: ReturnType<typeof useEventImages>; size?: number }) {
@@ -45,7 +61,7 @@ export function EventStory({ organizer, event, images, size = 76 }: { organizer:
   function watch() {
     close();
     // iOS zeigt nicht zwei Fenster gleichzeitig: erst das Sheet schließen lassen, dann die Story öffnen.
-    setTimeout(() => setViewing(true), Platform.OS === 'ios' ? 350 : 0);
+    setTimeout(() => setViewing(true), Platform.OS === 'ios' ? 400 : 0);
   }
 
   async function pick(camera: boolean) {
@@ -75,16 +91,8 @@ export function EventStory({ organizer, event, images, size = 76 }: { organizer:
     finally { setBusy(false); }
   }
 
-  const ringSize = size + 12;
-  const picture = <View style={[styles.gap, { borderRadius: (size + 6) / 2 }]}><Avatar organizer={organizer} size={size} /></View>;
   return <>
-    <Pressable accessibilityRole="button" accessibilityLabel={active ? 'Story ansehen oder posten' : 'Story posten'} onPress={() => setStage('menu')} hitSlop={6}
-      style={({ pressed }) => [{ width: ringSize, height: ringSize }, pressed && styles.pressed]}>
-      {active
-        ? <LinearGradient colors={[studio.pink, studio.accent, '#7a2bd6', studio.pink]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.ring, styles.ringGlow, { borderRadius: ringSize / 2 }]}>{picture}</LinearGradient>
-        : <View style={[styles.ring, styles.ringPlain, { borderRadius: ringSize / 2 }]}>{picture}</View>}
-      <View style={styles.plus}><Icon name="plus" size={15} color={studio.onAccent} /></View>
-    </Pressable>
+    <RingAvatar organizer={organizer} size={size} active={active} label={active ? 'Story ansehen oder posten' : 'Story posten'} onPress={() => setStage('menu')} />
 
     <StudioSheet visible={stage !== null} title={stage === 'preview' ? 'Story posten?' : stage === 'done' ? 'Gepostet' : 'Story'} onClose={busy ? () => {} : close}>
       {stage === 'menu' && <>

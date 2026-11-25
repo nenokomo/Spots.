@@ -1,6 +1,6 @@
 # Fortschritt – Spots Studio Umbau
 
-Branch: `design/studio-umbau` (von `main`, 25.11.2026, gepusht am 25.11., noch kein Pull Request). Plan und Begründung: [STUDIO-UMBAU-PLAN.md](STUDIO-UMBAU-PLAN.md).
+Branch: **`design/studio-einfacher`** (Schritt 3, lokal, nicht gepusht). Die Fassung davor (Schritte 0–2) liegt auf `design/studio-umbau` – dorthin zurück, falls Schritt 3 nicht gefällt. Plan und Begründung: [STUDIO-UMBAU-PLAN.md](STUDIO-UMBAU-PLAN.md).
 Diese Datei wird nach jedem Teilschritt aktualisiert und mit committet. Bei „mach weiter“: zuerst diese Datei lesen, dann mit `git status` und `git log` prüfen, was wirklich fertig ist.
 
 Betrifft Noyans Design (`src/features/studio/`, `src/components/Icon.tsx`, `src/screens/EventDetailScreen.tsx`, `src/screens/OrganizerProfileScreen.tsx`) und – mit Zustimmung von Jacint am 25.11. – Jacints Bereich, wo vorhandene Datenaufrufe im Studio anders zusammengesetzt werden (`tests/`, Ticketarten beim Speichern eines Events). Keine neue SQL, keine neuen Datenbank-Funktionen.
@@ -35,12 +35,22 @@ Betrifft Noyans Design (`src/features/studio/`, `src/components/Icon.tsx`, `src/
   - **Event anlegen nur über das ＋**: kein zweiter Knopf in der Übersicht.
   - Dafür getrennt: `src/screens/EventDetailScreen.tsx` und `OrganizerProfileScreen.tsx` in Ansicht (`…View`, mit optionalem `edit`) und Seite (lädt die Daten). Für Gäste unverändert. Daten des Studios in der Form der Besucher-App: `guestView.ts`.
 
+- **Schritt 3 – einfacher** (Noyan: „mach alles“, 14 Vorschläge aus der kritischen Durchsicht):
+  - **Die Seite ist das Formular.** Das ＋ öffnet die leere Eventseite mit Platzhaltern (`/studio/new`, von unten). Antippen öffnet ein Sheet nur für diesen Teil (`EventParts.tsx`) – beim Anlegen wie beim Bearbeiten. Die Schritt-Seiten (`EventWizardScreen`, `/studio/edit/[id]`) gibt es nicht mehr. Speichern: `saveEvent.ts`.
+  - **Drei Tabs und ein eigenes ＋**: Events · Zahlen · Profil. Übersicht und Events sind zusammengelegt (`EventsScreen.tsx`); `OverviewScreen` entfällt.
+  - **„Verwalten“ und „Mehr“** auf der Eventseite statt „Nur für euch“ ganz unten. Rückfragen im selben Sheet.
+  - **Story in Entdecken am Profilbild mit „+“** im Profil (`ExploreStory.tsx`, ersetzt `Gallery.tsx`); Logo beim Namen; Team in den Einstellungen.
+  - **Vorgaben vom letzten Event** (Uhrzeiten, Ort, Art, Genre, Abendkasse) und Datumsvorschlag (`freshForm`, `suggestedDate`).
+  - **„Euer Event ist live“** nach dem Veröffentlichen, mit „Jetzt teilen“.
+  - **Feinschliff:** Aktualisieren durch Ziehen (Events, Zahlen, Profil, Eventseite); Stifte neutral, ganze Bereiche tippbar; Tippflächen 44; Schrift mindestens 11; einmaliges Willkommen (`Welcome.tsx`); in Zahlen ein Auswahlknopf und ein Satz Erkenntnis (`ticketInsight`).
+  - **Nicht gebaut:** „Hilfe & Kontakt“ und Rechtliches – es gibt noch keine Kontakt-Mail und keine Domain (Plan, Abschnitt 7, Punkt 8).
+
 ## Geprüft
 
 - Typecheck und Expo-Lint ohne Fehler.
-- `node --test tests/*.test.cjs`: 112 bestanden, 0 fehlgeschlagen, 29 SQL-Tests übersprungen (auf diesem Rechner ist kein PGlite eingerichtet; an der SQL wurde nichts geändert). `tests/studio-app.test.cjs` hat 11 Tests; `tests/design-integration.test.cjs` prüft die Gast-Eventseite jetzt über die Ansicht und dass Gäste keine Stifte sehen.
+- `node --test tests/*.test.cjs`: 116 bestanden, 0 fehlgeschlagen, 29 SQL-Tests übersprungen (auf diesem Rechner ist kein PGlite eingerichtet; an der SQL wurde nichts geändert). `tests/studio-app.test.cjs` hat 15 Tests (Formular-Logik, Vorgaben, was fehlt, Platzhalter, Erkenntnis-Satz, Aufbau).
 - Probe-Bündel für iOS und Web gebaut (`expo export`), beide ohne Fehler.
-- **Nicht geprüft: die Oberfläche selbst.** Kein Handy-Test durch die KI, keine Vorschau im Browser (dafür braucht es ein angemeldetes Veranstalter-Konto). Vor allem ansehen: ob Eventseite und Veranstalterseite für **Gäste** unverändert aussehen, die Stifte im Studio, die Vorschau beim Anlegen, Datums- und Zeitauswahl auf iOS und Android, Story posten mit der Kamera.
+- **Nicht geprüft: die Oberfläche selbst.** Kein Handy-Test durch die KI. Vor allem ansehen: das ＋ neben der Leiste; Event anlegen auf der leeren Seite; die Sheets pro Teil (Datum und Uhrzeit auf iOS in der Zeile, auf Android der Dialog); „Verwalten“ und „Mehr“; Story in Entdecken am Profilbild; ob Eventseite und Veranstalterseite für **Gäste** unverändert aussehen.
 
 ## Offen
 

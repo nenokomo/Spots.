@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { useNow } from '../../hooks/useNow';
 import { dayKey } from '../../utils/events';
 import { dailyTotals, fetchEventStatsDaily, type EventStats, type EventStatsDay } from '../organizer/organizerApi';
-import { count, dayFormat, isUpcoming, share } from './format';
+import { count, dayFormat, isUpcoming, share, ticketInsight } from './format';
 import { Funnel } from './Funnel';
-import { useEventStats } from './hooks';
+import { useEventStats, useStudioRefresh } from './hooks';
 import { openEvent } from './routes';
 import { useStudio } from './StudioContext';
 import { studio, studioType } from './theme';
-import { Card, Chip, Empty, Message, SectionTitle, Segmented, StudioPage, studioStyles } from './ui';
+import { Card, Empty, MenuRow, Message, SectionTitle, Segmented, StudioPage, StudioSheet, studioStyles } from './ui';
 
 const metrics = { views: 'Aufrufe', saves: 'Gemerkt', ticketClicks: 'Tickets' } as const;
 type Metric = keyof typeof metrics;
@@ -67,8 +67,8 @@ function CompareRow({ row, image, last }: { row: EventStats; image: string | nul
 }
 
 /**
- * Reiter „Zahlen“ (docs/STUDIO-UMBAU-PLAN.md): pro Event der Trichter Gesehen → Gemerkt → Zu den Tickets, der Verlauf der
- * letzten 30 Tage und der Vergleich der Events. Nur was wirklich gezählt wird (SQL 26/38) – Einnahmen kommen dazu,
+ * Tab „Zahlen“ (docs/STUDIO-UMBAU-PLAN.md): oben ein Knopf zur Wahl des Events, dann ein Satz Erkenntnis, der Trichter
+ * Gesehen → Gemerkt → Zu den Tickets, der Verlauf der letzten 30 Tage und der Vergleich der Events. Nur was wirklich gezählt wird (SQL 26/38) – Einnahmen kommen dazu,
  * sobald es Verkaufszahlen gibt. Keine erfundenen Zahlen.
  */
 export default function StatsScreen() {
@@ -79,6 +79,8 @@ export default function StatsScreen() {
   const [choice, setChoice] = useState<string | null>(null);
   const [metric, setMetric] = useState<Metric>('views');
   const [privacy, setPrivacy] = useState(false);
+  const [picking, setPicking] = useState(false);
+  const refresh = useStudioRefresh();
   const organizerId = organizer?.id;
 
   useEffect(() => {
@@ -97,19 +99,26 @@ export default function StatsScreen() {
   const sum = (key: 'views' | 'saves' | 'ticketClicks' | 'snaps') => selected ? selected[key] : rows.reduce((total, row) => total + row[key], 0);
   const days = dailyTotals((daily ?? []).filter((row) => !selected || row.eventId === selected.eventId), dayKey(new Date(now)), DAYS);
   const flyer = (id: string) => events.find((event) => event.id === id)?.imageUrl ?? null;
+  const insight = ticketInsight(sum('views'), sum('ticketClicks'), selected ? rows.filter((row) => row.eventId !== selected.eventId) : []);
+  const choose = (id: string) => { setChoice(id); setPicking(false); };
 
-  return <StudioPage title="Zahlen">
+  return <StudioPage title="Zahlen" onRefresh={refresh.onRefresh} refreshing={refresh.refreshing}>
     <Message error={stats.error} />
     {stats.rows === null && !stats.error && <ActivityIndicator color={studio.accent} />}
     {stats.rows && rows.length === 0 && <Empty icon="chart" title="Noch keine Zahlen" text="Sobald ihr ein Event veröffentlicht habt, seht ihr hier, wie es ankommt." />}
 
     {rows.length > 0 && <>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.chipScroll}>
-        {rows.slice(0, 15).map((row) => <Chip key={row.eventId} label={`${dayFormat.format(new Date(row.startsAt))} · ${row.title}`} selected={selectedId === row.eventId} onPress={() => setChoice(row.eventId)} />)}
-        <Chip label="Alle Events" selected={selectedId === 'all'} onPress={() => setChoice('all')} />
-      </ScrollView>
+      <Pressable accessibilityRole="button" accessibilityLabel={`Event wählen: ${selected ? selected.title : 'Alle Events'}`} onPress={() => setPicking(true)}
+        style={({ pressed }) => [styles.picker, pressed && styles.pressed]}>
+        <View style={styles.pickerCopy}>
+          <Text numberOfLines={1} style={styles.pickerTitle}>{selected ? selected.title : 'Alle Events'}</Text>
+          {selected && <Text style={studioStyles.muted}>{dayFormat.format(new Date(selected.startsAt))}{selected.isPublished ? '' : ' · Entwurf'}</Text>}
+        </View>
+        <Icon name="down" size={18} color={studio.muted} />
+      </Pressable>
 
       <Card>
+        <Text style={styles.insight}>{insight}</Text>
         <Funnel views={sum('views')} saves={sum('saves')} ticketClicks={sum('ticketClicks')} />
         <View style={styles.shots}>
           <Icon name="camera" size={16} color={studio.faint} />
@@ -138,13 +147,20 @@ export default function StatsScreen() {
           : 'Datensparsam gezählt'}</Text>
       </Pressable>
     </>}
+
+    <StudioSheet visible={picking} title="Event wählen" onClose={() => setPicking(false)}>
+      <MenuRow icon="chart" title="Alle Events" hint="Alles zusammen" onPress={() => choose('all')} />
+      {rows.map((row) => <MenuRow key={row.eventId} icon="calendar" title={row.title} hint={`${dayFormat.format(new Date(row.startsAt))}${row.isPublished ? '' : ' · Entwurf'}`} onPress={() => choose(row.eventId)} />)}
+    </StudioSheet>
   </StudioPage>;
 }
 
 const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
-  chipScroll: { marginHorizontal: -studio.page },
-  chips: { gap: 8, paddingHorizontal: studio.page },
+  picker: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingHorizontal: 18, paddingVertical: 10, borderRadius: studio.radius, backgroundColor: studio.panelHigh, borderWidth: 1, borderColor: studio.line },
+  pickerCopy: { flex: 1, gap: 2 },
+  pickerTitle: { fontSize: 18, lineHeight: 23, fontWeight: '700', letterSpacing: -0.2, color: studio.text },
+  insight: { fontSize: 18, lineHeight: 25, fontWeight: '700', letterSpacing: -0.2, color: studio.text },
   shots: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 14, borderTopWidth: 1, borderTopColor: studio.line },
   shotsLabel: { ...studioType.body, flex: 1, color: studio.muted },
   shotsValue: { fontSize: 17, lineHeight: 22, fontWeight: '800', color: studio.text, fontVariant: ['tabular-nums'] },

@@ -1,6 +1,6 @@
 # Spots Studio – Umbau-Plan (Analyse und Entscheidungen)
 
-Stand: 25.11.2026. Branch `design/studio-umbau`. Auftrag von Noyan und Jacint (beide im Chat, beide haben zugestimmt).
+Stand: 25.11.2026, dritte Runde („einfacher“). Branch `design/studio-einfacher` (die Fassung davor liegt auf `design/studio-umbau`). Auftrag von Noyan und Jacint (beide im Chat, beide haben zugestimmt).
 
 **Wozu diese Datei?** Sie hält fest, **warum** das Studio umgebaut wird und **wie es am Ende aussehen soll**. Wer hier weiterarbeitet (Mensch oder KI), liest zuerst diese Datei und dann [FORTSCHRITT-studio-umbau.md](FORTSCHRITT-studio-umbau.md) (was davon schon fertig ist). Der Plan ändert sich nur, wenn Noyan oder Jacint etwas anders entscheiden – dann unten bei „Entscheidungen“ eintragen.
 
@@ -22,68 +22,63 @@ Das Studio war nach der **Datenbank** gebaut, nicht nach den **Aufgaben eines Ve
 
 Vorher bekamen alle fünf Momente gleich viel Gewicht, und der wichtigste (1) war ein kleiner Knopf. Dazu kam: Das Prinzip „jede Aktion nur an einer Stelle“ ist richtig, wurde aber so umgesetzt, dass Zusammengehöriges getrennt war (ein Foto zum Event postete man nicht am Event, sondern in einem anderen Reiter). **Die eine Stelle muss dort sein, wo man sie erwartet.**
 
-## 3. Entscheidungen (25.11., Noyan und Jacint)
+## 3. Entscheidungen
 
 | Thema | Entscheidung |
 | --- | --- |
-| Reiter | **Fünf: Übersicht · Events · ＋ · Zahlen · Profil.** Bewusst so gewählt, obwohl am 23.11. eine ähnliche Struktur verworfen wurde. Unterschied zu damals: kein eigener Story-Reiter, keine Extra-Seite für Zahlen, keine Banner. |
-| Name des letzten Reiters | Bleibt **„Profil“** (nicht „Club“). |
-| Story posten | **Über das runde Profilbild auf der Eventseite.** Das Bild trägt ein „+“, damit man sieht, dass man es antippen kann. Tippen öffnet zwei Punkte: **„Storys ansehen“** und **„Story posten“** (wie bei Instagram). |
-| ＋ in der Mitte | Legt ein **neues Event** an (die Hauptfunktion). Story posten gehört zum Profilbild am Event. |
-| Dauerhafte Bilder | Heißen **„Story in Entdecken“** und stehen im Reiter Profil. (Am 25.11. zuerst „Bilder“ genannt; Noyan hat sie so nicht gefunden – in der Besucher-App heißen sie auch Story.) Die Story eines Events (24 Stunden) bleibt am Profilbild mit „+“. |
-| Event anlegen | **Nur über das ＋** in der Leiste. Kein zweiter Knopf in der Übersicht (Rückmeldung Noyan). |
-| „Einnahmen“ | Heißt **„Zahlen“**, solange Spots keine Tickets verkauft. Kein leeres „–“ mehr. |
+| Tabs | **Drei: Events · Zahlen · Profil**, und rechts neben der Tab-Leiste das **＋ als eigener runder Knopf**. (25.11. zuerst fünf: Übersicht · Events · ＋ · Zahlen · Profil. Nach dem Bau zeigten Übersicht und Events fast dasselbe; in der Runde „einfacher“ zusammengelegt.) |
+| Name des letzten Tabs | Bleibt **„Profil“** (nicht „Club“). |
+| Bearbeiten | **Die Seite ist das Formular.** Eventseite und Veranstalterseite sind im Studio dieselben Seiten, die Gäste sehen. Was man ändern kann, tippt man an; es öffnet sich ein kleines Sheet nur für diesen Teil. Das gilt auch beim Anlegen: Das ＋ öffnet die leere Eventseite mit Platzhaltern. Keine Schritt-Seiten, keine nachgebaute Vorschau. |
+| Story posten | **Über das runde Profilbild mit „+“ auf der Eventseite**: „Storys ansehen“ und „Story posten“ (wie bei Instagram). |
+| Story in Entdecken | Die dauerhaften Bilder (bleiben, bis man sie löscht). **Dieselbe Geste: das Profilbild mit „+“ im Profil.** (Zuerst „Bilder“ genannt und unten im Profil – Noyan hat sie so nicht gefunden.) |
+| Event anlegen | **Nur über das ＋.** Kein zweiter Knopf. |
+| Verwalten | Was Gäste nicht sehen (Zahlen, Ausverkauft, Story und Shots ausblenden), steht hinter **„Verwalten“** in der Leiste unten auf der Eventseite. Seltenes (Duplizieren, Zurück auf Entwurf, Absagen) unter **„Mehr“** oben rechts. |
+| „Einnahmen“ | Heißt **„Zahlen“**, solange Spots keine Tickets verkauft. Kein leeres „–“. |
+| Farbe | **Rosa gehört der einen Hauptaktion** eines Bildschirms (Veröffentlichen, Teilen, das ＋). Stifte und Nebenknöpfe sind neutral. |
 | Anrede | Durchgehend **„ihr“**. |
-| Backend | Jacint ist dabei; Änderungen in seinem Bereich sind erlaubt. Für SQL gilt weiter: erst Datei und lokale Tests, dann Spots-Test, Produktion nur mit ausdrücklicher Freigabe für genau diese Aktion. |
+| Backend | Für SQL gilt: erst Datei und lokale Tests, dann Spots-Test, Produktion nur mit ausdrücklicher Freigabe für genau diese Aktion. |
 
-### Bearbeiten in der Gast-Ansicht (Noyan, nach dem ersten Test – umgesetzt)
+### Wie „Die Seite ist das Formular“ gebaut ist
 
-Veranstalter bearbeiten ihre **Veranstalterseite und ihre Eventseite so, wie der Gast sie sieht** – nicht in einem Formular mit nachgebauter Vorschau.
-
-- Die beiden Gast-Seiten sind in „Aussehen“ und „Daten laden“ getrennt: `EventDetailView` in `src/screens/EventDetailScreen.tsx` und `OrganizerProfileView` in `src/screens/OrganizerProfileScreen.tsx`. Die Besucher-App und das Studio benutzen **dieselbe Ansicht**; für Gäste sieht alles aus wie vorher.
-- Das Studio übergibt seine eigenen Daten (auch Entwürfe) in der Form der Besucher-App (`src/features/studio/guestView.ts`, gleiche Regeln für Genre, Filter, Bild, Ort) und schaltet mit `edit` die **Stifte** ein.
-- Ein Stift öffnet genau den Teil: am Event den passenden Schritt von „Event bearbeiten“, im Profil ein Sheet nur für diesen Teil (`ProfileEdit.tsx`).
-- Was Gäste nicht sehen, steht unter der Seite im Bereich **„Nur für euch“**.
-- Auch beim Anlegen: die **Vorschau ist die echte Eventseite**, schon vor dem Speichern.
+- Die beiden Gast-Seiten sind in „Aussehen“ und „Daten laden“ getrennt: `EventDetailView` in `src/screens/EventDetailScreen.tsx` und `OrganizerProfileView` in `src/screens/OrganizerProfileScreen.tsx`. Besucher-App und Studio benutzen **dieselbe Ansicht**; für Gäste sieht alles aus wie vorher.
+- Das Studio übergibt seine eigenen Daten (auch Entwürfe und noch nicht Gespeichertes) in der Form der Besucher-App (`src/features/studio/guestView.ts`) und schaltet mit `edit` das Antippen ein. Fehlt ein Teil, steht dort ein Platzhalter (`edit.empty`).
+- Ein Teil des Events öffnet `EventParts.tsx` (Flyer, Titel, Datum und Uhrzeit, Beschreibung, Tickets, Ort), ein Teil des Profils `ProfileEdit.tsx` (Titelbild; Name, Logo und Adresse; Über uns).
+- Gespeichertes Event: „Speichern“ im Sheet speichert sofort. Neues Event: „Übernehmen“ sammelt, gespeichert wird mit „Veröffentlichen“ oder „Als Entwurf“ (`saveEvent.ts`).
 
 ## 4. Zielbild
 
-### Reiter
+### Tabs
 
-- **Übersicht** (Start): Bis zur Freigabe die Schritte zum Start. Dann die große Karte fürs **nächste Event**: Flyer, Countdown, Status, **Checkliste** (Flyer, Beschreibung, Tickets, veröffentlicht – fehlende Punkte antippen), rundes Profilbild mit „+“ für die Story, „Teilen“ und „Ansehen wie ein Gast“. Am Abend des Events Live-Modus („Läuft jetzt“, neue Shots von Gästen). Darunter ein kurzer Zahlen-Streifen der letzten 7 Tage.
-- **Events**: Liste „Kommend / Vergangen“. Tippen öffnet die Eventseite.
-- **＋**: neues Event (Schritt-für-Schritt).
-- **Zahlen**: pro Event ein **Trichter** (gesehen → gemerkt → zu den Tickets), Verlauf der letzten 30 Tage, Vergleich der Events. Hinweis „datensparsam gezählt“ als kurzes Abzeichen statt Fußnote.
-- **Profil**: **die Veranstalterseite, wie Gäste sie sehen**, mit Stiften an Titelbild, Logo, Name und „Über uns“. Events öffnen die Eventseite im Studio. Darunter **Story in Entdecken** (dieselbe Kachel wie in Entdecken, Bilder hinzufügen und löschen) und „Nur für euch“: Fortschritt („zu 60 % fertig“), **Team** (Einladung über das Teilen-Menü). Zahnrad oben rechts → **Einstellungen** (Ansprechperson, Konto).
+- **Events** (Start): Bis zur Freigabe die Schritte zum Start. Dann die große Karte fürs **nächste Event** (Flyer, Countdown, Status, Profilbild mit „+“, „Noch offen“ – ein Punkt öffnet auf der Eventseite gleich den passenden Teil). Am Abend „Läuft jetzt“ und die Shots von Gästen. Darunter „Weitere“ und „Vergangen“.
+- **Zahlen**: oben ein Knopf zur Wahl des Events, dann **ein Satz Erkenntnis** („4 % der Aufrufe führten zu den Tickets. Das ist mehr als bei euren anderen Events.“), der **Trichter**, der Verlauf der letzten 30 Tage, der Vergleich. „Datensparsam gezählt“ zum Aufklappen.
+- **Profil**: die Veranstalterseite, wie Gäste sie sehen. Titelbild, Name und „Über uns“ zum Antippen; das Profilbild mit „+“ ist die Story in Entdecken. Darunter nur, was dem Profil noch fehlt. Zahnrad → **Einstellungen** (Team, Ansprechperson, Konto).
+- **＋** (eigener Knopf): neues Event.
 
-### Seiten über den Reitern
+### Seiten über den Tabs
 
-- **Eventseite** (`/studio/event/[id]`): **die Eventseite, wie Gäste sie sehen**, mit Stiften an Flyer, Titel, Zeit, Beschreibung, Tickets und Ort. Das runde Profilbild trägt das „+“ (Story). Leiste unten: „Veröffentlichen“ bzw. „Live in Spots“ und Teilen. Darunter „Nur für euch“: was noch offen ist, Zahlen dieses Events, Ausverkauft, Story und Shots der letzten 24 Stunden (ausblenden), Duplizieren, Absagen mit Rückfrage.
-- **Event anlegen / bearbeiten** (`/studio/edit/[id]`): vier kurze Schritte und eine Vorschau.
-  1. **Event** – Flyer zuerst, Titel, Art, Genre (Auswahl wie die Radar-Filter), Beschreibung.
-  2. **Wann** – Datums- und Zeitauswahl statt Texteingabe; Ende nach Mitternacht wird als nächster Tag angezeigt.
-  3. **Wo** – „Bei euch“ ist vorgewählt, sonst anderer Ort (suchen oder Adresse).
-  4. **Tickets** – ein Abschnitt: Online-Tickets (Link) / Abendkasse / Eintritt frei, darunter optional Preise.
-  5. **Vorschau** – die echte Eventseite der Gäste mit Stiften zurück zu den Schritten, unten **„Veröffentlichen“** oder „Als Entwurf“.
-  Zurück-Pfeil oben links, Warnung bei ungespeicherten Änderungen, Fehler direkt am Feld. Ein früheres Event kann als Vorlage dienen (Duplizieren).
-- **Einstellungen** (`/studio/settings`): Ansprechperson, Konto (abmelden, löschen mit Rückfrage).
+- **Eventseite** (`/studio/event/[id]`): die Eventseite der Gäste. Antippen ändert einen Teil. Leiste unten: „Verwalten“ und der nächste Schritt („Veröffentlichen“, danach „Teilen“). Nach dem Veröffentlichen: „Euer Event ist live“ mit „Jetzt teilen“.
+- **Neues Event** (`/studio/new`, von unten eingeblendet): dieselbe Seite, leer. Platzhalter „Flyer hinzufügen“, „Titel hinzufügen“, „Datum und Uhrzeit wählen“. Ort, Uhrzeiten, Art, Genre und Abendkasse kommen als **Vorgabe vom letzten Event**; das Datum wird als gleicher Wochentag vorgeschlagen. Zum Speichern braucht es Titel und Zeit, zum Veröffentlichen auch einen Flyer. „Schließen“ fragt nach, bevor Eingaben verloren gehen. Duplizieren: `?from=<id>`.
+- **Einstellungen** (`/studio/settings`): Team (Einladung über das Teilen-Menü), Ansprechperson, Konto (abmelden, löschen mit Rückfrage).
 
 ### Regeln für die Oberfläche
 
-- **Kein Erklärtext als Standard.** Ein guter Screen braucht keinen. Erklärungen nur bei einem Fehler, in leeren Zuständen oder hinter einem ⓘ.
+- **Kein Erklärtext als Standard.** Erklärungen nur bei einem Fehler, in leeren Zuständen oder zum Aufklappen.
 - **Rückfrage vor allem, was man nicht zurücknehmen kann** (absagen, löschen, Konto löschen, Mitglied entfernen).
+- **Tippflächen mindestens 44 Punkt, Schrift mindestens 11 Punkt.**
+- **Nach unten ziehen lädt neu** (Events, Zahlen, Profil, Eventseite).
 - **Glossar – genau diese Wörter, überall gleich:**
 
 | Wort | Bedeutung |
 | --- | --- |
 | Event | Eine Veranstaltung. |
-| Story | Bilder des Veranstalters zu einem Event, 24 Stunden sichtbar. Posten über das Profilbild mit „+“. |
+| Story | Bilder des Veranstalters zu einem Event, 24 Stunden sichtbar. Posten über das Profilbild mit „+“ am Event. |
+| Story in Entdecken | Dauerhafte Bilder des Veranstalters. Gäste sehen sie in Entdecken als Kachel. Profilbild mit „+“ im Profil. |
 | Shots | Bilder von Gästen zu einem Event, 24 Stunden sichtbar. |
-| Story in Entdecken | Dauerhafte Bilder des Veranstalters. Gäste sehen sie in Entdecken als Kachel; sie bleiben, bis man sie löscht. |
-| Profil | Die öffentliche Seite des Veranstalters in Spots. |
+| Profil | Die öffentliche Seite des Veranstalters in Spots (Veranstalterseite). |
 | Veranstalter | Wer Events anlegt (Club, Kollektiv, Reihe). „Club“ nur, wenn wirklich ein Club gemeint ist. |
+| Tab-Leiste, Tabs | Die Leiste unten und ihre Punkte. |
 
-- Das „SPOTS STUDIO“-Abzeichen steht nur noch auf der Übersicht, nicht mehr auf jeder Seite.
+- Das „SPOTS STUDIO“-Abzeichen steht nur auf dem Start-Tab. Beim ersten Öffnen erklärt ein einmaliges Willkommen die drei Dinge: Event anlegen, Story posten, Zahlen sehen.
 
 ## 5. Die Analyse im Einzelnen (Befund → Lösung)
 
@@ -140,8 +135,9 @@ Diese Punkte gehen nicht allein in der Oberfläche. Die App ist so gebaut, dass 
 5. **Teilen mit Link.** Events aus dem Studio haben keine Web-Adresse. „Teilen“ schickt deshalb Titel, Zeit, Ort und den Ticket-Link als Text. Für einen echten Link braucht es eine Event-Seite auf der Website und das App-Schema `spots://` (Release-Grundlagen). Danach auch: Flyer direkt in die Instagram-Story.
 6. **Einladung per Link.** Das Team wird jetzt über das Teilen-Menü eingeladen (Text mit Code). Ein Link, der die App öffnet und den Code einträgt, braucht dasselbe wie Punkt 5.
 7. **Verkaufszahlen** (wie bisher offen): verkaufte Tickets und Einnahmen pro Event. Erst dann kommt „Einnahmen“ zurück in den Reiter Zahlen.
-8. **Entwürfe löschen.** Im Studio gibt es nur „Event absagen“; ein Entwurf bleibt danach als „Abgesagt“ in der Liste. Die Datenbank erlaubt Veranstaltern bei Events nur Anlegen und Ändern, kein Löschen (SQL 15: `spots_event_insert`, `spots_event_edit`). Wunsch (Noyan): Entwürfe, die nie veröffentlicht waren, endgültig löschen. Braucht: Recht und Regel zum Löschen eigener, nie veröffentlichter Events samt ihrer Ticketarten. Danach in der App: „Entwurf löschen“ mit Rückfrage auf der Eventseite unter „Nur für euch“.
-9. **Später (Wettbewerb):** Gästeliste und Einlass-Scan (RA, Shotgun), Promoter-Links mit Auswertung (Shotgun), Ticketverkauf über Spots.
+8. **Hilfe und Kontakt, Rechtliches.** Bei „Abgelehnt“ und „Gesperrt“ steht „meldet euch beim Spots-Team“, aber es gibt keinen Weg dorthin. Geplant: „Hilfe & Kontakt“ in den Einstellungen und ein Knopf an der Stelle, dazu Impressum und Datenschutz. Braucht eine **Kontakt-Mail und die Domain** – beides ist auch auf der Website noch ein Platzhalter (`site.contactEmail`, `spots.example`). Nicht gebaut, um keine erfundene Adresse zu zeigen.
+9. **Entwürfe löschen.** Im Studio gibt es nur „Event absagen“; ein Entwurf bleibt danach als „Abgesagt“ in der Liste. Die Datenbank erlaubt Veranstaltern bei Events nur Anlegen und Ändern, kein Löschen (SQL 15: `spots_event_insert`, `spots_event_edit`). Wunsch (Noyan): Entwürfe, die nie veröffentlicht waren, endgültig löschen. Braucht: Recht und Regel zum Löschen eigener, nie veröffentlichter Events samt ihrer Ticketarten. Danach in der App: „Entwurf löschen“ mit Rückfrage auf der Eventseite unter „Nur für euch“.
+10. **Später (Wettbewerb):** Gästeliste und Einlass-Scan (RA, Shotgun), Promoter-Links mit Auswertung (Shotgun), Ticketverkauf über Spots.
 
 ## 8. Quellen des Vergleichs
 

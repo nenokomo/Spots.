@@ -1,12 +1,10 @@
 import { router } from 'expo-router';
-import type { Step } from './eventForm';
+import type { FormPart } from './eventForm';
 
 // Wege im Studio an einer Stelle. Aufbau: docs/STUDIO-UMBAU-PLAN.md, Abschnitt 4.
 
-/** Eventseite: alles zu einem Event. */
-export const openEvent = (id: string) => router.push({ pathname: '/studio/event/[id]', params: { id } });
-/** Event bearbeiten, auf Wunsch direkt bei einem Schritt (z. B. aus der Checkliste). */
-export const editEvent = (id: string, step?: Step) => router.push({ pathname: '/studio/edit/[id]', params: step ? { id, step } : { id } });
-/** Neues Event. `from` = ein früheres Event als Vorlage (duplizieren). */
-export const newEvent = (from?: string) => router.push({ pathname: '/studio/edit/[id]', params: from ? { id: 'new', from } : { id: 'new' } });
+/** Eventseite: alles zu einem Event. `part` öffnet dort gleich einen Teil zum Bearbeiten (z. B. aus „Noch offen“). */
+export const openEvent = (id: string, part?: FormPart) => router.push({ pathname: '/studio/event/[id]', params: part ? { id, part } : { id } });
+/** Neues Event: die leere Eventseite, von unten eingeblendet. `from` = ein früheres Event als Vorlage (duplizieren). */
+export const newEvent = (from?: string) => router.push(from ? { pathname: '/studio/new', params: { from } } : '/studio/new');
 export const goBack = () => router.canGoBack() ? router.back() : router.replace('/studio');

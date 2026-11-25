@@ -140,13 +140,16 @@ test('format: countdown, story window like SQL 33, quota without invented precis
   assert.equal(format.share(5, 0), null, 'no quota without views');
 });
 
-test('structure: five tabs with the plus in the middle, story only at the event, no dev sales numbers', () => {
+test('structure: three tabs and a separate plus, story only at the profile picture, nothing doubled', () => {
   const tabs = read('src/features/studio/StudioTabsLayout.tsx');
   const names = [...tabs.matchAll(/<Tabs\.Screen name="([a-z]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(names, ['index', 'events', 'create', 'stats', 'profile'], 'Übersicht · Events · ＋ · Zahlen · Profil');
+  assert.deepEqual(names, ['index', 'stats', 'profile'], 'Events · Zahlen · Profil');
   assert.match(tabs, /title: 'Profil'/, 'the last tab keeps its name');
-  for (const file of ['index', 'events', 'create', 'stats', 'profile']) assert.ok(fs.existsSync(path.join(__dirname, `../src/app/studio/(tabs)/${file}.tsx`)), file);
-  assert.ok(!fs.existsSync(path.join(__dirname, '../src/app/studio/(tabs)/story.tsx')), 'no story tab');
+  assert.match(tabs, /accessibilityLabel="Neues Event anlegen" onPress=\{\(\) => newEvent\(\)\}/, 'the plus is its own button next to the bar');
+  assert.deepEqual(fs.readdirSync(path.join(__dirname, '../src/app/studio/(tabs)')).sort(), ['_layout.tsx', 'index.tsx', 'profile.tsx', 'stats.tsx']);
+  // Ein Event legt man nur über das Plus an.
+  const creating = fs.readdirSync(path.join(__dirname, '../src/features/studio')).filter((file) => /newEvent\(\)/.test(read(`src/features/studio/${file}`)));
+  assert.deepEqual(creating, ['StudioTabsLayout.tsx'], 'no second way to create an event');
   // Story posten gibt es nur über das Profilbild am Event.
   const posting = fs.readdirSync(path.join(__dirname, '../src/features/studio')).filter((file) => read(`src/features/studio/${file}`).includes('eventStory: true'));
   assert.deepEqual(posting, ['Story.tsx']);
@@ -154,28 +157,27 @@ test('structure: five tabs with the plus in the middle, story only at the event,
   assert.match(story, /title="Storys ansehen"/);
   assert.match(story, /title="Story posten"/);
   assert.ok(!read('src/features/studio/StatsScreen.tsx').includes('testSales'), 'no made-up sales numbers');
-  // Ein Event legt man nur über das Plus an.
-  assert.ok(!read('src/features/studio/OverviewScreen.tsx').includes('newEvent'), 'no second way to create an event on the overview');
   // Absagen und Löschen fragen nach.
-  assert.match(read('src/features/studio/EventScreen.tsx'), /<ConfirmSheet visible=\{confirm === 'cancel'\}/);
+  assert.match(read('src/features/studio/EventScreen.tsx'), /title=\{sheet === 'cancel' \? 'Event absagen\?'/);
   assert.match(read('src/features/studio/AccountCard.tsx'), /<ConfirmSheet visible=\{confirm\}/);
+  // Neues Event fährt von unten ein und lässt sich nicht versehentlich wegwischen.
+  assert.match(read('src/features/studio/StudioLayout.tsx'), /<Stack\.Screen name="new" options=\{\{ presentation: 'fullScreenModal', gestureEnabled: false \}\} \/>/);
 });
 
-test('guest view: Studio shows the same event page and organizer page as guests, with pens instead of a rebuilt preview', () => {
-  const eventPage = read('src/features/studio/EventScreen.tsx');
-  assert.match(eventPage, /<EventDetailView event=\{guest\}/, 'the event page of the visitor app');
-  assert.match(eventPage, /edit=\{\{ onEdit: \(part\) => editEvent\(event\.id, partStep\[part\]\)/, 'a pen opens exactly that step');
-  const profile = read('src/features/studio/ProfileScreen.tsx');
-  assert.match(profile, /<OrganizerProfileView organizer=\{toPublicOrganizer\(organizer\)\} events=\{guestEvents\(events, organizer\.id\)\}/, 'the organizer page of the visitor app');
+test('the page is the form: creating and editing use the guest event page, parts open as sheets', () => {
+  const page = read('src/features/studio/EventScreen.tsx');
+  assert.equal([...page.matchAll(/<EventDetailView /g)].length, 2, 'the same guest view for a new and for a saved event');
+  assert.match(page, /onEdit: setPart, empty: guest\.empty, close: true/, 'new event: placeholders to tap');
+  assert.match(page, /<EventPartSheet part=\{part\} organizer=\{organizer\} form=\{form\} isNew applyLabel="Übernehmen"/);
+  assert.match(page, /applyLabel="Speichern"/, 'saved event: a part is saved right away');
+  assert.ok(!fs.existsSync(path.join(__dirname, '../src/app/studio/edit')), 'no separate step pages');
   assert.ok(!fs.existsSync(path.join(__dirname, '../src/app/studio/page.tsx')), 'no separate form page for the profile');
-  // Auch beim Anlegen: die Vorschau ist die echte Eventseite, die Stifte führen zum Schritt.
-  const wizard = read('src/features/studio/EventWizardScreen.tsx');
-  assert.match(wizard, /<EventDetailView event=\{guest\}/);
-  assert.match(wizard, /onEdit: \(part\) => go\(partStep\[part\]\)/);
-  // Dieselbe Kachel wie in Entdecken.
-  assert.match(read('src/features/studio/Gallery.tsx'), /<OrganizerStoryTile organizer=\{explore\}/);
-  assert.match(read('src/features/studio/Gallery.tsx'), /Story in Entdecken<\/SectionTitle>/);
-  // Die Besucher-Seiten bleiben für Gäste, wie sie sind: Stifte nur mit `edit`.
+  // Profil: die Veranstalterseite der Gäste; das Profilbild mit „+“ ist die Story in Entdecken.
+  const profile = read('src/features/studio/ProfileScreen.tsx');
+  assert.match(profile, /<OrganizerProfileView organizer=\{toPublicOrganizer\(organizer\)\} events=\{guestEvents\(events, organizer\.id\)\}/);
+  assert.match(profile, /avatar: <ExploreStory /);
+  assert.match(read('src/features/studio/ExploreStory.tsx'), /<OrganizerStoryTile organizer=\{explore\}/, 'the same tile as in Entdecken');
+  // Die Besucher-Seiten bleiben für Gäste, wie sie sind: Bearbeiten nur mit `edit`.
   const guestEvent = read('src/screens/EventDetailScreen.tsx');
   assert.match(guestEvent, /export function EventDetailView\(/);
   assert.match(guestEvent, /return <EventDetailView event=\{event\} organizer=\{organizer\} tickets=\{content\.tickets\} liveSnaps=\{content\.snaps\}/);
@@ -185,7 +187,7 @@ test('guest view: Studio shows the same event page and organizer page as guests,
 test('guest view data: own events are mapped with the rules of the visitor app, drafts included; guests only get published ones', () => {
   const adapter = load('src/services/eventAdapter.ts', { '../constants/theme': { categories: ['Alle', 'Techno', 'House', 'Hip-Hop', 'Konzerte', 'Events', 'Clubs'] },
     './eventSchema': { publishedValue: true }, '../../assets/events/nightlife.jpg': 1 });
-  const view = load('src/features/studio/guestView.ts', { '../../services/eventAdapter': adapter, '../../services/eventSchema': { publishedValue: true } });
+  const view = load('src/features/studio/guestView.ts', { '../../services/eventAdapter': adapter, '../../services/eventSchema': { publishedValue: true }, './eventForm': form });
   const organizerId = '11111111-1111-4111-8111-111111111111';
   const draft = event({ startsAt: '2026-11-28T22:00:00+00:00', endsAt: '2026-11-29T04:00:00+00:00', genre: 'Techno, Goa', isPublished: false });
   const mapped = view.toSpotEvent(draft, organizerId);
@@ -199,4 +201,69 @@ test('guest view data: own events are mapped with the rules of the visitor app, 
     event({ id: 'e3', startsAt: '2026-12-06T22:00:00+00:00', isPublished: true, status: 'cancelled' })], organizerId).length, 1, 'drafts and cancelled events are not on the public page');
   assert.deepEqual(plain(view.toPublicTickets('e1', [ticket({ soldOut: true })])), [{ id: 't1', eventId: 'e1', name: 'Abendkasse', description: null, priceCents: 1200, currency: 'EUR', externalUrl: null, salesEnd: null, soldOut: true }]);
   assert.equal(view.toPublicPosts('o', [{ id: 'p1', body: 'a', isPublished: true, createdAt: 'x', images: [] }, { id: 'p2', body: 'b', isPublished: false, createdAt: 'y', images: [] }]).length, 1);
+});
+
+test('defaults from the last event: times, place, kind, genre and door tickets; title, date, flyer, text and link are new', () => {
+  const last = event({ ticketUrl: null, genre: 'House', imageUrl: 'https://x.example/alt.jpg' });
+  const fresh = form.freshForm(organizer, { event: last, tickets: [ticket()] });
+  assert.equal(fresh.title, '');
+  assert.equal(fresh.date, '');
+  assert.equal(fresh.imageUrl, null);
+  assert.equal(fresh.description, '');
+  assert.equal(fresh.startTime, '23:00');
+  assert.equal(fresh.endTime, '05:00');
+  assert.deepEqual(plain(fresh.genres), ['House']);
+  assert.equal(fresh.placeMode, 'own');
+  assert.deepEqual(plain(fresh.prices.map((row) => [row.id ?? null, row.name, row.price])), [[null, 'Abendkasse', '12']], 'door prices again, as new rows');
+  // Ein Ticket-Link gehört zu genau einem Event: nichts davon übernehmen.
+  const online = form.freshForm(organizer, { event: event({ ticketUrl: 'https://t.example/alt' }), tickets: [ticket({ name: 'Early Bird', priceCents: 800 })] });
+  assert.equal(online.ticketUrl, '');
+  assert.equal(online.ticketMode, 'door');
+  assert.deepEqual(plain(online.prices.map((row) => row.price)), ['']);
+  assert.equal(form.freshForm(organizer, null).title, '', 'without an earlier event: empty defaults');
+  // Datum nur als Vorschlag: gleicher Wochentag, nächster Termin.
+  assert.equal(form.suggestedDate({ startsAt: '2026-11-21T22:00:00.000Z' }, now), '28.11.2026', 'last Saturday → next Saturday');
+  assert.equal(form.suggestedDate({ startsAt: '2026-11-28T22:00:00.000Z' }, now), '05.12.2026', 'a planned Saturday → the one after');
+  assert.equal(form.suggestedDate(null, now), '25.11.2026', 'no earlier event → today');
+});
+
+test('what is missing: saving needs title and time, publishing also a flyer', () => {
+  const empty = form.initialForm(organizer, null);
+  assert.deepEqual(plain(form.missingForSave(empty, { isNew: true, now })), ['title', 'when']);
+  assert.deepEqual(plain(form.missingForPublish(empty, { isNew: true, now })), ['flyer', 'title', 'when']);
+  const ready = { ...empty, title: 'Nacht', date: '28.11.2026', startTime: '23:00', endTime: '05:00' };
+  assert.deepEqual(plain(form.missingForSave(ready, { isNew: true, now })), []);
+  assert.deepEqual(plain(form.missingForPublish(ready, { isNew: true, now })), ['flyer']);
+  assert.deepEqual(plain(form.missingForPublish({ ...ready, imageUrl: 'https://x.example/f.jpg' }, { isNew: true, now })), []);
+  assert.equal(form.partLabels.when, 'Datum und Uhrzeit');
+});
+
+test('new event on its page: placeholders for what is missing, same mapping as for guests', () => {
+  const adapter = load('src/services/eventAdapter.ts', { '../constants/theme': { categories: ['Alle', 'Techno', 'House', 'Hip-Hop', 'Konzerte', 'Events', 'Clubs'] },
+    './eventSchema': { publishedValue: true }, '../../assets/events/nightlife.jpg': 1 });
+  const view = load('src/features/studio/guestView.ts', { '../../services/eventAdapter': adapter, '../../services/eventSchema': { publishedValue: true }, './eventForm': form });
+  const owner = { ...organizer, id: '11111111-1111-4111-8111-111111111111' };
+  const empty = view.formEvent(form.initialForm(owner, null), owner, now);
+  assert.deepEqual(plain(empty.empty), { title: 'Titel hinzufügen', when: 'Datum und Uhrzeit wählen' });
+  assert.equal(empty.event.venue, 'Club Eins', 'the own place is already there');
+  assert.ok(Date.parse(empty.event.startsAt) > now, 'without a time the page does not show the event as over');
+  const filled = view.formEvent({ ...form.initialForm(owner, null), title: 'Nacht', date: '28.11.2026', startTime: '23:00', endTime: '05:00', genres: ['Techno'],
+    prices: [{ key: 'a', name: 'Abendkasse', price: '12' }] }, owner, now);
+  assert.deepEqual(plain(filled.empty), {});
+  assert.equal(filled.event.title, 'Nacht');
+  assert.equal(filled.event.startsAt, '2026-11-28T22:00:00.000Z');
+  assert.deepEqual(plain(filled.event.categories), ['Techno', 'Clubs']);
+  assert.deepEqual(plain(filled.tickets.map((item) => [item.name, item.priceCents])), [['Abendkasse', 1200]]);
+});
+
+test('numbers: one sentence of insight, a comparison only with enough data', () => {
+  const status = load('src/utils/eventStatus.ts', { './events': load('src/utils/events.ts') });
+  const format = load('src/features/studio/format.ts', { '../../utils/eventStatus': status, '../../utils/events': load('src/utils/events.ts') });
+  assert.equal(format.ticketInsight(0, 0), 'Noch hat niemand dieses Event in Spots gesehen.');
+  assert.equal(format.ticketInsight(340, 15), '4 % der Aufrufe führten zu den Tickets.');
+  assert.equal(format.ticketInsight(340, 15, [{ views: 500, ticketClicks: 10 }]), '4 % der Aufrufe führten zu den Tickets.', 'one other event is no basis');
+  const others = [{ views: 500, ticketClicks: 10 }, { views: 300, ticketClicks: 6 }, { views: 5, ticketClicks: 5 }];
+  assert.equal(format.ticketInsight(340, 34, others), '10 % der Aufrufe führten zu den Tickets. Das ist mehr als bei euren anderen Events (2 %).');
+  assert.equal(format.ticketInsight(1000, 5, others), 'unter 1 % der Aufrufe führten zu den Tickets. Das ist weniger als bei euren anderen Events (2 %).');
+  assert.equal(format.ticketInsight(1000, 20, others), '2 % der Aufrufe führten zu den Tickets. Das ist etwa so viel wie bei euren anderen Events (2 %).');
 });
