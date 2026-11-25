@@ -48,8 +48,8 @@ export type OrganizerPart = 'cover' | 'name' | 'about';
 export type OrganizerProfileEdit = {
   onEdit: (part: OrganizerPart) => void;
   onOpenEvent: (id: string) => void;
-  /** Statt des Profilbilds: das Profilbild mit „+“ für die Story in Entdecken. */
-  avatar?: ReactNode;
+  /** Direkt unter Name und Ort, über „Über uns“: z. B. der Bereich „Story in Entdecken“. */
+  afterHead?: ReactNode;
   /** Rechts oben statt „Teilen“, z. B. das Zahnrad für die Einstellungen. */
   toolbar?: ReactNode;
   /** Unter der Seite. */
@@ -182,12 +182,13 @@ export function OrganizerProfileView({ organizer, events, posts: publicPosts, on
 
         {/* Identity on the cover's lower edge, left-aligned like the event title. */}
         <View style={[styles.head, { marginTop: -(AVATAR / 2 + 34) }]}>
-          {edit?.avatar ?? <Pressable disabled={!hasStories} accessibilityRole={hasStories ? 'button' : 'image'} accessibilityLabel={hasStories ? `Storys von ${organizer.displayName} ansehen` : `Profilbild von ${organizer.displayName}`}
-            onPress={() => setStory(groups.stories[0].id)} hitSlop={6} style={({ pressed }) => [styles.ringWrap, pressed && styles.pressed]}>
+          {/* Studio: Tippen auf das Profilbild ändert das Logo (es gehört zu „Name“). */}
+          <Pressable disabled={!edit && !hasStories} accessibilityRole={edit || hasStories ? 'button' : 'image'} accessibilityLabel={edit ? 'Logo ändern' : hasStories ? `Storys von ${organizer.displayName} ansehen` : `Profilbild von ${organizer.displayName}`}
+            onPress={() => edit ? edit.onEdit('name') : setStory(groups.stories[0].id)} hitSlop={6} style={({ pressed }) => [styles.ringWrap, pressed && styles.pressed]}>
             {hasStories && !storiesWatched
               ? <LinearGradient colors={[colors.pink, colors.accent, '#7a2bd6', colors.pink]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.ring, styles.ringGlow]}>{avatar}</LinearGradient>
               : <View style={[styles.ring, hasStories ? styles.ringSeen : styles.ringPlain]}>{avatar}</View>}
-          </Pressable>}
+          </Pressable>
           {edit
             ? <Pressable accessibilityRole="button" accessibilityLabel={`Name, Logo und Adresse ändern: ${organizer.displayName}`} onPress={() => edit.onEdit('name')} style={({ pressed }) => [styles.editRow, pressed && styles.pressed]}>
                 <Text accessibilityRole="header" style={[styles.name, styles.flex]}>{organizer.displayName}</Text><EditPen />
@@ -199,6 +200,8 @@ export function OrganizerProfileView({ organizer, events, posts: publicPosts, on
           </View>
           {groups.sounds.length > 0 && <View style={styles.sounds}>{groups.sounds.map((tag) => <Text key={tag} style={styles.sound}>{tag}</Text>)}</View>}
         </View>
+
+        {edit?.afterHead && <View style={styles.body}>{edit.afterHead}</View>}
 
         <View style={styles.body}>
           {/* About: the organizer's own words, first sentence as motto. Im Studio reagiert die ganze Karte. */}

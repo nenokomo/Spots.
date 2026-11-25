@@ -172,11 +172,12 @@ test('the page is the form: creating and editing use the guest event page, parts
   assert.match(page, /applyLabel="Speichern"/, 'saved event: a part is saved right away');
   assert.ok(!fs.existsSync(path.join(__dirname, '../src/app/studio/edit')), 'no separate step pages');
   assert.ok(!fs.existsSync(path.join(__dirname, '../src/app/studio/page.tsx')), 'no separate form page for the profile');
-  // Profil: die Veranstalterseite der Gäste; das Profilbild mit „+“ ist die Story in Entdecken.
+  // Profil: die Veranstalterseite der Gäste; „Story in Entdecken“ steht als eigener Bereich oben.
   const profile = read('src/features/studio/ProfileScreen.tsx');
   assert.match(profile, /<OrganizerProfileView organizer=\{toPublicOrganizer\(organizer\)\} events=\{guestEvents\(events, organizer\.id\)\}/);
-  assert.match(profile, /avatar: <ExploreStory /);
-  assert.match(read('src/features/studio/ExploreStory.tsx'), /<OrganizerStoryTile organizer=\{explore\}/, 'the same tile as in Entdecken');
+  assert.match(profile, /afterHead: <ExploreStory /, 'Story in Entdecken: its own visible area at the top of the profile');
+  assert.match(read('src/features/studio/ExploreStory.tsx'), /<Text style=\{styles\.title\}>Story in Entdecken<\/Text>/);
+  assert.match(read('src/features/studio/ExploreStory.tsx'), /organizerStoryPage\(explore, today\)/, 'watching shows the story as guests see it');
   // Die Besucher-Seiten bleiben für Gäste, wie sie sind: Bearbeiten nur mit `edit`.
   const guestEvent = read('src/screens/EventDetailScreen.tsx');
   assert.match(guestEvent, /export function EventDetailView\(/);

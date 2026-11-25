@@ -30,7 +30,7 @@ Vorher bekamen alle fünf Momente gleich viel Gewicht, und der wichtigste (1) wa
 | Name des letzten Tabs | Bleibt **„Profil“** (nicht „Club“). |
 | Bearbeiten | **Die Seite ist das Formular.** Eventseite und Veranstalterseite sind im Studio dieselben Seiten, die Gäste sehen. Was man ändern kann, tippt man an; es öffnet sich ein kleines Sheet nur für diesen Teil. Das gilt auch beim Anlegen: Das ＋ öffnet die leere Eventseite mit Platzhaltern. Keine Schritt-Seiten, keine nachgebaute Vorschau. |
 | Story posten | **Über das runde Profilbild mit „+“ auf der Eventseite**: „Storys ansehen“ und „Story posten“ (wie bei Instagram). |
-| Story in Entdecken | Die dauerhaften Bilder (bleiben, bis man sie löscht). **Dieselbe Geste: das Profilbild mit „+“ im Profil.** (Zuerst „Bilder“ genannt und unten im Profil – Noyan hat sie so nicht gefunden.) |
+| Story in Entdecken | Die dauerhaften Bilder (bleiben, bis man sie löscht). **Ein eigener, gut sichtbarer Bereich oben im Profil**, direkt unter dem Namen: ein Streifen mit „Hinzufügen“ und allen Bildern, dazu „Ansehen“. (Vorher zweimal versteckt: erst als „Bilder“ unten im Profil, dann hinter dem Profilbild mit „+“ – Noyan hat sie beide Male nicht gefunden. Das „+“ am Profilbild gibt es nur noch am Event.) |
 | Event anlegen | **Nur über das ＋.** Kein zweiter Knopf. |
 | Verwalten | Was Gäste nicht sehen (Zahlen, Ausverkauft, Story und Shots ausblenden), steht hinter **„Verwalten“** in der Leiste unten auf der Eventseite. Seltenes (Duplizieren, Zurück auf Entwurf, Absagen) unter **„Mehr“** oben rechts. |
 | „Einnahmen“ | Heißt **„Zahlen“**, solange Spots keine Tickets verkauft. Kein leeres „–“. |
@@ -51,7 +51,7 @@ Vorher bekamen alle fünf Momente gleich viel Gewicht, und der wichtigste (1) wa
 
 - **Events** (Start): Bis zur Freigabe die Schritte zum Start. Dann die große Karte fürs **nächste Event** (Flyer, Countdown, Status, Profilbild mit „+“, „Noch offen“ – ein Punkt öffnet auf der Eventseite gleich den passenden Teil). Am Abend „Läuft jetzt“ und die Shots von Gästen. Darunter „Weitere“ und „Vergangen“.
 - **Zahlen**: oben ein Knopf zur Wahl des Events, dann **ein Satz Erkenntnis** („4 % der Aufrufe führten zu den Tickets. Das ist mehr als bei euren anderen Events.“), der **Trichter**, der Verlauf der letzten 30 Tage, der Vergleich. „Datensparsam gezählt“ zum Aufklappen.
-- **Profil**: die Veranstalterseite, wie Gäste sie sehen. Titelbild, Name und „Über uns“ zum Antippen; das Profilbild mit „+“ ist die Story in Entdecken. Darunter nur, was dem Profil noch fehlt. Zahnrad → **Einstellungen** (Team, Ansprechperson, Konto).
+- **Profil**: die Veranstalterseite, wie Gäste sie sehen. Titelbild, Profilbild (Logo), Name und „Über uns“ zum Antippen. Direkt unter dem Namen der Bereich **„Story in Entdecken“**. Ganz unten nur, was dem Profil noch fehlt. Zahnrad → **Einstellungen** (Team, Ansprechperson, Konto).
 - **＋** (eigener Knopf): neues Event.
 
 ### Seiten über den Tabs
@@ -72,7 +72,7 @@ Vorher bekamen alle fünf Momente gleich viel Gewicht, und der wichtigste (1) wa
 | --- | --- |
 | Event | Eine Veranstaltung. |
 | Story | Bilder des Veranstalters zu einem Event, 24 Stunden sichtbar. Posten über das Profilbild mit „+“ am Event. |
-| Story in Entdecken | Dauerhafte Bilder des Veranstalters. Gäste sehen sie in Entdecken als Kachel. Profilbild mit „+“ im Profil. |
+| Story in Entdecken | Dauerhafte Bilder des Veranstalters. Gäste sehen sie in Entdecken als Kachel. Eigener Bereich oben im Profil. |
 | Shots | Bilder von Gästen zu einem Event, 24 Stunden sichtbar. |
 | Profil | Die öffentliche Seite des Veranstalters in Spots (Veranstalterseite). |
 | Veranstalter | Wer Events anlegt (Club, Kollektiv, Reihe). „Club“ nur, wenn wirklich ein Club gemeint ist. |

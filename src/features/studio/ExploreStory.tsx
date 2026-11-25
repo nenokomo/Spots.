@@ -1,8 +1,9 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { StoryViewer } from '../../components/EventStoryViewer';
-import { OrganizerStoryTile } from '../../components/OrganizerStoryTile';
+import { Icon } from '../../components/Icon';
+import { squircle } from '../../constants/theme';
 import { useNow } from '../../hooks/useNow';
 import { useToday } from '../../hooks/useToday';
 import type { ExploreOrganizer, OrganizerStoryItem } from '../../services/organizerStories';
@@ -10,29 +11,21 @@ import { organizerStoryPage } from '../../utils/stories';
 import { addStoryItem, deleteStoryItem, maxStoryItems, type MyOrganizer, type OrganizerEvent } from '../organizer/organizerApi';
 import { dayFormat, isUpcoming } from './format';
 import type { useExploreStory } from './hooks';
-import { RingAvatar } from './Story';
 import { studio, studioType } from './theme';
-import { Chip, Input, MenuRow, Message, Pill, StudioButton, StudioSheet, studioStyles } from './ui';
+import { Chip, Input, Message, Pill, StudioButton, StudioSheet, studioStyles } from './ui';
 
 type Picked = { uri: string; mimeType?: string | null };
-type Stage = 'menu' | 'add' | 'manage';
-type Props = {
-  organizer: MyOrganizer; events: OrganizerEvent[]; story: ReturnType<typeof useExploreStory>; size?: number;
-  /** Das Sheet wird von der Seite gesteuert, damit auch „Noch offen“ es öffnen kann. */
-  open: boolean; onOpen: (open: boolean) => void;
-};
 
 /**
- * „Story in Entdecken“ (SQL 33): die dauerhaften Bilder des Veranstalters. Gäste sehen sie in Entdecken als Kachel,
- * wenn sie nach Veranstaltern in ihrer Stadt schauen; sie bleiben, bis man sie löscht.
- * Dieselbe Geste wie am Event: das Profilbild mit „+“. Tippen zeigt oben **dieselbe Kachel wie in Entdecken** und darunter
- * „Story ansehen“ (wie ein Gast), „Bild hinzufügen“ und „Bilder verwalten“.
+ * „Story in Entdecken“ (SQL 33): die dauerhaften Bilder des Veranstalters. Gäste sehen sie in Entdecken, wenn sie nach
+ * Veranstaltern in ihrer Stadt schauen; die Bilder bleiben, bis man sie löscht.
+ * Ein eigener, gut sichtbarer Bereich oben im Profil (wie die Highlights bei Instagram): ein Streifen mit „Hinzufügen“
+ * und allen Bildern. Ein Bild antippen zeigt es groß mit „Löschen“; „Ansehen“ zeigt die Story, wie Gäste sie sehen.
  * Nicht zu verwechseln mit der Story eines Events (24 Stunden, Profilbild mit „+“ auf der Eventseite).
  */
-export function ExploreStory({ organizer, events, story, size = 92, open, onOpen }: Props) {
+export function ExploreStory({ organizer, events, story }: { organizer: MyOrganizer; events: OrganizerEvent[]; story: ReturnType<typeof useExploreStory> }) {
   const today = useToday();
   const now = useNow();
-  const [stage, setStage] = useState<Stage>('menu');
   const [picked, setPicked] = useState<Picked | null>(null);
   const [caption, setCaption] = useState('');
   const [linkId, setLinkId] = useState<string | null>(null);
@@ -46,8 +39,7 @@ export function ExploreStory({ organizer, events, story, size = 92, open, onOpen
   const full = items.length >= maxStoryItems;
   const selected = items.find((item) => item.id === selectedId) ?? null;
   const links = events.filter((event) => event.status !== 'cancelled').sort((a, b) => b.startsAt.localeCompare(a.startsAt)).slice(0, 20);
-  const reset = () => { setStage('menu'); setPicked(null); setCaption(''); setLinkId(null); setSelectedId(null); setConfirming(false); setError(null); };
-  const close = () => { if (!busy) { onOpen(false); reset(); } };
+  const close = () => { if (!busy) { setPicked(null); setCaption(''); setLinkId(null); setSelectedId(null); setConfirming(false); setError(null); } };
 
   // So, wie Entdecken den Veranstalter liest: sichtbare Bilder und das nächste veröffentlichte Event.
   const next = events.filter((event) => event.isPublished && event.status === 'scheduled' && isUpcoming(event, now)).sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
@@ -57,17 +49,11 @@ export function ExploreStory({ organizer, events, story, size = 92, open, onOpen
   };
   const page = organizerStoryPage(explore, today);
 
-  function watch() {
-    close();
-    // iOS zeigt nicht zwei Fenster gleichzeitig: erst das Sheet schließen lassen, dann die Story öffnen.
-    setTimeout(() => setViewing(true), Platform.OS === 'ios' ? 400 : 0);
-  }
-
   async function pick() {
     setError(null);
     try {
       const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [9, 16], quality: 0.8 });
-      if (!result.canceled && result.assets[0]) { setPicked({ uri: result.assets[0].uri, mimeType: result.assets[0].mimeType }); setStage('add'); }
+      if (!result.canceled && result.assets[0]) setPicked({ uri: result.assets[0].uri, mimeType: result.assets[0].mimeType });
     } catch { setError('Das Bild konnte nicht geöffnet werden. Bitte erneut versuchen.'); }
   }
 
@@ -76,7 +62,7 @@ export function ExploreStory({ organizer, events, story, size = 92, open, onOpen
     setBusy(true); setError(null);
     try {
       await addStoryItem(organizer.id, picked, { caption, eventId: linkId });
-      story.reload(); reset();
+      story.reload(); setPicked(null); setCaption(''); setLinkId(null);
     } catch (failure) { setError(failure instanceof Error ? failure.message : 'Hinzufügen hat nicht geklappt.'); }
     finally { setBusy(false); }
   }
@@ -88,25 +74,32 @@ export function ExploreStory({ organizer, events, story, size = 92, open, onOpen
     finally { setBusy(false); }
   }
 
-  return <>
-    <RingAvatar organizer={organizer} size={size} active={visible.length > 0} label="Story in Entdecken ansehen oder Bild hinzufügen" onPress={() => onOpen(true)} />
+  return <View style={styles.box}>
+    <View style={styles.head}>
+      <View style={styles.headCopy}>
+        <Text style={styles.title}>Story in Entdecken</Text>
+        <Text style={studioStyles.muted}>{items.length > 0 ? 'So finden euch Gäste in Entdecken. Die Bilder bleiben, bis ihr sie löscht.' : 'Zeigt Gästen in Entdecken, wie es bei euch aussieht. Die Bilder bleiben, bis ihr sie löscht.'}</Text>
+      </View>
+      {visible.length > 0 && <StudioButton small variant="secondary" icon="eye" label="Ansehen" onPress={() => setViewing(true)} />}
+    </View>
+    {!picked && !selected && <Message error={story.error ?? error} />}
 
-    <StudioSheet visible={open} title={stage === 'add' ? 'Bild hinzufügen' : stage === 'manage' ? 'Bilder verwalten' : 'Story in Entdecken'} onClose={close}>
-      {stage === 'menu' && <>
-        <View style={styles.top}>
-          <View pointerEvents="none" style={styles.tileBox}><OrganizerStoryTile organizer={explore} today={today} onOpen={() => {}} /></View>
-          <View style={styles.topCopy}>
-            <Text style={studioStyles.heading}>So seht ihr in Entdecken aus</Text>
-            <Text style={studioStyles.muted}>{visible.length > 0 ? 'Die Bilder bleiben, bis ihr sie löscht.' : 'Ohne Bilder zeigt die Kachel euer Logo.'}</Text>
-          </View>
-        </View>
-        <Message error={story.error ?? error} />
-        <MenuRow icon="eye" title="Story ansehen" hint={visible.length === 0 ? 'Noch keine Bilder' : visible.length === 1 ? '1 Bild' : `${visible.length} Bilder`} disabled={visible.length === 0} onPress={watch} />
-        <MenuRow icon="plus" title="Bild hinzufügen" hint={full ? `Mehr als ${maxStoryItems} Bilder gehen nicht` : undefined} disabled={story.items === null || full} onPress={() => void pick()} />
-        {items.length > 0 && <MenuRow icon="image" title="Bilder verwalten" onPress={() => { setError(null); setStage('manage'); }} />}
-      </>}
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip} style={styles.stripScroll}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Bild zur Story in Entdecken hinzufügen" disabled={story.items === null || full} onPress={() => void pick()}
+        style={({ pressed }) => [styles.tile, styles.add, (story.items === null || full) && styles.off, pressed && styles.pressed]}>
+        <Icon name="plus" size={26} color={studio.accent} />
+        <Text style={styles.addText}>Hinzufügen</Text>
+      </Pressable>
+      {items.map((item) => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={item.caption ?? 'Bild öffnen'} onPress={() => { setError(null); setSelectedId(item.id); }}
+        style={({ pressed }) => [styles.tile, pressed && styles.pressed]}>
+        <Image source={{ uri: item.url }} resizeMode="cover" style={[StyleSheet.absoluteFill, item.hidden && styles.dimmed]} />
+        {item.hidden && <View style={styles.hidden}><Text style={styles.hiddenText}>Ausgeblendet</Text></View>}
+      </Pressable>)}
+    </ScrollView>
+    {full && <Text style={studioStyles.faint}>Mehr als {maxStoryItems} Bilder gehen nicht. Löscht eins, um ein neues hinzuzufügen.</Text>}
 
-      {stage === 'add' && picked && <>
+    <StudioSheet visible={!!picked} title="Bild hinzufügen" onClose={close}>
+      {picked && <>
         <View style={styles.preview}><Image source={{ uri: picked.uri }} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityLabel="Ausgewähltes Bild" /></View>
         <Input label="Text" optional value={caption} onChange={setCaption} placeholder="z. B. So war's letzten Samstag" maxLength={200} editable={!busy} />
         {links.length > 0 && <View style={studioStyles.stack}>
@@ -118,27 +111,22 @@ export function ExploreStory({ organizer, events, story, size = 92, open, onOpen
         </View>}
         <Message error={error} />
         <StudioButton label="Hinzufügen" loading={busy} onPress={() => void add()} />
-        <StudioButton variant="ghost" label="Zurück" disabled={busy} onPress={reset} />
       </>}
+    </StudioSheet>
 
-      {stage === 'manage' && <>
-        <View style={styles.grid}>
-          {items.map((item) => <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: item.id === selectedId }} accessibilityLabel={item.caption ?? 'Bild auswählen'}
-            onPress={() => { setError(null); setConfirming(false); setSelectedId(item.id === selectedId ? null : item.id); }} style={({ pressed }) => [styles.tile, item.id === selectedId && styles.tileOn, pressed && styles.pressed]}>
-            <Image source={{ uri: item.url }} resizeMode="cover" style={[StyleSheet.absoluteFill, item.hidden && styles.dimmed]} />
-            {item.hidden && <View style={styles.hidden}><Text style={styles.hiddenText}>Ausgeblendet</Text></View>}
-          </Pressable>)}
-        </View>
-        {selected && <>
-          {selected.hidden && <Pill tone="red" label="Vom Spots-Team ausgeblendet" />}
-          {selected.caption && <Text style={studioStyles.body}>{selected.caption}</Text>}
-          {selected.event && <Text style={studioStyles.muted}>{dayFormat.format(new Date(selected.event.startsAt))} · {selected.event.title}</Text>}
-          {confirming
-            ? <StudioButton variant="danger" label="Ja, löschen" loading={busy} onPress={() => void remove(selected)} />
-            : <StudioButton variant="danger" icon="trash" label="Bild löschen" onPress={() => setConfirming(true)} />}
-        </>}
+    <StudioSheet visible={!!selected} title={confirming ? 'Bild löschen?' : 'Bild'} onClose={close}>
+      {selected && <>
+        <View style={styles.preview}><Image source={{ uri: selected.url }} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityLabel={selected.caption ?? 'Bild'} /></View>
+        {selected.hidden && <Pill tone="red" label="Vom Spots-Team ausgeblendet" />}
+        {selected.caption && <Text style={studioStyles.body}>{selected.caption}</Text>}
+        {selected.event && <Text style={studioStyles.muted}>{dayFormat.format(new Date(selected.event.startsAt))} · {selected.event.title}</Text>}
         <Message error={error} />
-        <StudioButton variant="ghost" label="Zurück" disabled={busy} onPress={reset} />
+        {confirming
+          ? <>
+              <StudioButton variant="danger" label="Ja, löschen" loading={busy} onPress={() => void remove(selected)} />
+              <StudioButton variant="ghost" label="Abbrechen" disabled={busy} onPress={() => setConfirming(false)} />
+            </>
+          : <StudioButton variant="danger" icon="trash" label="Bild löschen" onPress={() => setConfirming(true)} />}
       </>}
     </StudioSheet>
 
@@ -147,22 +135,25 @@ export function ExploreStory({ organizer, events, story, size = 92, open, onOpen
       {viewing && <StoryViewer pages={[{ ...page, media: page.media.map((media) => ({ ...media, storyItemId: undefined })) }]} initialId={page.id}
         onClose={() => setViewing(false)} onAction={() => setViewing(false)} />}
     </Modal>
-  </>;
+  </View>;
 }
 
 const styles = StyleSheet.create({
   pressed: { opacity: 0.8 },
-  top: { flexDirection: 'row', gap: 16, alignItems: 'center' },
-  // Gleiche Proportion wie die Kachel in Entdecken (Breite : Höhe = 0,62).
-  tileBox: { width: 112, height: 181 },
-  topCopy: { flex: 1, gap: 6 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tile: { width: '31.5%', aspectRatio: 9 / 16, overflow: 'hidden', borderRadius: studio.radiusSmall, backgroundColor: studio.panelHigh, borderWidth: 2, borderColor: 'transparent' },
-  tileOn: { borderColor: studio.accent },
+  box: { gap: 12, marginTop: 20, padding: 16, borderRadius: studio.radius, backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, ...squircle },
+  head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  headCopy: { flex: 1, gap: 4 },
+  title: { fontSize: 20, lineHeight: 25, fontWeight: '800', letterSpacing: -0.3, color: studio.text },
+  stripScroll: { marginHorizontal: -16 },
+  strip: { gap: 8, paddingHorizontal: 16 },
+  tile: { width: 92, height: 164, overflow: 'hidden', borderRadius: studio.radiusSmall, backgroundColor: studio.panelHigh },
+  add: { alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: studio.accentSoft, borderWidth: 1.5, borderColor: studio.accentLine, borderStyle: 'dashed' },
+  addText: { ...studioType.small, fontWeight: '700', color: studio.text },
+  off: { opacity: 0.45 },
   dimmed: { opacity: 0.35 },
   hidden: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   hiddenText: { fontSize: 11, lineHeight: 14, fontWeight: '700', color: studio.text },
-  preview: { alignSelf: 'center', width: 150, height: 267, overflow: 'hidden', borderRadius: studio.radius, backgroundColor: studio.bg },
+  preview: { alignSelf: 'center', width: 170, height: 302, overflow: 'hidden', borderRadius: studio.radius, backgroundColor: studio.bg },
   label: { ...studioType.label, color: studio.muted },
   optional: { color: studio.faint, textTransform: 'none', letterSpacing: 0, fontWeight: '400' },
   chips: { gap: 8 },

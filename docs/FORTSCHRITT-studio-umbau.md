@@ -39,7 +39,7 @@ Betrifft Noyans Design (`src/features/studio/`, `src/components/Icon.tsx`, `src/
   - **Die Seite ist das Formular.** Das ＋ öffnet die leere Eventseite mit Platzhaltern (`/studio/new`, von unten). Antippen öffnet ein Sheet nur für diesen Teil (`EventParts.tsx`) – beim Anlegen wie beim Bearbeiten. Die Schritt-Seiten (`EventWizardScreen`, `/studio/edit/[id]`) gibt es nicht mehr. Speichern: `saveEvent.ts`.
   - **Drei Tabs und ein eigenes ＋**: Events · Zahlen · Profil. Übersicht und Events sind zusammengelegt (`EventsScreen.tsx`); `OverviewScreen` entfällt.
   - **„Verwalten“ und „Mehr“** auf der Eventseite statt „Nur für euch“ ganz unten. Rückfragen im selben Sheet.
-  - **Story in Entdecken am Profilbild mit „+“** im Profil (`ExploreStory.tsx`, ersetzt `Gallery.tsx`); Logo beim Namen; Team in den Einstellungen.
+  - **Story in Entdecken als eigener Bereich oben im Profil** (`ExploreStory.tsx`, ersetzt `Gallery.tsx`): Streifen mit „Hinzufügen“ und allen Bildern, „Ansehen“ zeigt die Story wie ein Gast. Zuerst hinter dem Profilbild mit „+“ – Noyan fand sie dort nicht, deshalb sichtbar gemacht. Logo: Profilbild oder Name antippen; Team in den Einstellungen.
   - **Vorgaben vom letzten Event** (Uhrzeiten, Ort, Art, Genre, Abendkasse) und Datumsvorschlag (`freshForm`, `suggestedDate`).
   - **„Euer Event ist live“** nach dem Veröffentlichen, mit „Jetzt teilen“.
   - **Feinschliff:** Aktualisieren durch Ziehen (Events, Zahlen, Profil, Eventseite); Stifte neutral, ganze Bereiche tippbar; Tippflächen 44; Schrift mindestens 11; einmaliges Willkommen (`Welcome.tsx`); in Zahlen ein Auswahlknopf und ein Satz Erkenntnis (`ticketInsight`).

@@ -16,7 +16,7 @@ import { useStudio } from './StudioContext';
 import { studio } from './theme';
 import { Card, Check, Pill, ProgressBar, studioStyles } from './ui';
 
-type Todo = { label: string; done: boolean; part: OrganizerPart | 'story' };
+type Todo = { label: string; done: boolean; /** Ohne: der Punkt zeigt nur den Stand (die Story steht gut sichtbar oben im Profil). */ part?: OrganizerPart };
 /** Was dem Profil noch fehlt. Jeder Punkt öffnet den passenden Teil. `storyCount` null = die Story lädt noch. */
 export function profileChecklist(organizer: Pick<MyOrganizer, 'avatarUrl' | 'coverUrl' | 'motto' | 'biography' | 'websiteUrl' | 'socialUrl'>, storyCount: number | null): Todo[] {
   return [
@@ -25,14 +25,14 @@ export function profileChecklist(organizer: Pick<MyOrganizer, 'avatarUrl' | 'cov
     { label: 'Motto', done: !!organizer.motto?.trim(), part: 'about' },
     { label: 'Beschreibung', done: !!organizer.biography?.trim(), part: 'about' },
     { label: 'Website oder Instagram', done: !!organizer.websiteUrl || !!organizer.socialUrl, part: 'about' },
-    { label: 'Story in Entdecken', done: storyCount === null || storyCount > 0, part: 'story' },
+    { label: 'Story in Entdecken', done: storyCount === null || storyCount > 0 },
   ];
 }
 
 /**
  * Tab „Profil“ (docs/STUDIO-UMBAU-PLAN.md): **die Veranstalterseite, wie Gäste sie sehen** (OrganizerProfileView der Besucher-App).
- * Titelbild, Name und „Über uns“ lassen sich antippen und ändern. Das Profilbild mit „+“ ist die Story in Entdecken –
- * dieselbe Geste wie am Event. Events öffnen die Eventseite im Studio. Darunter nur, was dem Profil noch fehlt.
+ * Titelbild, Profilbild (Logo), Name und „Über uns“ lassen sich antippen und ändern. Direkt unter dem Namen steht gut
+ * sichtbar der Bereich „Story in Entdecken“. Events öffnen die Eventseite im Studio. Ganz unten nur, was dem Profil noch fehlt.
  * Zahnrad oben rechts → Einstellungen (Team, Ansprechperson, Konto). Nach unten ziehen lädt neu.
  */
 export default function ProfileScreen() {
@@ -41,7 +41,6 @@ export default function ProfileScreen() {
   const story = useExploreStory(organizer?.id);
   const refresh = useStudioRefresh(story.reload);
   const [part, setPart] = useState<OrganizerPart | null>(null);
-  const [storyOpen, setStoryOpen] = useState(false);
   const [posts, setPosts] = useState<PublicOrganizerPost[]>([]);
   const organizerId = organizer?.id;
 
@@ -72,7 +71,7 @@ export default function ProfileScreen() {
       <Text style={studioStyles.heading}>Euer Profil ist zu {Math.round((done / checklist.length) * 100)} % fertig</Text>
       <ProgressBar value={done / checklist.length} />
       <View>{checklist.filter((item) => !item.done).map((item) => <Check key={item.label} done={false} label={item.label}
-        onPress={() => { const target = item.part; if (target === 'story') setStoryOpen(true); else setPart(target); }} />)}</View>
+        onPress={item.part ? () => setPart(item.part ?? null) : undefined} />)}</View>
     </Card>}
   </View> : undefined;
 
@@ -80,7 +79,7 @@ export default function ProfileScreen() {
     <OrganizerProfileView organizer={toPublicOrganizer(organizer)} events={guestEvents(events, organizer.id)} posts={posts}
       edit={{
         onEdit: setPart, onOpenEvent: (id) => openEvent(id), below, refresh, bottomInset: tabBarContentInset(insets.bottom),
-        avatar: <ExploreStory organizer={organizer} events={events} story={story} open={storyOpen} onOpen={setStoryOpen} />,
+        afterHead: <ExploreStory organizer={organizer} events={events} story={story} />,
         toolbar: <IconButton icon="sliders" accessibilityLabel="Einstellungen" onPress={() => router.push('/studio/settings')} />,
       }} />
     <ProfilePartSheet part={part} organizer={organizer} onClose={() => setPart(null)} reload={reload} />
