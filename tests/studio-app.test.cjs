@@ -167,7 +167,8 @@ test('structure: three tabs and a separate plus, story only at the profile pictu
 test('the page is the form: creating and editing use the guest event page, parts open as sheets', () => {
   const page = read('src/features/studio/EventScreen.tsx');
   assert.equal([...page.matchAll(/<EventDetailView /g)].length, 2, 'the same guest view for a new and for a saved event');
-  assert.match(page, /onEdit: setPart, empty: guest\.empty, close: true/, 'new event: placeholders to tap');
+  assert.match(page, /onEdit: setPart, empty: guest\.empty, close: true, title: 'Neues Event'/, 'new event: placeholders to tap, and a title that says so');
+  assert.match(page, /<NewEventIntro \/>/, 'a short title card after tapping the plus');
   assert.match(page, /<EventPartSheet part=\{part\} organizer=\{organizer\} form=\{form\} isNew applyLabel="Übernehmen"/);
   assert.match(page, /applyLabel="Speichern"/, 'saved event: a part is saved right away');
   assert.ok(!fs.existsSync(path.join(__dirname, '../src/app/studio/edit')), 'no separate step pages');

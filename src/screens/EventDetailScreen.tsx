@@ -76,6 +76,8 @@ export type EventDetailEdit = {
   toolbar?: ReactNode;
   /** „Schließen“ statt Zurück-Pfeil (neues Event, das von unten eingeblendet wird). */
   close?: boolean;
+  /** Oben in der Mitte, z. B. „Neues Event“, damit klar ist, was man gerade tut. */
+  title?: string;
   /** Nach unten ziehen lädt neu. */
   refresh?: { refreshing: boolean; onRefresh: () => void };
 };
@@ -170,6 +172,7 @@ export function EventDetailView({ event, organizer, tickets, liveSnaps, address,
         <LinearGradient pointerEvents="none" colors={['#0a090cb3', '#0a090c00', '#0a090c00', '#0a090ccc', colors.background]} locations={[0, 0.2, 0.55, 0.85, 1]} style={StyleSheet.absoluteFill} />
         <View style={[styles.toolbar, { paddingTop: insets.top + space.sm }]}>
           <IconButton icon={edit?.close ? 'close' : 'back'} accessibilityLabel={edit?.close ? 'Schließen' : 'Zurück'} onPress={onBack} />
+          {edit?.title && <View style={styles.toolbarTitle}><Text accessibilityRole="header" numberOfLines={1} style={styles.toolbarTitleText}>{edit.title}</Text></View>}
           {edit?.toolbar ?? <IconButton icon="share" accessibilityLabel="Event teilen" onPress={() => void share()} />}
         </View>
         {edit && (event.imageIsPlaceholder
@@ -377,6 +380,8 @@ const styles = StyleSheet.create({
   editRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 44 },
   pen: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff1f', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff33' },
   placeholder: { color: colors.faint },
+  toolbarTitle: { alignSelf: 'center', justifyContent: 'center', height: 36, paddingHorizontal: space.lg, borderRadius: 18, backgroundColor: '#0a090cb3', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff40' },
+  toolbarTitleText: { ...type.label, color: colors.text },
   flyerEdit: { position: 'absolute', right: space.lg, flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: space.md, borderRadius: 18, backgroundColor: '#0a090cb3', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff40' },
   flyerEditText: { ...type.label, fontSize: 13, color: colors.text },
   flyerAdd: { position: 'absolute', alignSelf: 'center', alignItems: 'center', justifyContent: 'center', gap: space.sm, width: 200, height: 120, borderRadius: radius.lg, backgroundColor: '#0a090cb3', borderWidth: 1.5, borderColor: '#ffffff59', borderStyle: 'dashed', ...squircle },

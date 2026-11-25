@@ -1,7 +1,9 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useEffectEvent, useState } from 'react';
-import { ActivityIndicator, BackHandler, Image, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, BackHandler, Image, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
+import { Backdrop } from '../../components/Screen';
 import { IconButton } from '../../components/ui/Button';
 import { formatEventAddress } from '../../hooks/useEventAddress';
 import { useNow } from '../../hooks/useNow';
@@ -197,6 +199,30 @@ function ExistingEvent({ organizer, event, reload, initialPart, justPublished }:
 }
 
 /**
+ * Kurzes Titelbild nach dem Tipp auf das Plus: „Neues Event“. Es macht klar, was jetzt passiert, und blendet sich nach
+ * gut einer Sekunde von selbst aus (Tippen überspringt es) – ohne zusätzlichen Knopf auf dem Weg zum Event.
+ */
+function NewEventIntro() {
+  const [shown, setShown] = useState(true);
+  const [opacity] = useState(() => new Animated.Value(1));
+  const hide = () => Animated.timing(opacity, { toValue: 0, duration: 300, useNativeDriver: Platform.OS !== 'web' }).start(() => setShown(false));
+  const onTime = useEffectEvent(hide);
+  useEffect(() => {
+    const timer = setTimeout(onTime, 1400);
+    return () => clearTimeout(timer);
+  }, []);
+  if (!shown) return null;
+  return <Animated.View style={[StyleSheet.absoluteFill, { opacity }]}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Neues Event erstellen. Tippen, um fortzufahren." onPress={hide} style={styles.intro}>
+      <Backdrop />
+      <LinearGradient colors={studio.accentFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.introPlus}><Icon name="plus" size={40} color={studio.onAccent} /></LinearGradient>
+      <Text style={styles.introTitle}>Neues Event</Text>
+      <Text style={styles.introText}>Erstellt hier euer neues Event. Tippt an, was ihr ausfüllen wollt: Flyer, Titel, Datum.</Text>
+    </Pressable>
+  </Animated.View>;
+}
+
+/**
  * Ein neues Event: **die leere Eventseite mit Platzhaltern** (docs/STUDIO-UMBAU-PLAN.md, „Die Seite ist das Formular“).
  * Antippen füllt den Teil; gespeichert wird erst mit „Veröffentlichen“ oder „Als Entwurf“. Ungespeichertes geht nicht ohne Rückfrage verloren.
  */
@@ -254,7 +280,7 @@ function NewEvent({ organizer, seed, dateHint, reload }: { organizer: MyOrganize
     <EventDetailView event={guest.event} organizer={toPublicOrganizer(organizer)} tickets={guest.tickets} liveSnaps={[]} trackedId={null} onBack={leave}
       address={shown.venue ? null : formatEventAddress({ street: shown.place.street, house_number: shown.place.houseNumber, postcode: shown.place.postcode }, shown.place.city)}
       edit={{
-        onEdit: setPart, empty: guest.empty, close: true, bar,
+        onEdit: setPart, empty: guest.empty, close: true, title: 'Neues Event', bar,
         story: <View style={styles.avatar}><Avatar organizer={organizer} size={76} /></View>,
         toolbar: <View style={styles.toolbarSpace} />,
       }} />
@@ -262,6 +288,7 @@ function NewEvent({ organizer, seed, dateHint, reload }: { organizer: MyOrganize
       onApply={(next: EventForm) => { setForm(next); setPart(null); }} />
     <ConfirmSheet visible={leaving} title="Event verwerfen?" text="Eure Eingaben sind noch nicht gespeichert." confirmLabel="Verwerfen" cancelLabel="Weiter bearbeiten" danger
       onConfirm={() => { setLeaving(false); goBack(); }} onClose={() => setLeaving(false)} />
+    <NewEventIntro />
   </>;
 }
 
@@ -304,6 +331,10 @@ const styles = StyleSheet.create({
   need: { ...studioType.small, color: studio.muted },
   avatar: { padding: 4, borderRadius: 42, backgroundColor: studio.bg, borderWidth: 2, borderColor: '#ffffff26' },
   toolbarSpace: { width: 44, height: 44 },
+  intro: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 36, backgroundColor: studio.bg },
+  introPlus: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 8, borderWidth: 1, borderColor: '#ffffff33', boxShadow: '0 6px 28px #c922ab80' },
+  introTitle: { fontSize: 34, lineHeight: 40, fontWeight: '800', letterSpacing: -0.6, color: studio.text, textAlign: 'center' },
+  introText: { ...studioType.body, fontSize: 17, lineHeight: 24, color: studio.muted, textAlign: 'center' },
   ticket: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 },
   ticketCopy: { flex: 1, gap: 2 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

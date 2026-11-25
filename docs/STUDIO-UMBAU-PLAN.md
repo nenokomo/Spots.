@@ -57,7 +57,7 @@ Vorher bekamen alle fünf Momente gleich viel Gewicht, und der wichtigste (1) wa
 ### Seiten über den Tabs
 
 - **Eventseite** (`/studio/event/[id]`): die Eventseite der Gäste. Antippen ändert einen Teil. Leiste unten: „Verwalten“ und der nächste Schritt („Veröffentlichen“, danach „Teilen“). Nach dem Veröffentlichen: „Euer Event ist live“ mit „Jetzt teilen“.
-- **Neues Event** (`/studio/new`, von unten eingeblendet): dieselbe Seite, leer. Platzhalter „Flyer hinzufügen“, „Titel hinzufügen“, „Datum und Uhrzeit wählen“. Ort, Uhrzeiten, Art, Genre und Abendkasse kommen als **Vorgabe vom letzten Event**; das Datum wird als gleicher Wochentag vorgeschlagen. Zum Speichern braucht es Titel und Zeit, zum Veröffentlichen auch einen Flyer. „Schließen“ fragt nach, bevor Eingaben verloren gehen. Duplizieren: `?from=<id>`.
+- **Neues Event** (`/studio/new`, von unten eingeblendet): zuerst gut eine Sekunde ein Titelbild „Neues Event“ (Wunsch Noyan: es soll klar sein, dass man über das Plus ein Event erstellt; Tippen überspringt es), oben bleibt „Neues Event“ stehen. Dann dieselbe Seite, leer. Platzhalter „Flyer hinzufügen“, „Titel hinzufügen“, „Datum und Uhrzeit wählen“. Ort, Uhrzeiten, Art, Genre und Abendkasse kommen als **Vorgabe vom letzten Event**; das Datum wird als gleicher Wochentag vorgeschlagen. Zum Speichern braucht es Titel und Zeit, zum Veröffentlichen auch einen Flyer. „Schließen“ fragt nach, bevor Eingaben verloren gehen. Duplizieren: `?from=<id>`.
 - **Einstellungen** (`/studio/settings`): Team (Einladung über das Teilen-Menü), Ansprechperson, Konto (abmelden, löschen mit Rückfrage).
 
 ### Regeln für die Oberfläche
