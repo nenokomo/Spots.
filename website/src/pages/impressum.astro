@@ -13,7 +13,7 @@ const ph = (value: string, label: string) => value || `[TODO: ${label}]`;
 
       <h2>Angaben gemäß § 5 DDG</h2>
       <p>
-        <span class:list={{ ph: !l.company }}>{ph(l.company, 'Name / Firma')}</span>{l.legalForm ? ` (${l.legalForm})` : <span class="ph"> [TODO: Rechtsform]</span>}<br />
+        <span class:list={{ ph: !l.company }}>{ph(l.company, 'Name / Firma')}</span>{l.legalForm ? ` (${l.legalForm})` : ''}<br />
         <span class:list={{ ph: !l.street }}>{ph(l.street, 'Straße und Hausnummer')}</span><br />
         <span class:list={{ ph: !l.city }}>{ph(l.city, 'PLZ und Ort')}</span><br />
         Deutschland
