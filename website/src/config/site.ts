@@ -4,7 +4,7 @@ export const site = {
   name: 'Spots',
   tagline: 'Dein Radar für die Nacht',
   description: 'Spots zeigt dir live auf der Karte, wo heute Nacht in deiner Nähe etwas los ist: Partys, Clubs, Konzerte und Events – mit echten Eindrücken von vor Ort.',
-  contactEmail: 'kontakt@spots-app.de', // Postfach bei IONOS noch anlegen
+  contactEmail: 'kontakt@spots-app.de', // Postfach bei IONOS
   partnerEmail: '', // [TODO: Kontakt-Mail für Veranstalter]; leer = contactEmail
   appStoreUrl: '', // [TODO: Store-Link] App Store
   playStoreUrl: '', // [TODO: Store-Link] Google Play

@@ -201,7 +201,7 @@ Für Download und Updates gelten die Bedingungen von Apple (App Store) bzw. Goog
 
 ### 4.17 Kontakt per E-Mail
 
-Schreibst du uns, verarbeiten wir deine E-Mail-Adresse und deine Nachricht, um dein Anliegen zu bearbeiten (Art. 6 Abs. 1 lit. b bzw. f DSGVO). [OFFEN: E-Mail-Postfach-Anbieter]
+Schreibst du uns, verarbeiten wir deine E-Mail-Adresse und deine Nachricht, um dein Anliegen zu bearbeiten (Art. 6 Abs. 1 lit. b bzw. f DSGVO). IONOS SE, Montabaur. [OFFEN: Vertrag zur Auftragsverarbeitung mit IONOS abschließen]
 
 ### 4.18 Veranstalter-Story, Beiträge und Tickets [TEST]
 
@@ -241,7 +241,7 @@ Für Freigaben und Moderation hat das Spots-Team einen geschützten Bereich. Dor
 |---|---|---|---|
 | Supabase Inc. | Auftragsverarbeiter | Datenbank, Anmeldung, Dateispeicher, Server-Protokolle | live |
 | [OFFEN: E-Mail-Versanddienst] | Auftragsverarbeiter | Bestätigungs- und Passwort-E-Mails | [TEST] |
-| [OFFEN: E-Mail-Postfach-Anbieter] | Auftragsverarbeiter | Kontakt | ab Veröffentlichung |
+| IONOS SE | Auftragsverarbeiter | Kontakt-Postfach | ab Veröffentlichung |
 | Anthropic PBC | Auftragsverarbeiter | Entwürfe aus öffentlichen Event-Seiten | [GEPLANT] |
 | Apple, Google, OpenStreetMap Foundation | eigene Verantwortung [OFFEN: Rolle prüfen] | Karten | live |
 | OpenStreetMap Foundation (Nominatim) | eigene Verantwortung [OFFEN: Rolle prüfen] | Adresssuche für Veranstalter | [TEST] |

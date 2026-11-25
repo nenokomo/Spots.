@@ -33,16 +33,16 @@ npm run shots      # Screenshots in Handy-, Tablet- und Desktop-Breite nach docs
 
 `og` und `shots` nutzen den installierten Chrome oder Edge (Pfad notfalls über `CHROME=…`).
 
-## Deployen (Vercel, Netlify oder Cloudflare Pages)
+## Hosting: Netlify (seit 25.11.2026)
 
-1. Neues Projekt aus dem GitHub-Repo anlegen.
-2. **Root-Verzeichnis:** `website` · **Build-Befehl:** `npm run build` · **Ausgabeordner:** `dist`.
-3. Umgebungsvariablen setzen (siehe `.env.example`):
-   - `SITE_URL` – die echte Domain, z. B. `https://spots-app.de`
-   - `PUBLIC_SUPABASE_URL` und `PUBLIC_SUPABASE_PUBLISHABLE_KEY` – für das Kontaktformular (öffentliche Werte, keine Secrets)
-4. Danach geht jeder Merge nach `main` automatisch live; jeder Pull Request bekommt eine Vorschau-Adresse.
+Die Seite läuft bei Netlify (Projekt `spots-36by`, auch unter `spots-36by.netlify.app`) und ist öffentlich. Jeder Push nach `main` geht automatisch live; Pull Requests bekommen eine Vorschau-Adresse.
 
-**Kontaktformular:** Speichert über `public.spots_partner_request` (`supabase/ops/23_partner_requests.sql`). Im Testprojekt eingespielt; **in der Produktion erst nach Freigabe** von Jacint und euch. Ohne die beiden Supabase-Variablen öffnet das Formular stattdessen eine vorausgefüllte Mail an die Kontakt-Adresse. Anfragen findet ihr im Supabase-Dashboard unter `spots_partner_private.partner_requests`.
+- **Build-Einstellungen in Netlify:** Branch `main` · Base directory `website` · Build command `npm run build` · Publish directory `website/dist`. Node-Version aus `website/.nvmrc`.
+- **Umgebungsvariablen** (siehe `.env.example`, alle öffentlich – **nicht** als „Secret“ markieren, sonst bricht Netlify den Build ab): `SITE_URL=https://spots-app.de`, `PUBLIC_SUPABASE_URL` und `PUBLIC_SUPABASE_PUBLISHABLE_KEY` der Produktion.
+- **Domain:** `spots-app.de` (Hauptadresse, `www.` leitet weiter). DNS bleibt bei IONOS: A-Einträge für `@` und `www` auf `75.2.60.5`. Mail-Einträge (MX, SPF, DMARC, DKIM, autodiscover) nicht anfassen.
+- `astro.config.mjs` nutzt nur `website/tsconfig.json`: Beim Hoster sind die App-Pakete (expo) nicht installiert.
+
+**Kontaktformular:** Speichert über `public.spots_partner_request` (`supabase/ops/23_partner_requests.sql`), in Spots-Test und in der Produktion eingespielt. Ohne die beiden Supabase-Variablen öffnet das Formular stattdessen eine vorausgefüllte Mail an die Kontakt-Adresse. Anfragen findet ihr im Supabase-Dashboard unter `spots_partner_private.partner_requests`.
 
 Für die lokale Entwicklung zeigt `website/.env.development.local` (nicht im Git) auf Spots-Test.
 
@@ -62,11 +62,13 @@ Keine Cookies, kein Tracking, keine externen Schriften oder Skripte. Einzige Dat
 ## Offene TODOs vor dem Livegang
 
 **Daten (in `src/config/site.ts`):**
-- [ ] Kontakt-Mail, Kontakt-Mail für Veranstalter
+- [x] Kontakt-Mail `kontakt@spots-app.de` (Postfach bei IONOS)
+- [ ] Kontakt-Mail für Veranstalter (leer = Kontakt-Mail)
 - [ ] Store-Links App Store und Google Play; offizielle Store-Badges einsetzen (Vorgaben von Apple/Google)
 - [ ] Instagram- und TikTok-Profil
-- [ ] Impressum: Name/Firma, Rechtsform, Vertretungsberechtigte, Anschrift, Telefon, ggf. Register und USt-IdNr., verantwortliche Person nach § 18 MStV
-- [ ] Hosting-Anbieter mit Anschrift
+- [x] Impressum: Name, Vertretungsberechtigte, Anschrift, Telefon, verantwortliche Person nach § 18 MStV
+- [ ] Impressum: Rechtsform, ggf. Register und USt-IdNr., Hinweis nach § 36 VSBG prüfen
+- [ ] Hosting-Anbieter mit Anschrift (Netlify) in Impressum und Datenschutz; Netlify ist eine US-Firma
 
 **Datenschutzerklärung (`src/pages/datenschutz.astro`):**
 - [ ] Speicherdauer der Server-Protokolle, Grundlage für USA-Übermittlung beim Hoster
@@ -84,8 +86,8 @@ Keine Cookies, kein Tracking, keine externen Schriften oder Skripte. Einzige Dat
 **Inhalt:** Konditionen fürs Ticketing (FAQ Veranstalter: Servicegebühr).
 
 **Technik:**
-- [ ] Domain, `SITE_URL`
-- [ ] SQL 23 in der Produktion, Supabase-Variablen beim Hoster
+- [x] Domain `spots-app.de`, `SITE_URL` (Netlify, DNS bei IONOS)
+- [x] SQL 23 in der Produktion, Supabase-Variablen beim Hoster
 - [ ] Benachrichtigung bei neuen Anfragen (z. B. Mail über eine Edge Function) – bisher nur im Dashboard sichtbar
 
 Alle Rechtstexte sind Entwürfe – vor dem Livegang von einer Fachperson prüfen lassen.

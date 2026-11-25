@@ -23,17 +23,19 @@ Marketing-Website für Gäste und Veranstalter in `website/`: Startseite, `/vera
 - Handy-Ansichten neu gezeichnet wie in der App: Eventseite (`EventScreen.astro`), Shot (`SnapScreen.astro`), Entdecken mit Veranstalter-Kacheln (`ExploreScreen.astro`), Stile in `mock.css`.
 - Abschnitte „Und sonst so“ und „Start in Karlsruhe“ entfernt, Menüpunkt „Städte“ in Kopf- und Fußzeile auch.
 
-## Läuft gerade
+## Hosting (25.11.2026)
 
-- Nichts. Pull-Request-Text vorbereitet; Branch gepusht.
+- Netlify eingerichtet und öffentlich: `spots-36by.netlify.app`, Domain `spots-app.de` verbunden (DNS bei IONOS, A-Einträge auf Netlify, Mail-Einträge unverändert). Einstellungen in `website/README.md`, Abschnitt „Hosting“.
+- Build-Fehler behoben: Die Website las die tsconfig der App (braucht expo); jetzt fest `website/tsconfig.json`, Node aus `website/.nvmrc`.
+- Postfach `kontakt@spots-app.de` bei IONOS angelegt.
 
 ## Als Nächstes
 
-1. Pull Request im Browser anlegen (kein `gh` installiert), Review durch Noyan
-2. TODOs aus `website/README.md` füllen, Hosting einrichten
+1. HTTPS für `spots-app.de` in Netlify prüfen (Zertifikat), dann `https://spots-app.de` und Weiterleitung von `www.` prüfen.
+2. Kontaktformular einmal mit einer echten Anfrage testen (landet in der Produktion).
+3. TODOs aus `website/README.md` füllen: Rechtsform, Register, USt-IdNr., § 36 VSBG, Hosting (Netlify) in Impressum und Datenschutz, Store-Links.
 
 ## Offene Punkte
 
-- Produktion: SQL 23 dort einspielen (Freigabe Jacint + Nutzer), dann `PUBLIC_SUPABASE_URL` und `PUBLIC_SUPABASE_PUBLISHABLE_KEY` beim Hoster setzen.
-- Hosting-Konto (Vercel/Netlify/Cloudflare) und Domain anlegen, `SITE_URL` setzen.
-- Alle `[TODO: …]` siehe `website/README.md`.
+- Vertrag zur Auftragsverarbeitung mit IONOS (Postfach) und Netlify (Hosting).
+- Rechtstexte von einer Fachperson prüfen lassen; Seite zeigt noch `[TODO]`-Platzhalter.
