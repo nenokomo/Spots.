@@ -9,4 +9,6 @@ export default defineConfig({
   trailingSlash: 'always',
   integrations: [sitemap({ filter: (page) => !/\/(impressum|datenschutz)\/$/.test(page) })],
   devToolbar: { enabled: false },
+  // Nur die eigene tsconfig nutzen, nie die der App im Hauptordner (die braucht expo, das beim Hoster nicht installiert ist).
+  vite: { tsconfig: './tsconfig.json' },
 });
