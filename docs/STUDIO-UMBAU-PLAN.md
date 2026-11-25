@@ -30,10 +30,21 @@ Vorher bekamen alle fünf Momente gleich viel Gewicht, und der wichtigste (1) wa
 | Name des letzten Reiters | Bleibt **„Profil“** (nicht „Club“). |
 | Story posten | **Über das runde Profilbild auf der Eventseite.** Das Bild trägt ein „+“, damit man sieht, dass man es antippen kann. Tippen öffnet zwei Punkte: **„Storys ansehen“** und **„Story posten“** (wie bei Instagram). |
 | ＋ in der Mitte | Legt ein **neues Event** an (die Hauptfunktion). Story posten gehört zum Profilbild am Event. |
-| Dauerhafte Bilder | Heißen **„Bilder“** und stehen im Reiter Profil (früher „Story → Entdecken“). „Story“ heißt nur noch, was nach 24 Stunden verschwindet. |
+| Dauerhafte Bilder | Heißen **„Story in Entdecken“** und stehen im Reiter Profil. (Am 25.11. zuerst „Bilder“ genannt; Noyan hat sie so nicht gefunden – in der Besucher-App heißen sie auch Story.) Die Story eines Events (24 Stunden) bleibt am Profilbild mit „+“. |
+| Event anlegen | **Nur über das ＋** in der Leiste. Kein zweiter Knopf in der Übersicht (Rückmeldung Noyan). |
 | „Einnahmen“ | Heißt **„Zahlen“**, solange Spots keine Tickets verkauft. Kein leeres „–“ mehr. |
 | Anrede | Durchgehend **„ihr“**. |
 | Backend | Jacint ist dabei; Änderungen in seinem Bereich sind erlaubt. Für SQL gilt weiter: erst Datei und lokale Tests, dann Spots-Test, Produktion nur mit ausdrücklicher Freigabe für genau diese Aktion. |
+
+### Bearbeiten in der Gast-Ansicht (Noyan, nach dem ersten Test – umgesetzt)
+
+Veranstalter bearbeiten ihre **Veranstalterseite und ihre Eventseite so, wie der Gast sie sieht** – nicht in einem Formular mit nachgebauter Vorschau.
+
+- Die beiden Gast-Seiten sind in „Aussehen“ und „Daten laden“ getrennt: `EventDetailView` in `src/screens/EventDetailScreen.tsx` und `OrganizerProfileView` in `src/screens/OrganizerProfileScreen.tsx`. Die Besucher-App und das Studio benutzen **dieselbe Ansicht**; für Gäste sieht alles aus wie vorher.
+- Das Studio übergibt seine eigenen Daten (auch Entwürfe) in der Form der Besucher-App (`src/features/studio/guestView.ts`, gleiche Regeln für Genre, Filter, Bild, Ort) und schaltet mit `edit` die **Stifte** ein.
+- Ein Stift öffnet genau den Teil: am Event den passenden Schritt von „Event bearbeiten“, im Profil ein Sheet nur für diesen Teil (`ProfileEdit.tsx`).
+- Was Gäste nicht sehen, steht unter der Seite im Bereich **„Nur für euch“**.
+- Auch beim Anlegen: die **Vorschau ist die echte Eventseite**, schon vor dem Speichern.
 
 ## 4. Zielbild
 
@@ -43,19 +54,18 @@ Vorher bekamen alle fünf Momente gleich viel Gewicht, und der wichtigste (1) wa
 - **Events**: Liste „Kommend / Vergangen“. Tippen öffnet die Eventseite.
 - **＋**: neues Event (Schritt-für-Schritt).
 - **Zahlen**: pro Event ein **Trichter** (gesehen → gemerkt → zu den Tickets), Verlauf der letzten 30 Tage, Vergleich der Events. Hinweis „datensparsam gezählt“ als kurzes Abzeichen statt Fußnote.
-- **Profil**: die öffentliche Seite als **Vorschau** mit „Bearbeiten“, Fortschritt („zu 60 % fertig“), **Bilder**, **Team** (Einladung über das Teilen-Menü). Zahnrad oben rechts → **Einstellungen** (Ansprechperson, Konto).
+- **Profil**: **die Veranstalterseite, wie Gäste sie sehen**, mit Stiften an Titelbild, Logo, Name und „Über uns“. Events öffnen die Eventseite im Studio. Darunter **Story in Entdecken** (dieselbe Kachel wie in Entdecken, Bilder hinzufügen und löschen) und „Nur für euch“: Fortschritt („zu 60 % fertig“), **Team** (Einladung über das Teilen-Menü). Zahnrad oben rechts → **Einstellungen** (Ansprechperson, Konto).
 
 ### Seiten über den Reitern
 
-- **Eventseite** (`/studio/event/[id]`): alles zu einem Event. Oben das runde Profilbild mit „+“ (Story), Titel, Zeit, Ort, Status. Dann Checkliste, „Veröffentlichen“, Zahlen dieses Events, Tickets (ausverkauft schalten), Bilder der letzten 24 Stunden (Story und Shots, ausblenden), Aktionen (Bearbeiten, Teilen, Duplizieren, Ansehen wie ein Gast), Absagen mit Rückfrage.
+- **Eventseite** (`/studio/event/[id]`): **die Eventseite, wie Gäste sie sehen**, mit Stiften an Flyer, Titel, Zeit, Beschreibung, Tickets und Ort. Das runde Profilbild trägt das „+“ (Story). Leiste unten: „Veröffentlichen“ bzw. „Live in Spots“ und Teilen. Darunter „Nur für euch“: was noch offen ist, Zahlen dieses Events, Ausverkauft, Story und Shots der letzten 24 Stunden (ausblenden), Duplizieren, Absagen mit Rückfrage.
 - **Event anlegen / bearbeiten** (`/studio/edit/[id]`): vier kurze Schritte und eine Vorschau.
   1. **Event** – Flyer zuerst, Titel, Art, Genre (Auswahl wie die Radar-Filter), Beschreibung.
   2. **Wann** – Datums- und Zeitauswahl statt Texteingabe; Ende nach Mitternacht wird als nächster Tag angezeigt.
   3. **Wo** – „Bei euch“ ist vorgewählt, sonst anderer Ort (suchen oder Adresse).
   4. **Tickets** – ein Abschnitt: Online-Tickets (Link) / Abendkasse / Eintritt frei, darunter optional Preise.
-  5. **Vorschau** – „So sehen Gäste das Event“, dann **„Veröffentlichen“** oder „Als Entwurf speichern“.
+  5. **Vorschau** – die echte Eventseite der Gäste mit Stiften zurück zu den Schritten, unten **„Veröffentlichen“** oder „Als Entwurf“.
   Zurück-Pfeil oben links, Warnung bei ungespeicherten Änderungen, Fehler direkt am Feld. Ein früheres Event kann als Vorlage dienen (Duplizieren).
-- **Profil bearbeiten** (`/studio/page`): Logo, Titelbild, Name, Motto, Beschreibung, Adresse, Links.
 - **Einstellungen** (`/studio/settings`): Ansprechperson, Konto (abmelden, löschen mit Rückfrage).
 
 ### Regeln für die Oberfläche
@@ -67,9 +77,9 @@ Vorher bekamen alle fünf Momente gleich viel Gewicht, und der wichtigste (1) wa
 | Wort | Bedeutung |
 | --- | --- |
 | Event | Eine Veranstaltung. |
-| Story | Bilder des Veranstalters zu einem Event, 24 Stunden sichtbar. |
+| Story | Bilder des Veranstalters zu einem Event, 24 Stunden sichtbar. Posten über das Profilbild mit „+“. |
 | Shots | Bilder von Gästen zu einem Event, 24 Stunden sichtbar. |
-| Bilder | Dauerhafte Bilder im Profil (erscheinen in Entdecken). |
+| Story in Entdecken | Dauerhafte Bilder des Veranstalters. Gäste sehen sie in Entdecken als Kachel; sie bleiben, bis man sie löscht. |
 | Profil | Die öffentliche Seite des Veranstalters in Spots. |
 | Veranstalter | Wer Events anlegt (Club, Kollektiv, Reihe). „Club“ nur, wenn wirklich ein Club gemeint ist. |
 

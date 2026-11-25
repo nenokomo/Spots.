@@ -1,9 +1,11 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useEffectEvent, useState } from 'react';
-import { ActivityIndicator, BackHandler, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, BackHandler, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Icon } from '../../components/Icon';
+import { IconButton } from '../../components/ui/Button';
 import { squircle } from '../../constants/theme';
+import { formatEventAddress } from '../../hooks/useEventAddress';
+import { EventDetailView } from '../../screens/EventDetailScreen';
 import { geocodeAddress } from '../organizer/geocode';
 import {
   addTicket, deleteTicket, fetchTickets, maxTickets, saveOrganizerEvent, searchPublicVenues,
@@ -15,7 +17,7 @@ import {
   resolvedPlace, sameAddress, stepLabels, steps, ticketChanges, ticketModeLabels, ticketPlan, validateStep,
   type EventForm, type FormErrors, type Place, type Step,
 } from './eventForm';
-import { whenLine } from './format';
+import { partStep, toPublicOrganizer, toSpotEvent } from './guestView';
 import { useEventTickets } from './hooks';
 import { goBack } from './routes';
 import { Avatar } from './Story';
@@ -24,7 +26,7 @@ import { useStudio } from './StudioContext';
 import { studio, studioType } from './theme';
 import { Card, Check, Chip, ConfirmSheet, Input, MenuRow, Message, RoundButton, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
 
-const headings: Record<Step, string> = { event: 'Was veranstaltet ihr?', when: 'Wann?', where: 'Wo?', tickets: 'Tickets', preview: 'So sehen Gäste euer Event' };
+const headings: Record<Step, string> = { event: 'Was veranstaltet ihr?', when: 'Wann?', where: 'Wo?', tickets: 'Tickets', preview: 'Es fehlt noch etwas' };
 
 /** Eine Zeile „Bei euch“ / „Anderer Ort“ zum Auswählen. */
 function Choice({ selected, title, text, onPress }: { selected: boolean; title: string; text?: string | null; onPress: () => void }) {
@@ -43,6 +45,8 @@ type WizardProps = { organizer: MyOrganizer; event: OrganizerEvent | null; templ
 /**
  * Event anlegen oder bearbeiten in vier kurzen Schritten und einer Vorschau (docs/STUDIO-UMBAU-PLAN.md):
  * Event (Flyer zuerst) → Wann → Wo → Tickets → Vorschau mit „Veröffentlichen“ oder „Als Entwurf speichern“.
+ * Die Vorschau ist **die Eventseite, wie Gäste sie sehen** (EventDetailView der Besucher-App) – schon vor dem Speichern;
+ * die Stifte führen zurück zum passenden Schritt.
  * Neu: Schritt für Schritt mit „Weiter“. Bearbeiten: jeder Schritt direkt erreichbar, „Speichern“ überall.
  * Fehler stehen am Feld. Ungespeicherte Eingaben gehen nicht ohne Rückfrage verloren.
  */
@@ -145,12 +149,53 @@ function Wizard({ organizer, event, template, tickets, initialStep, reload }: Wi
 
   const times = eventTimes(form);
   const shown = resolvedPlace(form, organizer);
-  const previewPlace = shown.venue ? [shown.venue.name, shown.venue.city].filter(Boolean).join(', ') : [shown.place.name, shown.place.city].filter(Boolean).join(', ');
   const plan = ticketPlan(form);
-  const ticketLine = form.ticketMode === 'free' ? 'Eintritt frei' : form.ticketMode === 'online' ? 'Tickets online' : 'Abendkasse';
   const missing = steps.filter((key) => key !== 'preview' && Object.keys(validateStep(form, key, { isNew })).length > 0);
   const wasPublished = !!event?.isPublished;
   const cancelled = event?.status === 'cancelled';
+  const leaveSheet = <ConfirmSheet visible={leaving} title="Änderungen verwerfen?" text="Eure Eingaben sind noch nicht gespeichert." confirmLabel="Verwerfen" cancelLabel="Weiter bearbeiten" danger
+    onConfirm={() => { setLeaving(false); goBack(); }} onClose={() => setLeaving(false)} />;
+  /** Speichern in der Vorschau: je nach Stand veröffentlichen, als Entwurf speichern oder nur speichern. */
+  const finish = cancelled || wasPublished
+    ? <StudioButton label="Speichern" loading={busy} onPress={() => void save(wasPublished)} style={styles.flex} />
+    : approved
+      ? <>
+          <StudioButton variant="secondary" label="Als Entwurf" disabled={busy} onPress={() => void save(false)} />
+          <StudioButton label="Veröffentlichen" loading={busy} onPress={() => void save(true)} style={styles.flex} />
+        </>
+      : <StudioButton label="Als Entwurf speichern" loading={busy} onPress={() => void save(false)} style={styles.flex} />;
+
+  // Vorschau: das Event aus den Eingaben, gelesen mit den Regeln der Besucher-App. Die Kartenposition gibt es erst nach
+  // dem Speichern (oder bei unveränderter Adresse); bis dahin steht der Ort als Text da.
+  const samePosition = !!event && !shown.venue && !event.venueId && sameAddress(shown.place, event);
+  const guest = step === 'preview' && missing.length === 0 && times ? toSpotEvent({
+    id: event?.id ?? 'vorschau', title: form.title.trim(), description: form.description.trim() || null,
+    startsAt: times.startsAt.toISOString(), endsAt: times.endsAt.toISOString(),
+    venueId: shown.venue?.id ?? null, venueName: shown.venue ? shown.venue.name : shown.place.name,
+    street: shown.venue ? null : shown.place.street, houseNumber: shown.venue ? null : shown.place.houseNumber, postcode: shown.venue ? null : shown.place.postcode,
+    city: shown.venue ? shown.venue.city : shown.place.city,
+    latitude: samePosition || (event?.venueId && event.venueId === shown.venue?.id) ? event?.latitude ?? null : null,
+    longitude: samePosition || (event?.venueId && event.venueId === shown.venue?.id) ? event?.longitude ?? null : null,
+    imageUrl: form.imageUrl, ticketUrl: plan.ticketUrl, genre: genreText(form), category: form.category, status: 'scheduled', isPublished: false,
+  }, organizer.id) : null;
+
+  if (guest) return <>
+    <EventDetailView event={guest} organizer={toPublicOrganizer(organizer)} liveSnaps={[]} trackedId={null} onBack={back}
+      tickets={plan.desired.map((ticket, position) => ({ id: ticket.id ?? `neu-${position}`, eventId: guest.id, name: ticket.name, description: null, priceCents: ticket.priceCents,
+        currency: 'EUR', externalUrl: ticket.externalUrl ?? null, salesEnd: null, soldOut: tickets.find((item) => item.id === ticket.id)?.soldOut ?? false }))}
+      address={shown.venue ? null : formatEventAddress({ street: shown.place.street, house_number: shown.place.houseNumber, postcode: shown.place.postcode }, shown.place.city)}
+      edit={{
+        onEdit: (part) => go(partStep[part]),
+        story: <View style={styles.previewAvatar}><Avatar organizer={organizer} size={76} /></View>,
+        toolbar: <IconButton icon="close" accessibilityLabel="Schließen" onPress={leave} />,
+        notice: <Text style={styles.previewNote}>{dirty || isNew ? 'Vorschau – noch nicht gespeichert.' : 'So sehen Gäste euer Event.'}{!approved && !wasPublished ? ' Veröffentlichen geht, sobald Spots euch freigegeben hat.' : ''}</Text>,
+        bar: <View style={styles.finish}>
+          <Message error={error} />
+          <View style={styles.finishRow}>{finish}</View>
+        </View>,
+      }} />
+    {leaveSheet}
+  </>;
 
   return <StudioPage title={headings[step]}
     fixedTop={<>
@@ -173,17 +218,7 @@ function Wizard({ organizer, event, template, tickets, initialStep, reload }: Wi
       <Message error={error} />
       {step !== 'preview' && isNew && <StudioButton label="Weiter" onPress={next} />}
       {step !== 'preview' && !isNew && <StudioButton label="Speichern" loading={busy} onPress={() => void save(wasPublished)} />}
-      {step === 'preview' && (cancelled || wasPublished
-        ? <StudioButton label="Speichern" loading={busy} onPress={() => void save(wasPublished)} />
-        : approved
-          ? <>
-              <StudioButton label="Veröffentlichen" loading={busy} onPress={() => void save(true)} />
-              <StudioButton variant="ghost" label="Als Entwurf speichern" disabled={busy} onPress={() => void save(false)} />
-            </>
-          : <>
-              <StudioButton label="Als Entwurf speichern" loading={busy} onPress={() => void save(false)} />
-              <Text style={styles.footNote}>Veröffentlichen geht, sobald Spots euch freigegeben hat.</Text>
-            </>)}
+      {step === 'preview' && <View style={styles.finishRow}>{finish}</View>}
     </>}>
 
     {step === 'event' && <>
@@ -262,36 +297,11 @@ function Wizard({ organizer, event, template, tickets, initialStep, reload }: Wi
       </View>}
     </>}
 
-    {step === 'preview' && <>
-      {missing.length > 0 && <Card tone="amber">
-        <Text style={studioStyles.heading}>Es fehlt noch etwas</Text>
-        {missing.map((key) => <Check key={key} done={false} label={stepLabels[key]} onPress={() => { setStep(key); setAttempted(true); }} />)}
-      </Card>}
-      <View style={styles.preview}>
-        <View style={styles.poster}>
-          {form.imageUrl
-            ? <Image source={{ uri: form.imageUrl }} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityLabel="Flyer" />
-            : <LinearGradient colors={['#3a1530', '#1d1020']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, styles.posterEmpty]}>
-                <Icon name="image" size={28} color={studio.faint} /><Text style={studioStyles.faint}>Noch kein Flyer</Text>
-              </LinearGradient>}
-          <LinearGradient pointerEvents="none" colors={['#0a090c00', '#0a090ce6']} locations={[0.45, 1]} style={StyleSheet.absoluteFill} />
-        </View>
-        <View style={styles.previewBody}>
-          <View style={styles.previewAvatar}><Avatar organizer={organizer} size={56} /></View>
-          <Text style={styles.previewTitle}>{form.title.trim() || 'Titel fehlt'}</Text>
-          {times && <Text style={styles.previewWhen}>{whenLine({ startsAt: times.startsAt.toISOString(), endsAt: times.endsAt.toISOString() })}</Text>}
-          {genreText(form) && <View style={styles.wrap}>{genreText(form)!.split(', ').map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}</View>}
-          {previewPlace.length > 0 && <View style={styles.previewRow}><Icon name="pin" size={15} color={studio.pink} /><Text style={styles.previewText}>{previewPlace}</Text></View>}
-          <View style={styles.previewRow}><Icon name="ticket" size={15} color={studio.pink} />
-            <Text style={styles.previewText}>{ticketLine}{plan.desired.length > 0 && form.ticketMode !== 'free' ? ` · ${plan.desired.map((ticket) => ticket.name).join(', ')}` : ''}</Text>
-          </View>
-          {form.description.trim().length > 0 && <Text numberOfLines={4} style={studioStyles.muted}>{form.description.trim()}</Text>}
-        </View>
-      </View>
-    </>}
+    {step === 'preview' && <Card tone="amber">
+      {missing.map((key) => <Check key={key} done={false} label={stepLabels[key]} onPress={() => { setStep(key); setAttempted(true); }} />)}
+    </Card>}
 
-    <ConfirmSheet visible={leaving} title="Änderungen verwerfen?" text="Eure Eingaben sind noch nicht gespeichert." confirmLabel="Verwerfen" cancelLabel="Weiter bearbeiten" danger
-      onConfirm={() => { setLeaving(false); goBack(); }} onClose={() => setLeaving(false)} />
+    {leaveSheet}
   </StudioPage>;
 }
 
@@ -323,7 +333,6 @@ const styles = StyleSheet.create({
   stepOff: { opacity: 0.4 },
   stepLabel: { fontSize: 13, lineHeight: 17, fontWeight: '600', color: studio.muted },
   stepLabelOn: { color: studio.onAccent, fontWeight: '800' },
-  footNote: { ...studioType.small, color: studio.muted, textAlign: 'center' },
   label: { ...studioType.label, color: studio.muted },
   optional: { color: studio.faint, textTransform: 'none', letterSpacing: 0, fontWeight: '400' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -342,14 +351,9 @@ const styles = StyleSheet.create({
   rowPrice: { width: 92, textAlign: 'right' },
   rowRemove: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.panelHigh },
   fieldError: { ...studioType.small, color: studio.red },
-  preview: { borderRadius: 24, overflow: 'hidden', backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, ...squircle },
-  poster: { height: 280, backgroundColor: studio.panelHigh },
-  posterEmpty: { alignItems: 'center', justifyContent: 'center', gap: 8 },
-  previewBody: { gap: 10, paddingHorizontal: 18, paddingBottom: 20 },
-  previewAvatar: { marginTop: -28, alignSelf: 'flex-start', padding: 3, borderRadius: 31, backgroundColor: studio.bg },
-  previewTitle: { fontSize: 26, lineHeight: 31, fontWeight: '800', letterSpacing: -0.5, color: studio.text },
-  previewWhen: { ...studioType.body, fontWeight: '600', color: studio.pink },
-  tag: { ...studioType.small, fontWeight: '600', color: studio.text, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: studio.panelHigh, overflow: 'hidden' },
-  previewRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  previewText: { ...studioType.body, flex: 1, color: studio.text },
+  // Vorschau = Eventseite der Gäste: rundes Bild wie dort, Hinweis und die Knöpfe zum Speichern.
+  previewAvatar: { padding: 4, borderRadius: 42, backgroundColor: studio.bg, borderWidth: 2, borderColor: '#ffffff26' },
+  previewNote: { ...studioType.small, color: studio.muted, marginTop: 4 },
+  finish: { flex: 1, gap: 8 },
+  finishRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 });

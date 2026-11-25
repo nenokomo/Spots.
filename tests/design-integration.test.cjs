@@ -53,6 +53,12 @@ function nodes(tree) {
   if (!tree || typeof tree !== 'object') return [];
   return [tree, ...nodes(tree.props?.children)];
 }
+// Die Seite lädt die Daten und übergibt sie an die Ansicht (EventDetailView), die auch Spots Studio benutzt:
+// für die Prüfung die Ansicht mit den übergebenen Daten ausführen. Lade- und Fehlerzustand haben keine Ansicht.
+function detail(tree) {
+  const view = nodes(tree).find(node => typeof node.type === 'function' && node.type.name === 'EventDetailView');
+  return nodes(view ? view.type(view.props) : tree);
+}
 const event = { id: 'source-uuid', title: 'Controlled source record', categories: ['Clubs'],
   date: '02.01.2030', startsAt: '2030-01-02T20:00:00Z', location: 'Source city',
   image: { uri: 'https://example.org/source-image.jpg' }, imageIsPlaceholder: false,
@@ -73,18 +79,20 @@ test('all event cards navigate to the event UUID they were given, without a fict
 });
 test('new detail layout displays the fetched record and real original/backlinks', () => {
   const Screen = load('src/screens/EventDetailScreen.tsx', { event, loading: false, error: null }).default;
-  const elements = nodes(Screen());
+  const elements = detail(Screen());
   assert(elements.some(node => node.props?.children === event.title));
   assert(elements.some(node => node.props?.children === event.description));
   assert(elements.some(node => node.type === 'Link' && node.props.href === event.sourceUrl));
   // Eventseite (Noyan, 15.11.): ein Quellen-Link „Infos von Goabase“ zur Eventseite bei Goabase statt zwei Links.
   assert(elements.some(node => node.type === 'Link' && /^https:\/\/www\.goabase\.net\//.test(node.props.href ?? '')), 'Goabase stays visibly credited');
   assert(!elements.some(node => node.type === 'Link' && node.props.href?.pathname === '/organizer/[id]'));
+  // Gäste sehen keine Stifte; die gibt es nur in Spots Studio.
+  assert(!elements.some(node => /ändern|hinzufügen/.test(node.props?.accessibilityLabel ?? '')), 'no edit controls for guests');
 });
 test('new detail layout retains loading/error states without rendering a stale or fallback event', () => {
   for (const resource of [{ loading: true, error: null }, { event, loading: false, error: 'Source unavailable' }]) {
     const Screen = load('src/screens/EventDetailScreen.tsx', resource).default;
-    const elements = nodes(Screen());
+    const elements = detail(Screen());
     assert(elements.some(node => node.type === 'EventDataState' && node.props.error === resource.error));
     assert(!elements.some(node => node.props?.children === event.title));
   }

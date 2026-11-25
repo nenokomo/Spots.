@@ -1,92 +1,88 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Image, StyleSheet, Text, View } from 'react-native';
-import { Icon } from '../../components/Icon';
-import { squircle } from '../../constants/theme';
-import { reviewLabels, type MyOrganizer } from '../organizer/organizerApi';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IconButton } from '../../components/ui/Button';
+import { tabBarContentInset } from '../../constants/navigation';
+import { OrganizerProfileView, type OrganizerPart } from '../../screens/OrganizerProfileScreen';
+import type { PublicOrganizerPost } from '../../types/accounts';
+import { fetchMyPosts, reviewLabels, type MyOrganizer } from '../organizer/organizerApi';
 import { Gallery } from './Gallery';
-import { Avatar } from './Story';
+import { guestEvents, toPublicOrganizer, toPublicPosts } from './guestView';
+import { ProfilePartSheet } from './ProfileEdit';
+import { openEvent } from './routes';
 import { useStudio } from './StudioContext';
 import { TeamCard } from './TeamCard';
-import { studio, studioType } from './theme';
-import { Card, Check, Pill, ProgressBar, RoundButton, SectionTitle, StudioButton, StudioPage, studioStyles } from './ui';
+import { studio } from './theme';
+import { Card, Check, Pill, ProgressBar, SectionTitle, studioStyles } from './ui';
 
-const editPage = () => router.push('/studio/page');
-
-/** Was dem Profil noch fehlt. Jeder Punkt führt zu „Profil bearbeiten“. */
-export function profileChecklist(organizer: Pick<MyOrganizer, 'avatarUrl' | 'coverUrl' | 'motto' | 'biography' | 'websiteUrl' | 'socialUrl'>) {
+/** Was dem Profil noch fehlt. Jeder Punkt öffnet den passenden Teil zum Bearbeiten. */
+export function profileChecklist(organizer: Pick<MyOrganizer, 'avatarUrl' | 'coverUrl' | 'motto' | 'biography' | 'websiteUrl' | 'socialUrl'>): { label: string; done: boolean; part: OrganizerPart }[] {
   return [
-    { label: 'Logo', done: !!organizer.avatarUrl },
-    { label: 'Titelbild', done: !!organizer.coverUrl },
-    { label: 'Motto', done: !!organizer.motto?.trim() },
-    { label: 'Beschreibung', done: !!organizer.biography?.trim() },
-    { label: 'Website oder Instagram', done: !!organizer.websiteUrl || !!organizer.socialUrl },
+    { label: 'Logo', done: !!organizer.avatarUrl, part: 'logo' },
+    { label: 'Titelbild', done: !!organizer.coverUrl, part: 'cover' },
+    { label: 'Motto', done: !!organizer.motto?.trim(), part: 'about' },
+    { label: 'Beschreibung', done: !!organizer.biography?.trim(), part: 'about' },
+    { label: 'Website oder Instagram', done: !!organizer.websiteUrl || !!organizer.socialUrl, part: 'about' },
   ];
 }
 
-/** Das Profil so, wie es Gäste sehen: Titelbild, Logo, Name, Motto, Beschreibung. */
-function Preview({ organizer }: { organizer: MyOrganizer }) {
-  const approved = organizer.reviewStatus === 'approved';
-  const status = organizer.reviewStatus;
-  return <View style={styles.preview}>
-    <View style={styles.cover}>
-      {organizer.coverUrl
-        ? <Image source={{ uri: organizer.coverUrl }} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityLabel="Titelbild" />
-        : <LinearGradient colors={['#3a1530', '#1d1020']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />}
-      <LinearGradient pointerEvents="none" colors={['#0a090c00', '#0a090cd9']} locations={[0.4, 1]} style={StyleSheet.absoluteFill} />
-      <View style={styles.coverPill}><Pill label={approved ? 'Live in Spots' : reviewLabels[status]} tone={approved ? 'accent' : status === 'pending' ? 'amber' : status === 'draft' ? 'muted' : 'red'} /></View>
-    </View>
-    <View style={styles.body}>
-      <View style={styles.avatar}><Avatar organizer={organizer} size={76} /></View>
-      <Text style={styles.name}>{organizer.displayName}</Text>
-      {organizer.city && <View style={styles.line}><Icon name="pin" size={14} color={studio.faint} /><Text style={studioStyles.muted}>{organizer.city}</Text></View>}
-      {organizer.motto && <Text style={styles.motto}>{organizer.motto}</Text>}
-      {organizer.biography && <Text numberOfLines={3} style={studioStyles.muted}>{organizer.biography}</Text>}
-    </View>
-  </View>;
-}
-
 /**
- * Reiter „Profil“ (docs/STUDIO-UMBAU-PLAN.md): das öffentliche Profil als Vorschau mit „Bearbeiten“, was noch fehlt,
- * die dauerhaften Bilder und das Team. Ansprechperson und Konto liegen hinter dem Zahnrad (Einstellungen).
+ * Tab „Profil“ (docs/STUDIO-UMBAU-PLAN.md): **die Veranstalterseite, wie Gäste sie sehen** (OrganizerProfileView der Besucher-App),
+ * mit einem Stift an Titelbild, Logo, Name und „Über uns“. Events öffnen die Eventseite im Studio.
+ * Darunter: Story in Entdecken, was dem Profil noch fehlt und das Team. Zahnrad oben rechts → Einstellungen.
  */
 export default function ProfileScreen() {
-  const { organizer, events } = useStudio();
+  const { organizer, events, reload } = useStudio();
+  const insets = useSafeAreaInsets();
+  const [part, setPart] = useState<OrganizerPart | null>(null);
+  const [posts, setPosts] = useState<PublicOrganizerPost[]>([]);
+  const organizerId = organizer?.id;
+
+  useEffect(() => {
+    if (!organizerId) return;
+    let active = true;
+    fetchMyPosts(organizerId).then((rows) => { if (active) setPosts(toPublicPosts(organizerId, rows)); }, () => { if (active) setPosts([]); });
+    return () => { active = false; };
+  }, [organizerId]);
+
   if (!organizer) return null;
-  const approved = organizer.reviewStatus === 'approved';
+  const status = organizer.reviewStatus;
+  const approved = status === 'approved';
   const checklist = profileChecklist(organizer);
   const done = checklist.filter((item) => item.done).length;
-  const percent = Math.round((done / checklist.length) * 100);
 
-  return <StudioPage title="Profil" trailing={<RoundButton icon="sliders" label="Einstellungen" onPress={() => router.push('/studio/settings')} />}>
-    <Preview organizer={organizer} />
-    <View style={styles.buttons}>
-      <StudioButton icon="edit" label="Bearbeiten" onPress={editPage} style={styles.flex} />
-      {approved && <StudioButton variant="secondary" icon="eye" label="Als Gast ansehen" onPress={() => router.push({ pathname: '/organizer/[id]', params: { id: organizer.id } })} style={styles.flex} />}
-    </View>
-
-    {done < checklist.length && <Card>
-      <Text style={studioStyles.heading}>Euer Profil ist zu {percent} % fertig</Text>
-      <ProgressBar value={done / checklist.length} />
-      <View>{checklist.filter((item) => !item.done).map((item) => <Check key={item.label} done={false} label={item.label} onPress={editPage} />)}</View>
-    </Card>}
-
+  const below = <View style={styles.below}>
     <Gallery organizer={organizer} events={events} />
 
+    <View style={styles.ownHead}>
+      <Text style={styles.ownTitle}>Nur für euch</Text>
+      <Text style={studioStyles.muted}>Das sehen Gäste nicht.</Text>
+    </View>
+    {!approved && <Card>
+      <Pill label={reviewLabels[status]} tone={status === 'pending' ? 'amber' : status === 'draft' ? 'muted' : 'red'} />
+      <Text style={studioStyles.muted}>Gäste sehen euer Profil, sobald Spots euch freigegeben hat.</Text>
+    </Card>}
+    {done < checklist.length && <Card>
+      <Text style={studioStyles.heading}>Euer Profil ist zu {Math.round((done / checklist.length) * 100)} % fertig</Text>
+      <ProgressBar value={done / checklist.length} />
+      <View>{checklist.filter((item) => !item.done).map((item) => <Check key={item.label} done={false} label={item.label} onPress={() => setPart(item.part)} />)}</View>
+    </Card>}
     <SectionTitle>Team</SectionTitle>
     <TeamCard key={`team-${organizer.id}`} organizer={organizer} />
-  </StudioPage>;
+  </View>;
+
+  return <>
+    <OrganizerProfileView organizer={toPublicOrganizer(organizer)} events={guestEvents(events, organizer.id)} posts={posts}
+      edit={{ onEdit: setPart, onOpenEvent: openEvent, below, bottomInset: tabBarContentInset(insets.bottom),
+        toolbar: <IconButton icon="sliders" accessibilityLabel="Einstellungen" onPress={() => router.push('/studio/settings')} /> }} />
+    <ProfilePartSheet part={part} organizer={organizer} onClose={() => setPart(null)} reload={reload} />
+  </>;
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  preview: { borderRadius: 24, overflow: 'hidden', backgroundColor: studio.panel, borderWidth: 1, borderColor: studio.line, ...squircle },
-  cover: { height: 130, backgroundColor: studio.panelHigh },
-  coverPill: { position: 'absolute', right: 12, top: 12 },
-  body: { gap: 6, paddingHorizontal: 18, paddingBottom: 18 },
-  avatar: { marginTop: -40, alignSelf: 'flex-start', padding: 3, borderRadius: 41, backgroundColor: studio.bg },
-  name: { fontSize: 24, lineHeight: 29, fontWeight: '800', letterSpacing: -0.4, color: studio.text, marginTop: 4 },
-  line: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  motto: { ...studioType.body, fontSize: 17, lineHeight: 23, fontWeight: '700', color: studio.text, marginTop: 4 },
-  buttons: { flexDirection: 'row', gap: 10 },
+  below: { gap: studio.gap },
+  // „Nur für euch“: deutlich abgesetzt von dem, was Gäste sehen.
+  ownHead: { gap: 2, marginTop: 24, paddingTop: 24, borderTopWidth: 1, borderTopColor: studio.accentLine },
+  ownTitle: { fontSize: 24, lineHeight: 29, fontWeight: '800', letterSpacing: -0.4, color: studio.text },
 });

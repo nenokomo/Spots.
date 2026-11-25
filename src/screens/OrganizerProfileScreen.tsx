@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Animated, Image, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventHero } from '../components/EventCards';
@@ -22,6 +22,8 @@ import { useNow } from '../hooks/useNow';
 import { useOrganizerPage } from '../hooks/useOrganizer';
 import { useToday } from '../hooks/useToday';
 import { eventDetailHref } from '../navigation/eventRoutes';
+import type { PublicOrganizer, PublicOrganizerPost } from '../types/accounts';
+import type { SpotEvent } from '../types/events';
 import { eventPhase } from '../utils/eventStatus';
 import { dayKey } from '../utils/events';
 
@@ -37,6 +39,30 @@ function splitBio(text: string) {
   return match ? { motto: match[1], rest: match[2]?.trim() ?? '' } : { motto: text.trim(), rest: '' };
 }
 
+/** Teile der Veranstalterseite, die ein Veranstalter im Studio ändern kann. */
+export type OrganizerPart = 'cover' | 'logo' | 'name' | 'about';
+/**
+ * Spots Studio: dieselbe Seite, wie Gäste sie sehen, mit einem Stift an jedem Teil, den der Veranstalter ändern kann.
+ * Events öffnen dort die Eventseite im Studio; Merken und Tickets kaufen sind Sache der Gäste.
+ */
+export type OrganizerProfileEdit = {
+  onEdit: (part: OrganizerPart) => void;
+  onOpenEvent: (id: string) => void;
+  /** Rechts oben statt „Teilen“, z. B. das Zahnrad für die Einstellungen. */
+  toolbar?: ReactNode;
+  /** Unter der Seite, z. B. Story in Entdecken und Team. */
+  below?: ReactNode;
+  /** Platz unter dem Inhalt, z. B. für die Tab-Leiste. */
+  bottomInset?: number;
+};
+type ViewProps = { organizer: PublicOrganizer; events: SpotEvent[]; posts: PublicOrganizerPost[]; /** Ohne: kein Zurück-Pfeil (Tab). */ onBack?: () => void; edit?: OrganizerProfileEdit };
+
+function EditPen({ label, onPress }: { label: string; onPress: () => void }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={8} style={({ pressed }) => [styles.pen, pressed && styles.pressed]}>
+    <Icon name="edit" size={15} color={colors.text} />
+  </Pressable>;
+}
+
 /**
  * Organizer page in the language of the event page, built around one question: what does this
  * organizer have coming up? From top to bottom:
@@ -49,9 +75,7 @@ function splitBio(text: string) {
  * – „Vergangene Events“: the last three, more on request.
  * No tabs and no counters – everything is one scroll.
  */
-export default function OrganizerProfileScreen() {
-  const { id, event: highlightId } = useLocalSearchParams<{ id: string; event?: string }>();
-  const { state, reload } = useOrganizerPage(id);
+export function OrganizerProfileView({ organizer, events, posts: publicPosts, onBack, edit }: ViewProps) {
   const now = useNow();
   const today = useToday();
   const insets = useSafeAreaInsets();
@@ -64,11 +88,8 @@ export default function OrganizerProfileScreen() {
   const [calendarDate, setCalendarDate] = useState<string | null>(null);
   // Compact bar fades in once the name has scrolled under the top.
   const [scrollY] = useState(() => new Animated.Value(0));
-  const back = () => router.canGoBack() ? router.back() : router.replace('/');
 
-  const data = state.status === 'ready' ? state.data : null;
   const groups = useMemo(() => {
-    const events = data?.events ?? [];
     const upcoming = events.filter((event) => eventPhase(event, now) !== 'ended').sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
     const past = events.filter((event) => eventPhase(event, now) === 'ended').sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt));
     // Always the next upcoming (or running) event.
@@ -84,26 +105,10 @@ export default function OrganizerProfileScreen() {
         .reduce((counts, tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1), new Map<string, number>())]
         .sort((a, b) => b[1] - a[1]).slice(0, 4).map(([tag]) => tag),
     };
-  }, [data, now]);
+  }, [events, now]);
   const calendarDays = useMemo(() => groups.upcoming.map((event) => dayKey(new Date(event.startsAt))), [groups.upcoming]);
-  const posts = useMemo(() => (data?.posts ?? []).map((post) => ({ post, images: postImages(post) })), [data]);
+  const posts = useMemo(() => publicPosts.map((post) => ({ post, images: postImages(post) })), [publicPosts]);
 
-  if (state.status !== 'ready' || !data?.organizer) {
-    const unavailable = state.status === 'unavailable';
-    return (
-      <View style={[styles.screen, { paddingTop: insets.top + 8 }]}>
-        <Backdrop />
-        <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} plain style={styles.stateBack} />
-        {state.status === 'loading' || state.status === 'error'
-          ? <EventDataState loading={state.status === 'loading'} error={state.status === 'error' ? state.message : null} onRetry={reload} />
-          : <EmptyState icon="profile" title={unavailable ? 'Veranstalterseiten kommen bald' : 'Veranstalter nicht gefunden'}
-              text={unavailable ? 'Clubs und Veranstalter können ihre Seiten hier bald selbst gestalten.' : 'Dieses Profil ist nicht (mehr) öffentlich.'}
-              action={highlightId ? 'Zum Event' : 'Zurück'} onAction={() => highlightId ? router.replace(eventDetailHref(highlightId)) : back()} />}
-      </View>
-    );
-  }
-
-  const organizer = data.organizer;
   const website = organizer.websiteUrl?.startsWith('https://') ? organizer.websiteUrl : null;
   const cardWidth = width - gutter * 2;
   // Cover: the organizer's own cover picture (SQL 37, set in Spots Studio), otherwise the next real flyer, any real flyer,
@@ -124,6 +129,11 @@ export default function OrganizerProfileScreen() {
   const barOpacity = scrollY.interpolate({ inputRange: [150, 210], outputRange: [0, 1], extrapolate: 'clamp' });
   const avatar = <View style={styles.avatarGap}><OrganizerAvatar organizer={organizer} size={AVATAR} /></View>;
 
+  /** Studio: Tippen öffnet die Eventseite im Studio; Merken und Ticket-Link der Karte bleiben den Gästen. */
+  const eventNode = (event: SpotEvent, node: ReactNode, before?: () => void) => edit
+    ? <Pressable key={event.id} accessibilityRole="button" accessibilityLabel={`${event.title} öffnen`} onPress={() => { before?.(); edit.onOpenEvent(event.id); }}><View pointerEvents="none">{node}</View></Pressable>
+    : node;
+
   async function share() {
     try { await Share.share({ title: `${organizer.displayName} · Spots`, message: `${organizer.displayName} auf Spots${website ? `\n${website}` : ''}` }); } catch { /* dismissed */ }
   }
@@ -131,23 +141,31 @@ export default function OrganizerProfileScreen() {
   return (
     <View style={styles.screen}>
       <Backdrop />
-      <Animated.ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + (highlightTicket ? 110 : space.xxxl) }} showsVerticalScrollIndicator={false}
+      <Animated.ScrollView contentContainerStyle={{ paddingBottom: edit ? edit.bottomInset ?? space.xxxl : insets.bottom + (highlightTicket ? 110 : space.xxxl) }} showsVerticalScrollIndicator={false}
         scrollEventThrottle={16} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}>
         {/* Cover: the next flyer, blurred, fading into the page. */}
         <View style={[styles.cover, { height: insets.top + 230 }]}>
           {cover && <Image source={cover} resizeMode="cover" blurRadius={ownCover ? 0 : realFlyer ? 24 : 12} style={StyleSheet.absoluteFill} />}
           <LinearGradient pointerEvents="none" colors={cover ? ['#0a090cb3', '#0a090c33', '#0a090ccc', colors.background] : ['#3a1530', '#1d1020', colors.background]} locations={cover ? [0, 0.3, 0.75, 1] : [0, 0.55, 1]} style={StyleSheet.absoluteFill} />
+          {edit && <Pressable accessibilityRole="button" accessibilityLabel={ownCover ? 'Titelbild ändern' : 'Titelbild hinzufügen'} onPress={() => edit.onEdit('cover')}
+            style={({ pressed }) => [styles.coverEdit, { top: insets.top + space.sm + 56 }, pressed && styles.pressed]}>
+            <Icon name="edit" size={14} color={colors.text} />
+            <Text style={styles.coverEditText}>{ownCover ? 'Titelbild' : 'Titelbild hinzufügen'}</Text>
+          </Pressable>}
         </View>
 
         {/* Identity on the cover's lower edge, left-aligned like the event title. */}
         <View style={[styles.head, { marginTop: -(AVATAR / 2 + 34) }]}>
-          <Pressable disabled={!hasStories} accessibilityRole={hasStories ? 'button' : 'image'} accessibilityLabel={hasStories ? `Storys von ${organizer.displayName} ansehen` : `Profilbild von ${organizer.displayName}`}
-            onPress={() => setStory(groups.stories[0].id)} hitSlop={6} style={({ pressed }) => [styles.ringWrap, pressed && styles.pressed]}>
+          <Pressable disabled={!edit && !hasStories} accessibilityRole={edit || hasStories ? 'button' : 'image'} accessibilityLabel={edit ? 'Logo ändern' : hasStories ? `Storys von ${organizer.displayName} ansehen` : `Profilbild von ${organizer.displayName}`}
+            onPress={() => edit ? edit.onEdit('logo') : setStory(groups.stories[0].id)} hitSlop={6} style={({ pressed }) => [styles.ringWrap, pressed && styles.pressed]}>
             {hasStories && !storiesWatched
               ? <LinearGradient colors={[colors.pink, colors.accent, '#7a2bd6', colors.pink]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.ring, styles.ringGlow]}>{avatar}</LinearGradient>
               : <View style={[styles.ring, hasStories ? styles.ringSeen : styles.ringPlain]}>{avatar}</View>}
+            {edit && <View pointerEvents="none" style={styles.avatarPen}><Icon name="edit" size={14} color={colors.text} /></View>}
           </Pressable>
-          <Text accessibilityRole="header" style={styles.name}>{organizer.displayName}</Text>
+          {edit
+            ? <View style={styles.editRow}><Text accessibilityRole="header" style={[styles.name, styles.flex]}>{organizer.displayName}</Text><EditPen label="Name und Adresse ändern" onPress={() => edit.onEdit('name')} /></View>
+            : <Text accessibilityRole="header" style={styles.name}>{organizer.displayName}</Text>}
           <View style={styles.kindRow}>
             <Text style={styles.kind}>Veranstalter</Text>
             {organizer.city && <><View style={styles.kindDot} /><Icon name="pin" size={13} color={colors.pink} /><Text style={styles.kind}>{organizer.city}</Text></>}
@@ -157,9 +175,12 @@ export default function OrganizerProfileScreen() {
 
         <View style={styles.body}>
           {/* About: the organizer's own words, first sentence as motto. */}
-          {(bio || website) && <View style={styles.about}>
+          {(bio || website || edit) && <View style={styles.about}>
             <LinearGradient pointerEvents="none" colors={['#c922ab2e', '#5d2a921f', '#ffffff05']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-            <Text style={styles.aboutLabel}>Über uns</Text>
+            {edit
+              ? <View style={styles.editRow}><Text style={[styles.aboutLabel, styles.flex]}>Über uns</Text><EditPen label="Über uns ändern" onPress={() => edit.onEdit('about')} /></View>
+              : <Text style={styles.aboutLabel}>Über uns</Text>}
+            {edit && !bio && !website && <Text style={styles.bio}>Noch kein Text. Erzählt Gästen, wer ihr seid.</Text>}
             {bio && <>
               <View style={styles.mottoRow}>
                 <Text style={styles.quote}>“</Text>
@@ -179,7 +200,7 @@ export default function OrganizerProfileScreen() {
           {/* Always the next upcoming event. */}
           {groups.highlight && <View style={styles.block}>
             <SectionTitle title={groups.highlightTitle} style={styles.blockTitle} />
-            <EventHero event={groups.highlight} href={eventDetailHref(groups.highlight.id)} today={today} now={now} width={cardWidth} />
+            {eventNode(groups.highlight, <EventHero event={groups.highlight} href={eventDetailHref(groups.highlight.id)} today={today} now={now} width={cardWidth} />)}
           </View>}
 
           {groups.upcoming.length > 0 && <View style={styles.block}>
@@ -194,7 +215,7 @@ export default function OrganizerProfileScreen() {
               </Pressable>
             </View>
             {programme.length > 0
-              ? <View style={styles.list}>{programme.map((event) => <OrganizerEventRow key={event.id} event={event} now={now} />)}</View>
+              ? <View style={styles.list}>{programme.map((event) => eventNode(event, <OrganizerEventRow key={event.id} event={event} now={now} />))}</View>
               : <Text style={styles.programEmpty}>Weitere Termine folgen. Im Kalender siehst du alles, was schon feststeht.</Text>}
             {groups.others.length > PROGRAM_PREVIEW && <Pressable accessibilityRole="button" onPress={openCalendar} style={({ pressed }) => [styles.showAll, pressed && styles.pressed]}>
               <Icon name="calendar" size={14} color={colors.muted} />
@@ -216,12 +237,13 @@ export default function OrganizerProfileScreen() {
 
         {groups.past.length > 0 && <View style={[styles.body, styles.block]}>
           <SectionTitle title="Vergangene Events" style={styles.blockTitle} />
-          <View style={styles.list}>{shownPast.map((event) => <OrganizerEventRow key={event.id} event={event} now={now} />)}</View>
+          <View style={styles.list}>{shownPast.map((event) => eventNode(event, <OrganizerEventRow key={event.id} event={event} now={now} />))}</View>
           {groups.past.length > PAST_PREVIEW && <Pressable accessibilityRole="button" onPress={() => setAllPast((value) => !value)} style={({ pressed }) => [styles.showAll, pressed && styles.pressed]}>
             <Text style={styles.showAllText}>{allPast ? 'Weniger anzeigen' : 'Alle vergangenen Events'}</Text>
             <Icon name="down" size={14} color={colors.muted} />
           </Pressable>}
         </View>}
+        {edit?.below && <View style={[styles.body, styles.block]}>{edit.below}</View>}
       </Animated.ScrollView>
 
       {/* Fixed top: back and share always reachable; behind them a glass bar with picture and name fades in. */}
@@ -231,17 +253,17 @@ export default function OrganizerProfileScreen() {
           <View style={styles.topLine} />
         </Animated.View>
         <View pointerEvents="box-none" style={[styles.toolbar, { paddingTop: insets.top + space.sm, paddingBottom: space.sm }]}>
-          <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} />
+          {onBack ? <IconButton icon="back" accessibilityLabel="Zurück" onPress={onBack} /> : <View style={styles.toolbarSpace} />}
           <Animated.View pointerEvents="none" style={[styles.topTitle, { opacity: barOpacity }]}>
             <OrganizerAvatar organizer={organizer} size={28} />
             <Text numberOfLines={1} style={styles.topName}>{organizer.displayName}</Text>
           </Animated.View>
-          <IconButton icon="share" accessibilityLabel="Veranstalter teilen" onPress={() => void share()} />
+          {edit?.toolbar ?? <IconButton icon="share" accessibilityLabel="Veranstalter teilen" onPress={() => void share()} />}
         </View>
       </View>
 
       {/* Fixed bottom bar like on the event page: tickets for the next event and save – only when it has tickets. */}
-      {groups.highlight && highlightTicket && <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      {!edit && groups.highlight && highlightTicket && <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <GlassBackdrop radius={0} variant="panel" />
         <View style={styles.barRow}>
           <Button label={highlightTicket.label === 'Tickets' ? 'Tickets fürs nächste Event' : highlightTicket.label} icon="ticket" accessibilityLabel={`${highlightTicket.a11y}: ${groups.highlight.title}`}
@@ -267,7 +289,7 @@ export default function OrganizerProfileScreen() {
               {calendarDate && <View style={styles.list}>
                 <Text style={styles.calendarDay}>{calendarDay.format(new Date(`${calendarDate}T12:00:00Z`))}</Text>
                 {dayEvents.length > 0
-                  ? dayEvents.map((event) => <OrganizerEventRow key={event.id} event={event} now={now} onOpen={() => setCalendarOpen(false)} />)
+                  ? dayEvents.map((event) => eventNode(event, <OrganizerEventRow key={event.id} event={event} now={now} onOpen={() => setCalendarOpen(false)} />, () => setCalendarOpen(false)))
                   : <Text style={styles.programEmpty}>An diesem Tag ist kein Event angekündigt.</Text>}
               </View>}
             </ScrollView>
@@ -278,7 +300,40 @@ export default function OrganizerProfileScreen() {
   );
 }
 
+/** /organizer/[id]: lädt das öffentliche Profil für Gäste und zeigt es in der Ansicht oben. */
+export default function OrganizerProfileScreen() {
+  const { id, event: highlightId } = useLocalSearchParams<{ id: string; event?: string }>();
+  const { state, reload } = useOrganizerPage(id);
+  const insets = useSafeAreaInsets();
+  const back = () => router.canGoBack() ? router.back() : router.replace('/');
+  const data = state.status === 'ready' ? state.data : null;
+
+  if (state.status !== 'ready' || !data?.organizer) {
+    const unavailable = state.status === 'unavailable';
+    return (
+      <View style={[styles.screen, { paddingTop: insets.top + 8 }]}>
+        <Backdrop />
+        <IconButton icon="back" accessibilityLabel="Zurück" onPress={back} plain style={styles.stateBack} />
+        {state.status === 'loading' || state.status === 'error'
+          ? <EventDataState loading={state.status === 'loading'} error={state.status === 'error' ? state.message : null} onRetry={reload} />
+          : <EmptyState icon="profile" title={unavailable ? 'Veranstalterseiten kommen bald' : 'Veranstalter nicht gefunden'}
+              text={unavailable ? 'Clubs und Veranstalter können ihre Seiten hier bald selbst gestalten.' : 'Dieses Profil ist nicht (mehr) öffentlich.'}
+              action={highlightId ? 'Zum Event' : 'Zurück'} onAction={() => highlightId ? router.replace(eventDetailHref(highlightId)) : back()} />}
+      </View>
+    );
+  }
+
+  return <OrganizerProfileView organizer={data.organizer} events={data.events} posts={data.posts} onBack={back} />;
+}
+
 const styles = StyleSheet.create({
+  // Spots Studio: Stifte an den Teilen, die der Veranstalter ändern kann.
+  editRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  pen: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentDeep, borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff40' },
+  coverEdit: { position: 'absolute', right: space.lg, flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: space.md, borderRadius: 17, backgroundColor: colors.accentDeep, borderWidth: StyleSheet.hairlineWidth, borderColor: '#ffffff40' },
+  coverEditText: { ...type.label, fontSize: 13, color: colors.text },
+  avatarPen: { position: 'absolute', right: -2, bottom: -2, width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentDeep, borderWidth: 3, borderColor: colors.background },
+  toolbarSpace: { width: 44, height: 44 },
   screen: { flex: 1, backgroundColor: colors.background },
   stateBack: { backgroundColor: colors.surface, marginLeft: space.lg, marginBottom: space.lg },
   cover: { overflow: 'hidden', backgroundColor: colors.surface },

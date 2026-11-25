@@ -5,12 +5,11 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { squircle } from '../../constants/theme';
 import { useNow } from '../../hooks/useNow';
-import { eventDetailHref } from '../../navigation/eventRoutes';
 import { fetchEventStatsDaily, submitOrganizer, type MyOrganizer, type OrganizerEvent } from '../organizer/organizerApi';
 import { eventChecklist } from './eventForm';
 import { count, countdown, eventState, isUpcoming, placeLine, whenLine } from './format';
 import { useEventImages, useEventTickets } from './hooks';
-import { editEvent, newEvent, openEvent } from './routes';
+import { editEvent, openEvent } from './routes';
 import { shareEvent } from './share';
 import { EventStory } from './Story';
 import { useStudio } from './StudioContext';
@@ -38,8 +37,8 @@ function StartCard({ organizer, hasEvent, reload }: { organizer: MyOrganizer; ha
     {organizer.reviewNote && <Text style={studioStyles.body}>Hinweis vom Spots-Team: {organizer.reviewNote}</Text>}
     <View>
       <Check done label="Konto erstellt" />
-      <Check done={!!organizer.avatarUrl} label="Logo hochladen" onPress={() => router.push('/studio/page')} />
-      <Check done={hasEvent} label="Erstes Event anlegen" onPress={() => newEvent()} />
+      <Check done={!!organizer.avatarUrl} label="Logo hochladen" onPress={() => router.navigate('/studio/profile')} />
+      <Check done={hasEvent} label="Erstes Event anlegen" />
       <Check done={false} label="Freigabe durch Spots" />
     </View>
     {canSubmit && <StudioButton label={status === 'rejected' ? 'Antrag erneut stellen' : 'Antrag stellen'} loading={busy}
@@ -51,6 +50,7 @@ function StartCard({ organizer, hasEvent, reload }: { organizer: MyOrganizer; ha
 /**
  * Das nächste Event als große Karte: Flyer, wie lange noch, Status, die Story über das Profilbild mit „+“ und die
  * Checkliste. Offene Punkte führen direkt zum passenden Schritt. Läuft das Event, zeigt die Karte den Abend.
+ * Tippen öffnet die Eventseite – dort sieht man das Event, wie Gäste es sehen.
  */
 function NextEventCard({ organizer, event, now }: { organizer: MyOrganizer; event: OrganizerEvent; now: number }) {
   const images = useEventImages(event.id);
@@ -96,7 +96,6 @@ function NextEventCard({ organizer, event, now }: { organizer: MyOrganizer; even
 
       <View style={styles.actions}>
         <StudioButton small variant="secondary" icon="share" label="Teilen" onPress={() => void shareEvent(event)} />
-        {event.isPublished && <StudioButton small variant="secondary" icon="eye" label="Wie ein Gast ansehen" onPress={() => router.push(eventDetailHref(event.id))} />}
       </View>
     </View>
   </View>;
@@ -141,9 +140,7 @@ export default function OverviewScreen() {
     <StartCard organizer={organizer} hasEvent={events.length > 0} reload={reload} />
     {next
       ? <NextEventCard key={next.id} organizer={organizer} event={next} now={now} />
-      : <Empty icon="calendar" title="Kein Event geplant" text="Legt euer nächstes Event an: Flyer, Zeit, Ort, Tickets.">
-          <StudioButton icon="plus" label="Event anlegen" onPress={() => newEvent()} />
-        </Empty>}
+      : <Empty icon="calendar" title="Kein Event geplant" text="Tippt unten auf das Plus und legt euer nächstes Event an." />}
     {events.length > 0 && <WeekNumbers organizerId={organizer.id} />}
   </StudioPage>;
 }

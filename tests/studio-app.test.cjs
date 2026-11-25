@@ -154,7 +154,49 @@ test('structure: five tabs with the plus in the middle, story only at the event,
   assert.match(story, /title="Storys ansehen"/);
   assert.match(story, /title="Story posten"/);
   assert.ok(!read('src/features/studio/StatsScreen.tsx').includes('testSales'), 'no made-up sales numbers');
+  // Ein Event legt man nur über das Plus an.
+  assert.ok(!read('src/features/studio/OverviewScreen.tsx').includes('newEvent'), 'no second way to create an event on the overview');
   // Absagen und Löschen fragen nach.
   assert.match(read('src/features/studio/EventScreen.tsx'), /<ConfirmSheet visible=\{confirm === 'cancel'\}/);
   assert.match(read('src/features/studio/AccountCard.tsx'), /<ConfirmSheet visible=\{confirm\}/);
+});
+
+test('guest view: Studio shows the same event page and organizer page as guests, with pens instead of a rebuilt preview', () => {
+  const eventPage = read('src/features/studio/EventScreen.tsx');
+  assert.match(eventPage, /<EventDetailView event=\{guest\}/, 'the event page of the visitor app');
+  assert.match(eventPage, /edit=\{\{ onEdit: \(part\) => editEvent\(event\.id, partStep\[part\]\)/, 'a pen opens exactly that step');
+  const profile = read('src/features/studio/ProfileScreen.tsx');
+  assert.match(profile, /<OrganizerProfileView organizer=\{toPublicOrganizer\(organizer\)\} events=\{guestEvents\(events, organizer\.id\)\}/, 'the organizer page of the visitor app');
+  assert.ok(!fs.existsSync(path.join(__dirname, '../src/app/studio/page.tsx')), 'no separate form page for the profile');
+  // Auch beim Anlegen: die Vorschau ist die echte Eventseite, die Stifte führen zum Schritt.
+  const wizard = read('src/features/studio/EventWizardScreen.tsx');
+  assert.match(wizard, /<EventDetailView event=\{guest\}/);
+  assert.match(wizard, /onEdit: \(part\) => go\(partStep\[part\]\)/);
+  // Dieselbe Kachel wie in Entdecken.
+  assert.match(read('src/features/studio/Gallery.tsx'), /<OrganizerStoryTile organizer=\{explore\}/);
+  assert.match(read('src/features/studio/Gallery.tsx'), /Story in Entdecken<\/SectionTitle>/);
+  // Die Besucher-Seiten bleiben für Gäste, wie sie sind: Stifte nur mit `edit`.
+  const guestEvent = read('src/screens/EventDetailScreen.tsx');
+  assert.match(guestEvent, /export function EventDetailView\(/);
+  assert.match(guestEvent, /return <EventDetailView event=\{event\} organizer=\{organizer\} tickets=\{content\.tickets\} liveSnaps=\{content\.snaps\}/);
+  assert.match(read('src/screens/OrganizerProfileScreen.tsx'), /return <OrganizerProfileView organizer=\{data\.organizer\} events=\{data\.events\} posts=\{data\.posts\} onBack=\{back\} \/>/);
+});
+
+test('guest view data: own events are mapped with the rules of the visitor app, drafts included; guests only get published ones', () => {
+  const adapter = load('src/services/eventAdapter.ts', { '../constants/theme': { categories: ['Alle', 'Techno', 'House', 'Hip-Hop', 'Konzerte', 'Events', 'Clubs'] },
+    './eventSchema': { publishedValue: true }, '../../assets/events/nightlife.jpg': 1 });
+  const view = load('src/features/studio/guestView.ts', { '../../services/eventAdapter': adapter, '../../services/eventSchema': { publishedValue: true } });
+  const organizerId = '11111111-1111-4111-8111-111111111111';
+  const draft = event({ startsAt: '2026-11-28T22:00:00+00:00', endsAt: '2026-11-29T04:00:00+00:00', genre: 'Techno, Goa', isPublished: false });
+  const mapped = view.toSpotEvent(draft, organizerId);
+  assert.equal(mapped.title, 'Techno Night');
+  assert.deepEqual(plain(mapped.categories), ['Techno', 'Clubs'], 'same filters as on the radar');
+  assert.deepEqual(plain(mapped.genres), ['Techno', 'Goa']);
+  assert.equal(mapped.venue, 'Club Eins');
+  assert.equal(mapped.organizerId, organizerId);
+  assert.equal(mapped.imageIsPlaceholder, false);
+  assert.equal(view.guestEvents([draft, event({ id: 'e2', startsAt: '2026-12-05T22:00:00+00:00', endsAt: null, isPublished: true }),
+    event({ id: 'e3', startsAt: '2026-12-06T22:00:00+00:00', isPublished: true, status: 'cancelled' })], organizerId).length, 1, 'drafts and cancelled events are not on the public page');
+  assert.deepEqual(plain(view.toPublicTickets('e1', [ticket({ soldOut: true })])), [{ id: 't1', eventId: 'e1', name: 'Abendkasse', description: null, priceCents: 1200, currency: 'EUR', externalUrl: null, salesEnd: null, soldOut: true }]);
+  assert.equal(view.toPublicPosts('o', [{ id: 'p1', body: 'a', isPublished: true, createdAt: 'x', images: [] }, { id: 'p2', body: 'b', isPublished: false, createdAt: 'y', images: [] }]).length, 1);
 });
