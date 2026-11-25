@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { onSnapsChanged } from '../../services/content';
 import type { OrganizerStoryItem } from '../../services/organizerStories';
-import { fetchEventShots, fetchEventStats, fetchMyStoryItems, fetchTickets, type EventStats, type StudioShot, type StudioTicket } from '../organizer/organizerApi';
+import { fetchEventShots, fetchEventStats, fetchMyPosts, fetchMyStoryItems, fetchTickets, type EventStats, type StudioPost, type StudioShot, type StudioTicket } from '../organizer/organizerApi';
 import { useStudio } from './StudioContext';
 
 const message = (failure: unknown, fallback: string) => failure instanceof Error ? failure.message : fallback;
@@ -78,6 +78,22 @@ export function useExploreStory(organizerId: string | null | undefined) {
     if (!organizerId) return;
     let active = true;
     fetchMyStoryItems(organizerId).then((rows) => { if (active) { setItems(rows); setError(null); } },
+      (failure: unknown) => { if (active) { setItems([]); setError(message(failure, 'Laden hat nicht geklappt.')); } });
+    return () => { active = false; };
+  }, [organizerId, revision]);
+  return { items, error, reload };
+}
+
+/** Alle Beiträge des Veranstalters, auch zurückgezogene (SQL 15, 19). null = lädt. */
+export function usePosts(organizerId: string | null | undefined) {
+  const [items, setItems] = useState<StudioPost[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
+  const reload = useCallback(() => setRevision((value) => value + 1), []);
+  useEffect(() => {
+    if (!organizerId) return;
+    let active = true;
+    fetchMyPosts(organizerId).then((rows) => { if (active) { setItems(rows); setError(null); } },
       (failure: unknown) => { if (active) { setItems([]); setError(message(failure, 'Laden hat nicht geklappt.')); } });
     return () => { active = false; };
   }, [organizerId, revision]);

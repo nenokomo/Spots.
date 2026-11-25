@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { useNow } from '../../hooks/useNow';
 import { dayKey } from '../../utils/events';
@@ -10,7 +10,7 @@ import { useEventStats, useStudioRefresh } from './hooks';
 import { openEvent } from './routes';
 import { useStudio } from './StudioContext';
 import { studio, studioType } from './theme';
-import { Card, Empty, MenuRow, Message, SectionTitle, Segmented, StudioPage, StudioSheet, studioStyles } from './ui';
+import { Card, Empty, ErrorNote, Grow, MenuRow, SectionTitle, Segmented, Skeleton, StudioPage, StudioSheet, studioStyles } from './ui';
 
 const metrics = { views: 'Aufrufe', saves: 'Gemerkt', ticketClicks: 'Tickets' } as const;
 type Metric = keyof typeof metrics;
@@ -33,7 +33,7 @@ function History({ days, metric }: { days: Omit<EventStatsDay, 'eventId'>[]; met
       <Text style={styles.readoutValue}>{count.format(picked ? picked[metric] : total)}</Text>
       <Text style={studioStyles.muted}>{picked ? labelOf(picked.day) : `${metrics[metric]} · letzte ${DAYS} Tage`}</Text>
     </View>
-    <View style={styles.bars}>
+    <Grow axis="y" trigger={metric} style={styles.bars}>
       {days.map((day) => {
         const value = day[metric];
         return <Pressable key={day.day} accessibilityRole="button" accessibilityLabel={`${labelOf(day.day)}: ${count.format(value)} ${metrics[metric]}`}
@@ -41,7 +41,7 @@ function History({ days, metric }: { days: Omit<EventStatsDay, 'eventId'>[]; met
           <View style={[styles.bar, { height: value > 0 ? Math.max(4, (value / max) * 96) : 2 }, value === 0 && styles.barZero, selected === day.day && styles.barOn]} />
         </Pressable>;
       })}
-    </View>
+    </Grow>
     <View style={styles.axis}>
       <Text style={styles.axisLabel}>{days[0] ? labelOf(days[0].day) : ''}</Text>
       <Text style={styles.axisLabel}>Heute</Text>
@@ -107,8 +107,12 @@ export default function StatsScreen() {
   const choose = (id: string) => { setChoice(id); setPicking(false); };
 
   return <StudioPage title="Zahlen" onRefresh={refresh.onRefresh} refreshing={refresh.refreshing}>
-    <Message error={stats.error} />
-    {stats.rows === null && !stats.error && <ActivityIndicator color={studio.accent} />}
+    {stats.error && <ErrorNote message={stats.error} onRetry={refresh.onRefresh} busy={refresh.refreshing} />}
+    {stats.rows === null && !stats.error && <>
+      <Skeleton height={60} radius={studio.radius} />
+      <Skeleton height={230} radius={studio.radius} />
+      <Skeleton height={210} radius={studio.radius} />
+    </>}
     {stats.rows && rows.length === 0 && <Empty icon="chart" title="Noch keine Zahlen" text="Sobald ihr ein Event veröffentlicht habt, seht ihr hier, wie es ankommt." />}
 
     {rows.length > 0 && <>
@@ -134,7 +138,7 @@ export default function StatsScreen() {
       <SectionTitle>Verlauf</SectionTitle>
       <Card>
         <Segmented options={metrics} value={metric} onChange={setMetric} />
-        {daily === null ? <ActivityIndicator color={studio.accent} /> : <History key={`${selectedId}-${metric}`} days={days} metric={metric} />}
+        {daily === null ? <Skeleton height={150} /> : <History key={`${selectedId}-${metric}`} days={days} metric={metric} />}
       </Card>
 
       {rows.length > 1 && <>

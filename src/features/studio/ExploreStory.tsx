@@ -9,10 +9,11 @@ import { useToday } from '../../hooks/useToday';
 import type { ExploreOrganizer, OrganizerStoryItem } from '../../services/organizerStories';
 import { organizerStoryPage } from '../../utils/stories';
 import { addStoryItem, deleteStoryItem, maxStoryItems, type MyOrganizer, type OrganizerEvent } from '../organizer/organizerApi';
+import { feedback } from './feel';
 import { dayFormat, isUpcoming } from './format';
 import type { useExploreStory } from './hooks';
 import { studio, studioType } from './theme';
-import { Chip, Input, Message, Pill, StudioButton, StudioSheet, studioStyles } from './ui';
+import { Chip, Input, Message, Pill, Skeleton, StudioButton, StudioSheet, studioStyles } from './ui';
 
 type Picked = { uri: string; mimeType?: string | null };
 
@@ -62,6 +63,7 @@ export function ExploreStory({ organizer, events, story }: { organizer: MyOrgani
     setBusy(true); setError(null);
     try {
       await addStoryItem(organizer.id, picked, { caption, eventId: linkId });
+      feedback.success('Bild hinzugefügt.');
       story.reload(); setPicked(null); setCaption(''); setLinkId(null);
     } catch (failure) { setError(failure instanceof Error ? failure.message : 'Hinzufügen hat nicht geklappt.'); }
     finally { setBusy(false); }
@@ -69,7 +71,7 @@ export function ExploreStory({ organizer, events, story }: { organizer: MyOrgani
 
   async function remove(item: OrganizerStoryItem) {
     setBusy(true); setError(null);
-    try { await deleteStoryItem(organizer.id, item); story.reload(); setSelectedId(null); setConfirming(false); }
+    try { await deleteStoryItem(organizer.id, item); feedback.success('Bild gelöscht.'); story.reload(); setSelectedId(null); setConfirming(false); }
     catch (failure) { setError(failure instanceof Error ? failure.message : 'Löschen hat nicht geklappt.'); }
     finally { setBusy(false); }
   }
@@ -88,6 +90,7 @@ export function ExploreStory({ organizer, events, story }: { organizer: MyOrgani
         <Icon name="plus" size={26} color={studio.accent} />
         <Text style={styles.addText}>Hinzufügen</Text>
       </Pressable>
+      {story.items === null && [0, 1].map((index) => <Skeleton key={index} height={164} width={92} />)}
       {items.map((item) => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={item.caption ?? 'Bild öffnen'} onPress={() => { setError(null); setSelectedId(item.id); }}
         style={({ pressed }) => [styles.tile, pressed && styles.pressed]}>
         <Image source={{ uri: item.url }} resizeMode="cover" style={[StyleSheet.absoluteFill, item.hidden && styles.dimmed]} />

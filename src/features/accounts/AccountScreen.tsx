@@ -24,7 +24,7 @@ const choices: Record<Kind, { title: string; text: string; icon: IconName }> = {
 };
 const titles: Record<Kind, Record<Mode, string>> = {
   private: { signIn: 'Anmelden', register: 'Konto erstellen', forgot: 'Passwort vergessen' },
-  organizer: { signIn: 'Anmelden für Veranstalter', register: 'Club registrieren', forgot: 'Passwort vergessen' },
+  organizer: { signIn: 'Anmelden für Veranstalter', register: 'Als Veranstalter registrieren', forgot: 'Passwort vergessen' },
 };
 const subtitles: Record<Kind, Record<Mode, string>> = {
   private: {
@@ -33,13 +33,13 @@ const subtitles: Record<Kind, Record<Mode, string>> = {
     forgot: 'Wir schicken dir einen Link, mit dem du ein neues Passwort setzt.',
   },
   organizer: {
-    signIn: 'Euer Zugang zu Spots Studio: Events, Club-Profil und Zahlen.',
-    register: 'Ihr bekommt Spots Studio für eure Events und Zahlen. Das Spots-Team prüft euren Club einmal.',
+    signIn: 'Euer Zugang zu Spots Studio: Events, Profil und Zahlen.',
+    register: 'Ihr bekommt Spots Studio für eure Events und Zahlen. Das Spots-Team prüft euer Profil einmal.',
     forgot: 'Wir schicken euch einen Link, mit dem ihr ein neues Passwort setzt.',
   },
 };
 
-/** Eingabefeld im Look der Startseite (auch für die Club-Felder). */
+/** Eingabefeld im Look der Startseite (auch für die Felder des Veranstalter-Profils). */
 function Field({ label, value, onChange, placeholder, optional, maxLength, editable = true, keyboard = 'default', autoComplete, secure }: {
   label: string; value: string; onChange: (value: string) => void; placeholder?: string; optional?: boolean; maxLength?: number; editable?: boolean;
   keyboard?: 'default' | 'url' | 'number-pad' | 'phone-pad' | 'email-address'; secure?: boolean;
@@ -136,7 +136,7 @@ export default function AccountScreen() {
       setMode('signIn');
       setMessage(result.requiresEmailConfirmation
         ? organizer === 'invited' ? 'Fast geschafft: Bitte bestätige deine E-Mail und melde dich dann an. Danach gibst du den Einladungscode ein.'
-        : organizer ? 'Fast geschafft: Bitte bestätigt eure E-Mail und meldet euch dann an. Das Spots-Team prüft euren Club.' : 'Fast geschafft: Bitte bestätige deine E-Mail und melde dich dann an.'
+        : organizer ? 'Fast geschafft: Bitte bestätigt eure E-Mail und meldet euch dann an. Das Spots-Team prüft euer Profil.' : 'Fast geschafft: Bitte bestätige deine E-Mail und melde dich dann an.'
         : 'Konto erstellt.');
     } else {
       // Weiter geht es über den Effekt oben, sobald die Kontoart bekannt ist.
@@ -218,18 +218,19 @@ export default function AccountScreen() {
               setRecovering(false);
             })} />
           </View> : !session && <View style={styles.form}>
-            {mode === 'register' && kind === 'organizer' && !team && !invited
-              && <OrganizerSignupFields value={club} onChange={setClub} editable={!busy} Input={Field} hintStyle={styles.hint} />}
             {mode === 'register' && kind === 'organizer' && !team && invited
-              && <Text style={styles.hint}>Du gehörst zum Team eines Clubs, der schon bei Spots ist. Erstelle dein Konto und gib nach dem Anmelden den Einladungscode ein, den du vom Club bekommen hast.</Text>}
+              && <Text style={styles.hint}>Du gehörst zum Team eines Veranstalters, der schon bei Spots ist. Erstelle dein Konto und gib nach dem Anmelden den Einladungscode ein, den du bekommen hast.</Text>}
             <Field label="E-Mail" value={email} onChange={setEmail} keyboard="email-address" autoComplete="email" editable={!busy} />
             {mode !== 'forgot' && <Field label="Passwort" value={password} onChange={setPassword} secure autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
               placeholder={mode === 'register' ? 'mindestens 8 Zeichen' : undefined} editable={!busy} />}
+            {/* Erst das Konto, dann das Profil: so ist die lange Liste in klare Gruppen geteilt. */}
+            {mode === 'register' && kind === 'organizer' && !team && !invited
+              && <OrganizerSignupFields value={club} onChange={setClub} editable={!busy} Input={Field} hintStyle={styles.hint} headingStyle={styles.groupTitle} />}
             <Button label={mode === 'forgot' ? 'Link senden' : mode === 'register' ? 'Registrieren' : 'Anmelden'} loading={busy} disabled={disabled}
               onPress={() => void action(submit, mode === 'register')} />
             {mode === 'signIn' && <Button label="Passwort vergessen?" variant="ghost" disabled={busy} onPress={() => switchMode('forgot')} />}
-            {mode === 'signIn' && !team && <Button label={kind === 'organizer' ? 'Club registrieren' : 'Neues Konto erstellen'} variant="secondary" disabled={busy} onPress={() => switchMode('register')} />}
-            {mode === 'register' && kind === 'organizer' && !team && <Button label={invited ? 'Doch einen neuen Club registrieren' : 'Ich habe einen Einladungscode'} variant="ghost" disabled={busy} onPress={() => { setInvited((value) => !value); setError(null); }} />}
+            {mode === 'signIn' && !team && <Button label={kind === 'organizer' ? 'Als Veranstalter registrieren' : 'Neues Konto erstellen'} variant="secondary" disabled={busy} onPress={() => switchMode('register')} />}
+            {mode === 'register' && kind === 'organizer' && !team && <Button label={invited ? 'Doch neu als Veranstalter registrieren' : 'Ich habe einen Einladungscode'} variant="ghost" disabled={busy} onPress={() => { setInvited((value) => !value); setError(null); }} />}
             {mode !== 'signIn' && <Button label="Zurück zur Anmeldung" variant="ghost" disabled={busy} onPress={() => switchMode('signIn')} />}
           </View>)}
         </View>}
@@ -266,6 +267,7 @@ const styles = StyleSheet.create({
   optional: { textTransform: 'none', letterSpacing: 0, fontWeight: '400' },
   input: { ...type.body, minHeight: 50, borderWidth: 1, borderColor: '#ffffff1c', borderRadius: radius.md, paddingHorizontal: space.lg, color: colors.text, backgroundColor: colors.surfaceHigh },
   hint: { ...type.footnote, color: colors.muted },
+  groupTitle: { ...type.headline, color: colors.text, marginTop: space.md },
   error: { ...type.footnote, color: colors.danger },
   message: { ...type.footnote, color: colors.text },
   guest: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs, minHeight: 48 },

@@ -40,7 +40,7 @@ function splitBio(text: string) {
 }
 
 /** Teile der Veranstalterseite, die ein Veranstalter im Studio ändern kann. Das Logo gehört zu „Name“. */
-export type OrganizerPart = 'cover' | 'name' | 'about';
+export type OrganizerPart = 'cover' | 'name' | 'about' | 'posts';
 /**
  * Spots Studio: dieselbe Seite, wie Gäste sie sehen. Jeder Teil, den der Veranstalter ändern kann, lässt sich antippen
  * (ein kleiner Stift zeigt es an). Events öffnen dort die Eventseite im Studio; Merken und Tickets kaufen sind Sache der Gäste.
@@ -242,9 +242,15 @@ export function OrganizerProfileView({ organizer, events, posts: publicPosts, on
         </View>
 
         {/* Posts directly on the page, like the Instagram feed. */}
-        {posts.length > 0 && <View style={styles.block}>
-          <SectionTitle title="Beiträge" style={[styles.blockTitle, styles.inset]} />
-          <OrganizerPostList items={posts} organizer={organizer} />
+        {(posts.length > 0 || edit) && <View style={styles.block}>
+          {edit
+            ? <Pressable accessibilityRole="button" accessibilityLabel="Beiträge bearbeiten" onPress={() => edit.onEdit('posts')} style={({ pressed }) => [styles.editRow, styles.inset, pressed && styles.pressed]}>
+                <SectionTitle title="Beiträge" style={[styles.blockTitle, styles.flex]} /><EditPen />
+              </Pressable>
+            : <SectionTitle title="Beiträge" style={[styles.blockTitle, styles.inset]} />}
+          {posts.length > 0
+            ? <OrganizerPostList items={posts} organizer={organizer} />
+            : <Text style={[styles.programEmpty, styles.inset]}>Noch keine Beiträge. Zeigt Gästen, was bei euch los ist.</Text>}
         </View>}
 
         {groups.past.length > 0 && <View style={[styles.body, styles.block]}>

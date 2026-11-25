@@ -45,18 +45,28 @@ Betrifft Noyans Design (`src/features/studio/`, `src/components/Icon.tsx`, `src/
   - **Feinschliff:** Aktualisieren durch Ziehen (Events, Zahlen, Profil, Eventseite); Stifte neutral, ganze Bereiche tippbar; Tippflächen 44; Schrift mindestens 11; einmaliges Willkommen (`Welcome.tsx`); in Zahlen ein Auswahlknopf und ein Satz Erkenntnis (`ticketInsight`).
   - **Nicht gebaut:** „Hilfe & Kontakt“ und Rechtliches – es gibt noch keine Kontakt-Mail und keine Domain (Plan, Abschnitt 7, Punkt 8).
 
+- **Schritt 4 – Feinschliff** (Noyan: „mach es so gut wie möglich“):
+  - **Spürbare Rückmeldung** (`feel.ts`, neues Paket `expo-haptics`): Erfolg bei Speichern, Veröffentlichen, Posten; Fehler; Auswahl bei Chips und Umschaltern; der Tipp aufs Plus. Erfolge werden für VoiceOver und TalkBack angesagt. Im Web still.
+  - **Lade-Skelette statt Lade-Kreisel** (`Skeleton`, `PageSkeleton` in `ui.tsx`): Start des Studios, Zahlen, Eventseite, Story-Streifen, Team. Mit „Bewegung reduzieren“ stehen sie still.
+  - **Fehler mit Ausweg** (`ErrorNote`): „Erneut versuchen“ beim Start, in Events und Zahlen. Was schon geladen war, bleibt stehen; Eingaben in Sheets bleiben erhalten.
+  - **Bewegung:** Balken im Trichter und im Verlauf wachsen beim Erscheinen (`Grow`); „Euer Event ist live“ mit Haken.
+  - **Barrierefreiheit:** Sheets halten den Screenreader bei sich (`accessibilityViewIsModal`); große Schrift wächst mit, bei Titeln, Chips und Umschaltern begrenzt; Tab-Beschriftung fest.
+  - **Beiträge im Studio** (`Posts.tsx`, `usePosts`): über „Beiträge“ auf der Veranstalterseite – neuer Beitrag mit Text und bis zu zehn Bildern, zurückziehen, wieder zeigen, löschen mit Rückfrage.
+  - **Registrieren-Seite** (`AccountScreen.tsx`, `OrganizerSignupFields.tsx`): „Als Veranstalter registrieren“ statt „Club registrieren“; erst E-Mail und Passwort, dann das Profil in vier Gruppen (Euer Profil · Adresse · Im Netz · Ansprechperson). Betrifft Jacints Bereich (Konten), nur Texte und Reihenfolge.
+
 ## Geprüft
 
 - Typecheck und Expo-Lint ohne Fehler.
-- `node --test tests/*.test.cjs`: 116 bestanden, 0 fehlgeschlagen, 29 SQL-Tests übersprungen (auf diesem Rechner ist kein PGlite eingerichtet; an der SQL wurde nichts geändert). `tests/studio-app.test.cjs` hat 15 Tests (Formular-Logik, Vorgaben, was fehlt, Platzhalter, Erkenntnis-Satz, Aufbau).
+- `node --test tests/*.test.cjs`: 117 bestanden, 0 fehlgeschlagen, 29 SQL-Tests übersprungen (auf diesem Rechner ist kein PGlite eingerichtet; an der SQL wurde nichts geändert). `tests/studio-app.test.cjs` hat 16 Tests (Formular-Logik, Vorgaben, was fehlt, Platzhalter, Erkenntnis-Satz, Aufbau, Feinschliff).
 - Probe-Bündel für iOS und Web gebaut (`expo export`), beide ohne Fehler.
 - **Im Handy-Format angesehen (Web-Vorschau 375 × 812, mit Noyans Veranstalter-Konto):** Start-Tab, das Plus mit Titelbild und leerer Eventseite, die Sheets für Titel und Tickets, eine gespeicherte Eventseite mit „Verwalten“ und „Mehr“, Zahlen, Profil mit „Story in Entdecken“; dazu Eventseite und Veranstalterseite als Gast (unverändert, ohne Stifte). Dabei behoben: verschachtelte Knöpfe im Web (ungültiges HTML), Ort eines neuen Events startet „Bei euch“ statt mit dem letzten (evtl. privaten) Ort, Titelbild „Neues Event“ erscheint sofort, Symbolbild abgedunkelt, inerter Knopf „Profil“ entfernt, gewählte Chips dezenter, Vorauswahl und Grammatik in Zahlen, Titel bei „Story in Entdecken“ bricht nicht mehr um. Gespeichert oder gepostet wurde dabei nichts.
-- **Nicht geprüft:** ein echtes Gerät. Die Web-Vorschau zeigt nicht die Datums- und Zeitauswahl von iOS und Android (dort ein Textfeld), keine Kamera, keine Sicherheitsabstände am Rand, kein echtes Wischen. Speichern, Veröffentlichen und Story posten wurden nicht ausgelöst.
+- Nach Schritt 4 erneut im Handy-Format angesehen: Start, Zahlen, Profil und das neue Sheet „Beiträge“ (ohne etwas zu veröffentlichen). **Die Registrieren-Seite nicht**: die Vorschau war angemeldet, und abmelden darf die KI Noyans Konto nicht.
+- **Nicht geprüft:** ein echtes Gerät. Haptik gibt es nur dort. Die Web-Vorschau zeigt nicht die Datums- und Zeitauswahl von iOS und Android (dort ein Textfeld), keine Kamera, keine Sicherheitsabstände am Rand, kein echtes Wischen. Speichern, Veröffentlichen und Story posten wurden nicht ausgelöst.
 
 ## Offen
 
 - Handy-Test durch Noyan (Liste oben). Erster Test: Rückmeldungen in Schritt 2 umgesetzt.
 - Alles aus dem Plan, Abschnitt 7 („Daten nötig von Jacint“): Vormerken zur Veröffentlichung, Push-Benachrichtigungen, Veranstalter ohne festen Ort, Schutz für private Adressen, Teilen und Einladen mit echtem Link, Verkaufszahlen.
 - Entwürfe löschen geht noch nicht: Die Datenbank erlaubt Veranstaltern kein Löschen von Events (Plan, Abschnitt 7, Punkt 8 – Daten nötig von Jacint).
-- Registrieren-Seite: Dort steht weiter „Name des Clubs“ (`OrganizerSignupFields.tsx`, gemeinsam mit der Startseite). Wortwahl und Design dieser Seite sind ein eigener Schritt.
-- Beiträge im Studio anlegen (Daten sind da, Oberfläche fehlt weiter).
+- Registrieren-Seite: Wortwahl und Reihenfolge sind überarbeitet, aber nicht angesehen (siehe „Geprüft“). Das Design der Seite selbst (Aussehen der Felder) ist unverändert.
+- Nicht gebaut im Feinschliff: echte Offline-Erkennung (bräuchte ein weiteres Paket; Fehler beim Laden zeigen stattdessen „Erneut versuchen“), eigene Übergänge zwischen Seiten (es bleiben die des Systems).

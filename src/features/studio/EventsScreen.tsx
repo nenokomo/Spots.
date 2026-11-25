@@ -15,7 +15,7 @@ import { shareEvent } from './share';
 import { EventStory } from './Story';
 import { useStudio } from './StudioContext';
 import { studio, studioType } from './theme';
-import { Card, Check, Empty, Message, Pill, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
+import { Card, Check, Empty, ErrorNote, Message, Pill, Segmented, StudioButton, StudioPage, studioStyles } from './ui';
 
 const startTexts: Record<Exclude<MyOrganizer['reviewStatus'], 'approved'>, { title: string; text: string | null; tone?: 'amber' | 'red' }> = {
   draft: { title: 'Antrag noch nicht gestellt', text: null },
@@ -80,7 +80,7 @@ function NextEventCard({ organizer, event, now }: { organizer: MyOrganizer; even
       <View style={styles.identity}>
         <View style={styles.story}><EventStory organizer={organizer} event={event} images={images} size={64} /></View>
         <Pressable accessibilityRole="button" accessibilityLabel={`${event.title} öffnen`} onPress={() => openEvent(event.id)} style={styles.identityCopy}>
-          <Text numberOfLines={2} style={styles.nextTitle}>{event.title}</Text>
+          <Text numberOfLines={2} maxFontSizeMultiplier={1.3} style={styles.nextTitle}>{event.title}</Text>
           <Text numberOfLines={1} style={studioStyles.muted}>{whenLine(event)}</Text>
           {placeLine(event) && <Text numberOfLines={1} style={studioStyles.muted}>{placeLine(event)}</Text>}
         </Pressable>
@@ -121,7 +121,7 @@ export default function EventsScreen() {
   const shown = view === 'upcoming' ? further : past;
 
   return <StudioPage mark title="Events" onRefresh={refresh.onRefresh} refreshing={refresh.refreshing}>
-    <Message error={error} />
+    {error && <ErrorNote message={error} onRetry={refresh.onRefresh} busy={refresh.refreshing} />}
     <StartCard organizer={organizer} hasEvent={events.length > 0} reload={reload} />
     {next
       ? <NextEventCard key={next.id} organizer={organizer} event={next} now={now} />

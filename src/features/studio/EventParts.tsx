@@ -8,6 +8,7 @@ import {
   categoryLabels, endsNextDay, genreChoices, hasOwnPlace, maxGenres, newPriceRow, ownPlace, partLabels, stepOfPart, ticketModeLabels, validateStep,
   type EventForm, type FormErrors, type FormPart, type Place,
 } from './eventForm';
+import { feedback } from './feel';
 import { StudioImageField } from './StudioImageField';
 import { studio, studioType } from './theme';
 import { Chip, Input, MenuRow, Message, Segmented, StudioButton, StudioSheet, studioStyles } from './ui';
@@ -63,7 +64,7 @@ function PartForm({ part, organizer, form, isNew, applyLabel, dateHint, onApply 
     if (step && Object.keys(validateStep(draft, step, { isNew })).length > 0) { setAttempted(true); return; }
     setBusy(true); setError(null);
     try { await onApply(draft); }
-    catch (failure) { setError(failure instanceof Error ? failure.message : 'Speichern hat nicht geklappt.'); setBusy(false); }
+    catch (failure) { feedback.error(); setError(failure instanceof Error ? failure.message : 'Speichern hat nicht geklappt.'); setBusy(false); }
   }
 
   return <>

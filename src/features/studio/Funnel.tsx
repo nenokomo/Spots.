@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
 import { count, share } from './format';
 import { studio, studioType } from './theme';
+import { Grow } from './ui';
 
 /**
  * Trichter eines Events: wie viele haben es gesehen, wie viele gemerkt, wie viele sind zu den Tickets gegangen.
@@ -21,7 +22,9 @@ export function Funnel({ views, saves, ticketClicks }: { views: number; saves: n
         <Text style={styles.value}>{count.format(row.value)}</Text>
       </View>
       <View style={styles.track}>
-        {row.value > 0 && <LinearGradient colors={row.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.fill, { width: `${Math.max(3, row.width * 100)}%` }]} />}
+        {row.value > 0 && <Grow axis="x" trigger={row.value} style={[styles.fill, { width: `${Math.max(3, row.width * 100)}%` }]}>
+          <LinearGradient colors={row.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.fillColor} />
+        </Grow>}
       </View>
     </View>)}
   </View>;
@@ -36,5 +39,6 @@ const styles = StyleSheet.create({
   quota: { ...studioType.small, color: studio.faint, fontWeight: '600' },
   value: { fontSize: 20, lineHeight: 24, fontWeight: '800', letterSpacing: -0.4, color: studio.text, fontVariant: ['tabular-nums'], minWidth: 44, textAlign: 'right' },
   track: { height: 10, borderRadius: 5, overflow: 'hidden', backgroundColor: studio.panelHigh },
-  fill: { height: 10, borderRadius: 5 },
+  fill: { height: 10, borderRadius: 5, overflow: 'hidden' },
+  fillColor: { flex: 1 },
 });

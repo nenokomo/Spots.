@@ -1,11 +1,12 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import type { ReactNode } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Animated, Easing, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View, type DimensionValue, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '../../components/Icon';
 import { Backdrop } from '../../components/Screen';
 import { SectionTitle as NeonTitle } from '../../components/ui/Section';
 import { colors, squircle } from '../../constants/theme';
+import { feedback, motionReduced } from './feel';
 import { studio, studioType } from './theme';
 
 // Bausteine der Studio-Oberfläche im Spots-Look (Design Noyan). Regeln dazu: docs/STUDIO-UMBAU-PLAN.md, Abschnitt 4.
@@ -54,7 +55,7 @@ export function StudioPage({ title, subtitle, mark, onBack, trailing, children, 
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           {mark && <StudioMark />}
-          <Text accessibilityRole="header" style={onBack ? styles.titleSmall : styles.title}>{title}</Text>
+          <Text accessibilityRole="header" maxFontSizeMultiplier={1.3} style={onBack ? styles.titleSmall : styles.title}>{title}</Text>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
         {!onBack && trailing}
@@ -95,15 +96,15 @@ export function Pill({ label, tone = 'muted' }: { label: string; tone?: 'accent'
     green: [studio.greenSoft, studio.green], muted: [studio.panelHigh, studio.muted] }[tone];
   return <View style={[styles.pill, { backgroundColor: palette[0] }, tone === 'accent' && styles.pillGlow]}>
     <View style={[styles.pillDot, { backgroundColor: palette[1] }]} />
-    <Text style={[styles.pillLabel, { color: palette[1] }]}>{label}</Text>
+    <Text maxFontSizeMultiplier={1.5} style={[styles.pillLabel, { color: palette[1] }]}>{label}</Text>
   </View>;
 }
 
 /** Auswahl-Chip, z. B. Genre oder Event. */
 export function Chip({ label, selected, onPress, disabled }: { label: string; selected: boolean; onPress: () => void; disabled?: boolean }) {
-  return <Pressable accessibilityRole="button" accessibilityState={{ selected, disabled: !!disabled }} accessibilityLabel={label} disabled={disabled} onPress={onPress}
+  return <Pressable accessibilityRole="button" accessibilityState={{ selected, disabled: !!disabled }} accessibilityLabel={label} disabled={disabled} onPress={() => { feedback.select(); onPress(); }}
     style={({ pressed }) => [styles.chip, selected && styles.chipActive, pressed && styles.pressed, disabled && styles.disabled]}>
-    <Text numberOfLines={1} style={[styles.chipLabel, selected && styles.chipLabelActive]}>{label}</Text>
+    <Text numberOfLines={1} maxFontSizeMultiplier={1.5} style={[styles.chipLabel, selected && styles.chipLabelActive]}>{label}</Text>
   </Pressable>;
 }
 
@@ -150,15 +151,69 @@ export function ProgressBar({ value }: { value: number }) {
   </View>;
 }
 
+/**
+ * Platzhalter, solange Inhalt lädt: eine ruhige Fläche in der Form dessen, was gleich erscheint, statt eines Lade-Kreisels.
+ * Pulsiert sanft; mit „Bewegung reduzieren“ steht sie still.
+ */
+export function Skeleton({ height, width = '100%', radius = studio.radiusSmall, style }: { height: number; width?: DimensionValue; radius?: number; style?: StyleProp<ViewStyle> }) {
+  const [opacity] = useState(() => new Animated.Value(0.55));
+  useEffect(() => {
+    if (motionReduced()) return;
+    const step = (toValue: number) => Animated.timing(opacity, { toValue, duration: 750, easing: Easing.inOut(Easing.quad), useNativeDriver: Platform.OS !== 'web' });
+    const loop = Animated.loop(Animated.sequence([step(1), step(0.55)]));
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return <Animated.View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[{ height, width, borderRadius: radius, backgroundColor: studio.panelHigh, opacity }, style]} />;
+}
+
+/** Eine ganze Seite als Skelett: Titel, eine große Karte, zwei Zeilen – für das erste Laden des Studios. */
+export function PageSkeleton() {
+  const insets = useSafeAreaInsets();
+  return <View accessibilityRole="progressbar" accessibilityLabel="Lädt" style={[styles.page, styles.pageSkeleton, { paddingTop: insets.top + 24 }]}>
+    <Backdrop />
+    <Skeleton height={38} width="45%" />
+    <Skeleton height={360} radius={24} />
+    <Skeleton height={52} radius={26} />
+    <Skeleton height={96} radius={studio.radius} />
+    <Skeleton height={96} radius={studio.radius} />
+  </View>;
+}
+
+/** Laden hat nicht geklappt: sagen, was los ist, und den einen Ausweg anbieten. Was schon da war, bleibt stehen. */
+export function ErrorNote({ message, onRetry, busy }: { message: string; onRetry?: () => void; busy?: boolean }) {
+  return <View accessibilityRole="alert" style={styles.errorNote}>
+    <Icon name="info" size={20} color={studio.red} />
+    <Text style={styles.errorNoteText}>{message}</Text>
+    {onRetry && <StudioButton small variant="secondary" label="Erneut versuchen" loading={busy} onPress={onRetry} />}
+  </View>;
+}
+
+/**
+ * Wächst beim Erscheinen von 0 auf seine Größe (Balken eines Diagramms): `axis` x von links, y von unten.
+ * Mit „Bewegung reduzieren“ steht der Inhalt sofort da. `trigger` startet die Bewegung neu, z. B. bei anderen Daten.
+ */
+export function Grow({ axis, trigger, style, children }: { axis: 'x' | 'y'; trigger?: unknown; style?: StyleProp<ViewStyle>; children?: ReactNode }) {
+  const [scale] = useState(() => new Animated.Value(motionReduced() ? 1 : 0));
+  useEffect(() => {
+    if (motionReduced()) { scale.setValue(1); return; }
+    scale.setValue(0);
+    const animation = Animated.timing(scale, { toValue: 1, duration: 480, easing: Easing.out(Easing.cubic), useNativeDriver: Platform.OS !== 'web' });
+    animation.start();
+    return () => animation.stop();
+  }, [scale, trigger]);
+  return <Animated.View style={[style, { transform: [axis === 'x' ? { scaleX: scale } : { scaleY: scale }], transformOrigin: axis === 'x' ? 'left' : 'bottom' }]}>{children}</Animated.View>;
+}
+
 /** Bottom sheet im Studio. Die Tastatur schiebt den Inhalt nach oben. */
 export function StudioSheet({ visible, title, onClose, children }: { visible: boolean; title: string; onClose: () => void; children: ReactNode }) {
   return <Modal visible={visible} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}>
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.sheetBackdrop}>
       <Pressable accessibilityRole="button" accessibilityLabel={`${title} schließen`} onPress={onClose} style={StyleSheet.absoluteFill} />
-      <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.sheet}>
+      <SafeAreaView accessibilityViewIsModal edges={['bottom', 'left', 'right']} style={styles.sheet}>
         <View style={styles.grabber} />
         <View style={styles.sheetHead}>
-          <Text accessibilityRole="header" style={styles.sheetTitle}>{title}</Text>
+          <Text accessibilityRole="header" maxFontSizeMultiplier={1.4} style={styles.sheetTitle}>{title}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Schließen" onPress={onClose} hitSlop={8} style={styles.sheetClose}><Icon name="close" size={15} color={studio.muted} /></Pressable>
         </View>
         <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>{children}</ScrollView>
@@ -214,9 +269,9 @@ export function PickerField({ label, value, placeholder, icon, onPress, error, d
 export function Segmented<T extends string>({ options, value, onChange }: { options: Record<T, string>; value: T; onChange: (value: T) => void }) {
   return <View style={styles.segmented}>
     {(Object.keys(options) as T[]).map((key) => <Pressable key={key} accessibilityRole="button" accessibilityState={{ selected: value === key }}
-      onPress={() => onChange(key)} style={styles.segment}>
+      onPress={() => { if (value !== key) feedback.select(); onChange(key); }} style={styles.segment}>
       {value === key && <LinearGradient pointerEvents="none" colors={studio.accentFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, styles.segmentFill]} />}
-      <Text numberOfLines={1} style={[styles.segmentLabel, value === key && styles.segmentLabelActive]}>{options[key]}</Text>
+      <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.segmentLabel, value === key && styles.segmentLabelActive]}>{options[key]}</Text>
     </Pressable>)}
   </View>;
 }
@@ -294,6 +349,9 @@ const styles = StyleSheet.create({
   emptyIcon: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.accentSoft },
   emptyTitle: { ...studioType.heading, color: studio.text, textAlign: 'center' },
   emptyText: { ...studioType.small, color: studio.muted, textAlign: 'center' },
+  pageSkeleton: { paddingHorizontal: studio.page, gap: studio.gap },
+  errorNote: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12, padding: 14, borderRadius: studio.radius, backgroundColor: studio.redSoft, borderWidth: 1, borderColor: '#ff6b6b66', ...squircle },
+  errorNoteText: { ...studioType.body, flex: 1, minWidth: 160, color: studio.text },
   progress: { height: 6, borderRadius: 3, overflow: 'hidden', backgroundColor: studio.panelHigh },
   progressFill: { height: 6, borderRadius: 3 },
   sheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#000000b3' },

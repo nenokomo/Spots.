@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useEffectEvent, useState } from 'react';
-import { ActivityIndicator, Animated, BackHandler, Image, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Animated, BackHandler, Image, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { Backdrop } from '../../components/Screen';
 import { IconButton } from '../../components/ui/Button';
@@ -11,6 +11,7 @@ import { EventDetailView } from '../../screens/EventDetailScreen';
 import { formatPrice } from '../../services/content';
 import { saveOrganizerEvent, setShotHidden, setTicketSoldOut, type MyOrganizer, type OrganizerEvent, type StudioShot } from '../organizer/organizerApi';
 import { EventPartSheet } from './EventParts';
+import { feedback } from './feel';
 import { freshForm, initialForm, missingForPublish, missingForSave, partLabels, resolvedPlace, suggestedDate, type EventForm, type FormPart } from './eventForm';
 import { eventState, timeFormat } from './format';
 import { Funnel } from './Funnel';
@@ -22,7 +23,7 @@ import { shareEvent } from './share';
 import { Avatar, EventStory } from './Story';
 import { useStudio } from './StudioContext';
 import { studio, studioType } from './theme';
-import { ConfirmSheet, MenuRow, Message, Pill, SectionTitle, StudioButton, StudioPage, StudioSheet, studioStyles } from './ui';
+import { ConfirmSheet, MenuRow, Message, PageSkeleton, Pill, SectionTitle, Skeleton, StudioButton, StudioPage, StudioSheet, studioStyles } from './ui';
 
 const message = (failure: unknown, fallback: string) => failure instanceof Error ? failure.message : fallback;
 const needText = (parts: FormPart[]) => `Zum Veröffentlichen fehlt noch: ${parts.map((part) => partLabels[part]).join(', ')}`;
@@ -96,8 +97,9 @@ function ExistingEvent({ organizer, event, reload, initialPart, justPublished }:
     setBusy(key); setError(null);
     try {
       await saveOrganizerEvent(organizer.id, { ...rest, status, isPublished: status === 'scheduled' && approved && live }, id);
+      feedback.success(then === 'live' ? 'Euer Event ist live.' : 'Gespeichert.');
       reload(); setSheet(then);
-    } catch (failure) { setError(message(failure, 'Hat nicht geklappt.')); }
+    } catch (failure) { feedback.error(); setError(message(failure, 'Hat nicht geklappt.')); }
     finally { setBusy(null); }
   }
 
@@ -146,12 +148,12 @@ function ExistingEvent({ organizer, event, reload, initialPart, justPublished }:
       }} />
 
     <EventPartSheet part={tickets === null ? null : part} organizer={organizer} form={form} isNew={false} applyLabel="Speichern" dateHint={form.date} onClose={() => setPart(null)}
-      onApply={async (next: EventForm) => { await saveEventForm({ organizer, event, form: next, live: event.isPublished }); reload(); reloadTickets(); setPart(null); }} />
+      onApply={async (next: EventForm) => { await saveEventForm({ organizer, event, form: next, live: event.isPublished }); feedback.success('Gespeichert.'); reload(); reloadTickets(); setPart(null); }} />
 
     <StudioSheet visible={sheet === 'manage'} title="Verwalten" onClose={() => setSheet(null)}>
       <SectionTitle>Zahlen</SectionTitle>
       {numbers ? <Funnel views={numbers.views} saves={numbers.saves} ticketClicks={numbers.ticketClicks} />
-        : stats.error ? <Message error={stats.error} /> : stats.rows ? <Funnel views={0} saves={0} ticketClicks={0} /> : <ActivityIndicator color={studio.accent} />}
+        : stats.error ? <Message error={stats.error} /> : stats.rows ? <Funnel views={0} saves={0} ticketClicks={0} /> : <Skeleton height={130} />}
       {tickets && tickets.length > 0 && <>
         <SectionTitle>Ausverkauft?</SectionTitle>
         {tickets.map((ticket) => <View key={ticket.id} style={styles.ticket}>
@@ -191,7 +193,8 @@ function ExistingEvent({ organizer, event, reload, initialPart, justPublished }:
 
     {/* Der Moment nach dem Veröffentlichen: jetzt teilen Veranstalter am ehesten. */}
     <StudioSheet visible={sheet === 'live'} title="Euer Event ist live" onClose={() => setSheet(null)}>
-      <Text style={studioStyles.body}>Gäste finden es jetzt auf dem Radar und in Entdecken.</Text>
+      <LinearGradient colors={studio.accentFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.done}><Icon name="check" size={34} color={studio.onAccent} /></LinearGradient>
+      <Text style={[studioStyles.body, styles.doneText]}>Gäste finden es jetzt auf dem Radar und in Entdecken.</Text>
       <StudioButton icon="share" label="Jetzt teilen" onPress={() => afterSheet(() => void shareEvent(event))} />
       <StudioButton variant="ghost" label="Fertig" onPress={() => setSheet(null)} />
     </StudioSheet>
@@ -216,7 +219,7 @@ function NewEventIntro() {
     <Pressable accessibilityRole="button" accessibilityLabel="Neues Event erstellen. Tippen, um fortzufahren." onPress={hide} style={styles.intro}>
       <Backdrop />
       <LinearGradient colors={studio.accentFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.introPlus}><Icon name="plus" size={40} color={studio.onAccent} /></LinearGradient>
-      <Text style={styles.introTitle}>Neues Event</Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.introTitle}>Neues Event</Text>
       <Text style={styles.introText}>Erstellt hier euer neues Event. Tippt an, was ihr ausfüllen wollt: Flyer, Titel, Datum.</Text>
     </Pressable>
   </Animated.View>;
@@ -252,9 +255,10 @@ function NewEvent({ organizer, seed, dateHint, reload }: { organizer: MyOrganize
     setBusy(live ? 'live' : 'draft'); setError(null);
     try {
       const id = await saveEventForm({ organizer, event: null, form, live, existingId: createdId, onSaved: setCreatedId });
+      feedback.success(live && approved ? 'Euer Event ist live.' : 'Als Entwurf gespeichert.');
       reload();
       router.replace({ pathname: '/studio/event/[id]', params: live && approved ? { id, live: '1' } : { id } });
-    } catch (failure) { setError(message(failure, 'Speichern hat nicht geklappt.')); setBusy(null); }
+    } catch (failure) { feedback.error(); setError(message(failure, 'Speichern hat nicht geklappt.')); setBusy(null); }
   }
 
   const guest = formEvent(form, organizer, now);
@@ -295,7 +299,7 @@ function NewEvent({ organizer, seed, dateHint, reload }: { organizer: MyOrganize
 export default function EventScreen() {
   const { id, part, live } = useLocalSearchParams<{ id: string; part?: string; live?: string }>();
   const { organizer, events, reload } = useStudio();
-  if (organizer === undefined) return <View style={styles.loading}><ActivityIndicator color={studio.accent} /></View>;
+  if (organizer === undefined) return <PageSkeleton />;
   const event = organizer ? events.find((item) => item.id === id) : undefined;
   if (!organizer || !event) return <StudioPage title="Event" onBack={goBack}><Text style={studioStyles.muted}>Dieses Event gibt es nicht (mehr).</Text></StudioPage>;
   const initialPart = part && part in partLabels ? part as FormPart : null;
@@ -320,13 +324,14 @@ export function NewEventScreen() {
     {ready
       ? <NewEvent key={template?.id ?? 'neu'} organizer={organizer} dateHint={suggestedDate(source)} reload={reload}
           seed={template ? initialForm(organizer, template, tickets ?? [], true) : freshForm(organizer, source ? { event: source, tickets: tickets ?? [] } : null)} />
-      : <View style={styles.loading}><ActivityIndicator color={studio.accent} /></View>}
+      : <PageSkeleton />}
     <NewEventIntro />
   </>;
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.bg },
+  done: { alignSelf: 'center', width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 24px #c922ab80' },
+  doneText: { textAlign: 'center' },
   pressed: { opacity: 0.8 },
   flex: { flex: 1 },
   notice: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 4 },

@@ -1,15 +1,16 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Tabs } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassBackdrop } from '../../components/GlassBackdrop';
 import { Icon, type IconName } from '../../components/Icon';
 import { floatingTabBar } from '../../constants/navigation';
+import { feedback } from './feel';
 import { newEvent } from './routes';
 import SetupScreen from './Setup';
 import { useStudio } from './StudioContext';
 import { studio } from './theme';
-import { Message, StudioButton } from './ui';
+import { ErrorNote, PageSkeleton } from './ui';
 import { Welcome } from './Welcome';
 
 const PLUS = 60;
@@ -34,9 +35,7 @@ export default function StudioTabsLayout() {
   const bottom = Math.max(insets.bottom, floatingTabBar.bottomGap);
 
   if (organizer === undefined) {
-    return <View style={styles.loading}>{error
-      ? <><Message error={error} /><StudioButton small variant="secondary" label="Erneut versuchen" onPress={reload} /></>
-      : <ActivityIndicator color={studio.accent} />}</View>;
+    return error ? <View style={styles.loading}><ErrorNote message={error} onRetry={reload} /></View> : <PageSkeleton />;
   }
   if (organizer === null) return <SetupScreen reload={reload} />;
 
@@ -50,13 +49,15 @@ export default function StudioTabsLayout() {
       tabBarIconStyle: { width: 52, height: 28 },
       tabBarLabelPosition: 'below-icon',
       tabBarLabelStyle: { fontSize: 11, lineHeight: 14, fontWeight: '600', marginTop: 2 },
+      // Die Leiste hat eine feste Höhe: die Beschriftung wächst nicht mit, damit sie nicht abgeschnitten wird.
+      tabBarAllowFontScaling: false,
       tabBarBackground: () => <View pointerEvents="none" style={styles.capsule}><GlassBackdrop radius={33} variant="panel" /></View>,
     }}>
       <Tabs.Screen name="index" options={{ title: 'Events', tabBarIcon: ({ focused }) => <TabIcon name="calendar" focused={focused} /> }} />
       <Tabs.Screen name="stats" options={{ title: 'Zahlen', tabBarIcon: ({ focused }) => <TabIcon name="chart" focused={focused} /> }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: ({ focused }) => <TabIcon name="profile" focused={focused} /> }} />
     </Tabs>
-    <Pressable accessibilityRole="button" accessibilityLabel="Neues Event anlegen" onPress={() => newEvent()}
+    <Pressable accessibilityRole="button" accessibilityLabel="Neues Event anlegen" onPress={() => { feedback.tap(); newEvent(); }}
       style={({ pressed }) => [styles.plus, { right: sideInset, bottom: bottom + (floatingTabBar.height - PLUS) / 2 }, pressed && styles.plusPressed]}>
       <LinearGradient colors={studio.accentFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.plusFill}><Icon name="plus" size={26} color={studio.onAccent} /></LinearGradient>
     </Pressable>
@@ -66,7 +67,7 @@ export default function StudioTabsLayout() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: studio.bg },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: studio.bg, padding: 24 },
+  loading: { flex: 1, justifyContent: 'center', backgroundColor: studio.bg, padding: 24 },
   capsule: { ...StyleSheet.absoluteFill, borderRadius: 33 },
   icon: { width: 52, height: 28, alignItems: 'center', justifyContent: 'center' },
   plus: { position: 'absolute', width: PLUS, height: PLUS, borderRadius: PLUS / 2, boxShadow: '0 4px 18px #c922ab80' },

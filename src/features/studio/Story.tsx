@@ -8,6 +8,7 @@ import { SnapViewer } from '../../components/SnapViewer';
 import { useNow } from '../../hooks/useNow';
 import { postShot } from '../../services/content';
 import type { MyOrganizer, OrganizerEvent } from '../organizer/organizerApi';
+import { feedback } from './feel';
 import { canPostStory } from './format';
 import type { useEventImages } from './hooks';
 import { studio } from './theme';
@@ -85,9 +86,10 @@ export function EventStory({ organizer, event, images, size = 76 }: { organizer:
     setBusy(true); setError(null);
     try {
       await postShot(event.id, picked, { eventStory: true });
+      feedback.success('Story gepostet.');
       setPicked(null);
       setStage('done');
-    } catch (failure) { setError(failure instanceof Error ? failure.message : 'Posten hat nicht geklappt.'); }
+    } catch (failure) { feedback.error(); setError(failure instanceof Error ? failure.message : 'Posten hat nicht geklappt.'); }
     finally { setBusy(false); }
   }
 

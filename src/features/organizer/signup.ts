@@ -44,13 +44,13 @@ export function validateOrganizerSignup(input: OrganizerSignupInput): { data: Or
   const name = text(input.name), street = text(input.street), houseNumber = text(input.houseNumber);
   const postcode = input.postcode.trim(), city = text(input.city), contactName = text(input.contactName), phone = text(input.phone);
   const website = normalizeWebsite(input.website), social = normalizeSocial(input.social);
-  if (name.length < 2 || name.length > 120) return { error: 'Bitte den Namen des Clubs eingeben.' };
+  if (name.length < 2 || name.length > 120) return { error: 'Bitte euren Namen eingeben.' };
   if (!street || street.length > 200 || !houseNumber || houseNumber.length > 20) return { error: 'Bitte Straße und Hausnummer eingeben.' };
   if (!/^[0-9]{5}$/.test(postcode)) return { error: 'Bitte eine fünfstellige Postleitzahl eingeben.' };
   if (!city || city.length > 120) return { error: 'Bitte die Stadt eingeben.' };
   if (website === 'invalid') return { error: 'Die Website-Adresse ist ungültig.' };
   if (social === 'invalid') return { error: 'Den Social-Media-Link bitte als Adresse oder als @Name eingeben.' };
-  if (contactName.length < 2 || contactName.length > 120) return { error: 'Bitte eine Ansprechperson angeben.' };
+  if (contactName.length < 2 || contactName.length > 120) return { error: 'Bitte den Namen einer Ansprechperson angeben.' };
   if (!phonePattern.test(phone)) return { error: 'Bitte eine Telefonnummer angeben (nur Ziffern, Leerzeichen, +, /, -).' };
   return { data: { name, street, house_number: houseNumber, postcode, city, website_url: website, social_url: social, contact_name: contactName, phone } };
 }

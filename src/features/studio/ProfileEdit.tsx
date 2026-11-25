@@ -3,14 +3,17 @@ import { View } from 'react-native';
 import type { OrganizerPart } from '../../screens/OrganizerProfileScreen';
 import { updateOrganizerProfile, type MyOrganizer } from '../organizer/organizerApi';
 import { normalizeSocial, normalizeWebsite } from '../organizer/signup';
+import { feedback } from './feel';
 import { StudioImageField } from './StudioImageField';
 import { Input, Message, StudioButton, StudioSheet, studioStyles } from './ui';
 
-const titles: Record<OrganizerPart, string> = { cover: 'Titelbild', name: 'Name, Logo und Adresse', about: 'Über uns' };
+/** Teile des Profils mit eigenen Feldern. Beiträge haben ihr eigenes Sheet (Posts.tsx). */
+export type ProfilePart = Exclude<OrganizerPart, 'posts'>;
+const titles: Record<ProfilePart, string> = { cover: 'Titelbild', name: 'Name, Logo und Adresse', about: 'Über uns' };
 type Errors = Partial<Record<'name' | 'street' | 'postcode' | 'city' | 'website' | 'social', string>>;
 
 /** Die Felder eines Teils des Profils. Gespeichert wird immer das ganze Profil; die anderen Teile bleiben unverändert. */
-function PartForm({ part, organizer, onDone }: { part: OrganizerPart; organizer: MyOrganizer; onDone: () => void }) {
+function PartForm({ part, organizer, onDone }: { part: ProfilePart; organizer: MyOrganizer; onDone: () => void }) {
   const [value, setValue] = useState(() => ({
     name: organizer.displayName, motto: organizer.motto ?? '', biography: organizer.biography ?? '',
     street: organizer.street ?? '', houseNumber: organizer.houseNumber ?? '', postcode: organizer.postcode ?? '', city: organizer.city ?? '',
@@ -41,8 +44,9 @@ function PartForm({ part, organizer, onDone }: { part: OrganizerPart; organizer:
     try {
       await updateOrganizerProfile(organizer.id, { displayName: value.name, biography: value.biography || null, street: value.street, houseNumber: value.houseNumber,
         postcode: value.postcode, city: value.city, websiteUrl, socialUrl, avatarUrl: value.avatarUrl, motto: value.motto || null, coverUrl: value.coverUrl });
+      feedback.success('Gespeichert.');
       onDone();
-    } catch (failure) { setError(failure instanceof Error ? failure.message : 'Speichern hat nicht geklappt.'); setBusy(false); }
+    } catch (failure) { feedback.error(); setError(failure instanceof Error ? failure.message : 'Speichern hat nicht geklappt.'); setBusy(false); }
   }
 
   return <>
@@ -74,7 +78,7 @@ function PartForm({ part, organizer, onDone }: { part: OrganizerPart; organizer:
  * Ein Teil des Profils bearbeiten: öffnet sich über den Stift an genau diesem Teil der Veranstalterseite
  * (Titelbild; Name, Logo und Adresse; Über uns). Nach dem Speichern zeigt die Seite sofort den neuen Stand.
  */
-export function ProfilePartSheet({ part, organizer, onClose, reload }: { part: OrganizerPart | null; organizer: MyOrganizer; onClose: () => void; reload: () => void }) {
+export function ProfilePartSheet({ part, organizer, onClose, reload }: { part: ProfilePart | null; organizer: MyOrganizer; onClose: () => void; reload: () => void }) {
   return <StudioSheet visible={part !== null} title={part ? titles[part] : ''} onClose={onClose}>
     {part && <PartForm key={part} part={part} organizer={organizer} onDone={() => { reload(); onClose(); }} />}
   </StudioSheet>;

@@ -1,8 +1,8 @@
 import { Redirect, Stack } from 'expo-router';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useAccountSession } from '../accounts/useAccountSession';
 import { StudioProvider } from './StudioContext';
 import { studio } from './theme';
+import { PageSkeleton } from './ui';
 import { useAccountType } from './useAccountType';
 
 /**
@@ -16,7 +16,7 @@ export default function StudioLayout() {
   const type = useAccountType(userId);
 
   if (account.loading || (userId && type === null)) {
-    return <View style={styles.loading}><ActivityIndicator color={studio.accent} /></View>;
+    return <PageSkeleton />;
   }
   if (!userId || type !== 'organizer') return <Redirect href="/" />;
 
@@ -30,7 +30,3 @@ export default function StudioLayout() {
     </Stack>
   </StudioProvider>;
 }
-
-const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: studio.bg },
-});

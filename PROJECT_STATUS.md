@@ -49,12 +49,12 @@ Spots Studio gehört zur Spots-Familie (`src/features/studio/theme.ts`: gleicher
 - Kartenposition von Club-Events kommt aus OpenStreetMap (Nominatim) und kann etwas daneben liegen; die Adresse steht auf der Eventseite. Datenschutz: Event-Adressen gehen beim Speichern an Nominatim.
 - Studio-Umbau (`design/studio-einfacher`) noch nicht auf dem Handy geprüft: nur Typecheck, Lint, App-Tests und Probe-Bündel. Einnahmen und verkaufte Tickets brauchen Daten vom Backend (Entscheidung offen); bis dahin heißt der Reiter „Zahlen“.
 - Radar: Events ohne Endzeit (meist Ticketmaster-Konzerte) gelten vier Stunden ab Beginn als laufend – eine Annahme, kein bestätigtes Ende.
-- Motto, Titelbild und Statistik-Verlauf haben auf `design/studio-umbau` eine Oberfläche; Beiträge anlegen ist weiter offen ([docs/FORTSCHRITT-profil-beitraege-zahlen.md](docs/FORTSCHRITT-profil-beitraege-zahlen.md)). Mit einem Club-Konto noch nicht ausprobiert.
+- Motto, Titelbild, Statistik-Verlauf und Beiträge haben auf `design/studio-einfacher` eine Oberfläche ([docs/FORTSCHRITT-studio-umbau.md](docs/FORTSCHRITT-studio-umbau.md)). Beiträge wurden dort noch nicht wirklich veröffentlicht (nur angesehen).
 
 ## Fehlt noch
 
 - Eigener Mailserver (Domain, SMTP), deutsche Mailtexte eintragen.
-- Studio: mehrere Clubs pro Konto; Oberfläche für Beiträge; die Backend-Punkte aus [docs/STUDIO-UMBAU-PLAN.md](docs/STUDIO-UMBAU-PLAN.md), Abschnitt 7 (Vormerken, Push, Veranstalter ohne festen Ort, Schutz privater Adressen, Teilen mit Link).
+- Studio: mehrere Clubs pro Konto; die Backend-Punkte aus [docs/STUDIO-UMBAU-PLAN.md](docs/STUDIO-UMBAU-PLAN.md), Abschnitt 7 (Vormerken, Push, Veranstalter ohne festen Ort, Schutz privater Adressen, Teilen mit Link).
 - Shots: Live-Kamera und Videos (Development Build).
 - Produktion: Datenbank, Function und Aufräum-Zeitplan eingerichtet; offen sind Dashboard-Einstellungen (Teil C) und Konten für alle (Teil D, erst mit Mailserver und Rechtstexten), siehe [docs/PRODUKTION-RUNDE-2.md](docs/PRODUKTION-RUNDE-2.md).
 - Rechtliches: Entwürfe in [docs/entwuerfe/](docs/entwuerfe/README.md) (am 23.11. mit dem Code abgeglichen) prüfen lassen; Links zu den Texten in die App. Ticketverkauf über Spots (Idee: Zahlungsdienst mit Marktplatz, Club bleibt Verkäufer) ist nur besprochen, nichts gebaut.

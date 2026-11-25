@@ -146,7 +146,7 @@ test('structure: three tabs and a separate plus, story only at the profile pictu
   const names = [...tabs.matchAll(/<Tabs\.Screen name="([a-z]+)"/g)].map((match) => match[1]);
   assert.deepEqual(names, ['index', 'stats', 'profile'], 'Events · Zahlen · Profil');
   assert.match(tabs, /title: 'Profil'/, 'the last tab keeps its name');
-  assert.match(tabs, /accessibilityLabel="Neues Event anlegen" onPress=\{\(\) => newEvent\(\)\}/, 'the plus is its own button next to the bar');
+  assert.match(tabs, /accessibilityLabel="Neues Event anlegen" onPress=\{\(\) => \{ feedback\.tap\(\); newEvent\(\); \}\}/, 'the plus is its own button next to the bar');
   assert.deepEqual(fs.readdirSync(path.join(__dirname, '../src/app/studio/(tabs)')).sort(), ['_layout.tsx', 'index.tsx', 'profile.tsx', 'stats.tsx']);
   // Ein Event legt man nur über das Plus an.
   const creating = fs.readdirSync(path.join(__dirname, '../src/features/studio')).filter((file) => /newEvent\(\)/.test(read(`src/features/studio/${file}`)));
@@ -277,4 +277,30 @@ test('numbers: one sentence of insight, a comparison only with enough data', () 
   assert.equal(format.ticketInsight(340, 34, others), '10 % der Aufrufe führten zu den Tickets. Das ist mehr als bei euren anderen Events (2 %).');
   assert.equal(format.ticketInsight(1000, 5, others), 'unter 1 % der Aufrufe führten zu den Tickets. Das ist weniger als bei euren anderen Events (2 %).');
   assert.equal(format.ticketInsight(1000, 20, others), '2 % der Aufrufe führten zu den Tickets. Das ist etwa so viel wie bei euren anderen Events (2 %).');
+});
+
+test('polish: feedback you can feel, skeletons instead of spinners, errors with a way out, posts and registration wording', () => {
+  const dir = path.join(__dirname, '../src/features/studio');
+  const files = fs.readdirSync(dir).filter((file) => file.endsWith('.tsx'));
+  // Keine Lade-Kreisel als ganze Ansicht mehr: nur noch in Knöpfen (StudioButton) und an zwei kleinen Stellen.
+  const spinners = files.filter((file) => /<ActivityIndicator color=\{studio\.accent\}/.test(read(`src/features/studio/${file}`)));
+  assert.deepEqual(spinners, [], 'page-level spinners are replaced by skeletons');
+  assert.match(read('src/features/studio/StudioTabsLayout.tsx'), /<ErrorNote message=\{error\} onRetry=\{reload\} \/>/);
+  assert.match(read('src/features/studio/StudioTabsLayout.tsx'), /<PageSkeleton \/>/);
+  // Haptik nur über den einen Helfer, der im Web still bleibt und „Bewegung reduzieren“ kennt.
+  const feel = read('src/features/studio/feel.ts');
+  assert.match(feel, /if \(Platform\.OS === 'web'\) return;/);
+  assert.match(feel, /AccessibilityInfo\.announceForAccessibility\(message\)/);
+  assert.deepEqual(files.filter((file) => read(`src/features/studio/${file}`).includes("from 'expo-haptics'")), [], 'screens never call the haptics module directly');
+  assert.match(read('src/features/studio/ui.tsx'), /if \(motionReduced\(\)\) return;/, 'skeletons stand still with reduced motion');
+  assert.match(read('src/features/studio/ui.tsx'), /accessibilityViewIsModal/, 'screen readers stay inside an open sheet');
+  // Beiträge: über „Beiträge“ auf der Veranstalterseite, Löschen mit Rückfrage.
+  assert.match(read('src/features/studio/ProfileScreen.tsx'), /next === 'posts' \? setPostsOpen\(true\) : setPart\(next\)/);
+  assert.match(read('src/features/studio/Posts.tsx'), /label="Ja, löschen"/);
+  // Registrieren: „Veranstalter“ statt „Club“, erst das Konto, dann das Profil in Gruppen.
+  const account = read('src/features/accounts/AccountScreen.tsx');
+  assert.ok(!/Club registrieren|euren Club|Club-Profil/.test(account), 'no „Club“ wording for all organizers');
+  assert.ok(account.indexOf('<Field label="E-Mail"') < account.indexOf('<OrganizerSignupFields'), 'account first, then the profile');
+  const fields = read('src/features/studio/OrganizerSignupFields.tsx');
+  for (const heading of ['Euer Profil', 'Adresse', 'Im Netz', 'Ansprechperson']) assert.ok(fields.includes(`>${heading}</Text>`), heading);
 });

@@ -7,7 +7,7 @@ import {
 import { dayFormat } from './format';
 import { shareInvite } from './share';
 import { studio, studioType } from './theme';
-import { Card, ConfirmSheet, Input, Message, Pill, StudioButton, studioStyles } from './ui';
+import { Card, ConfirmSheet, Input, Message, Pill, Skeleton, StudioButton, studioStyles } from './ui';
 
 /**
  * Team (SQL 35). Der Besitzer sieht die Mitglieder, lädt über das Teilen-Menü ein und entfernt Mitglieder (mit Rückfrage).
@@ -46,7 +46,7 @@ export function TeamCard({ organizer }: { organizer: MyOrganizer }) {
   if (!owner) return <Card><Text style={studioStyles.muted}>Ihr gehört zum Team. Mitglieder verwaltet der Besitzer des Profils.</Text></Card>;
 
   return <Card>
-    {members === null && <Text style={studioStyles.muted}>Lädt …</Text>}
+    {members === null && <Skeleton height={48} />}
     {members?.map((member) => <View key={member.userId} style={styles.row}>
       <View style={styles.copy}>
         <Text style={studioStyles.body} numberOfLines={1}>{member.email}</Text>

@@ -66,6 +66,8 @@ Vorher bekamen alle fünf Momente gleich viel Gewicht, und der wichtigste (1) wa
 - **Rückfrage vor allem, was man nicht zurücknehmen kann** (absagen, löschen, Konto löschen, Mitglied entfernen).
 - **Tippflächen mindestens 44 Punkt, Schrift mindestens 11 Punkt.**
 - **Nach unten ziehen lädt neu** (Events, Zahlen, Profil, Eventseite).
+- **Laden zeigt Skelette, keine Kreisel.** Ein Fehler beim Laden bietet „Erneut versuchen“ an und lässt stehen, was schon da war.
+- **Rückmeldung zum Spüren** bei Erfolg, Fehler und Auswahl – nur über `feel.ts`, nie direkt. „Bewegung reduzieren“ wird beachtet.
 - **Glossar – genau diese Wörter, überall gleich:**
 
 | Wort | Bedeutung |
@@ -75,6 +77,7 @@ Vorher bekamen alle fünf Momente gleich viel Gewicht, und der wichtigste (1) wa
 | Story in Entdecken | Dauerhafte Bilder des Veranstalters. Gäste sehen sie in Entdecken als Kachel. Eigener Bereich im Profil, unter „Vergangene Events“. |
 | Shots | Bilder von Gästen zu einem Event, 24 Stunden sichtbar. |
 | Profil | Die öffentliche Seite des Veranstalters in Spots (Veranstalterseite). |
+| Beitrag | Text mit bis zu zehn Bildern auf der Veranstalterseite. Bleibt, bis man ihn zurückzieht oder löscht. |
 | Veranstalter | Wer Events anlegt (Club, Kollektiv, Reihe). „Club“ nur, wenn wirklich ein Club gemeint ist. |
 | Tab-Leiste, Tabs | Die Leiste unten und ihre Punkte. |
 
