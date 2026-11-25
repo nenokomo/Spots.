@@ -106,16 +106,18 @@ export default function OrganizerProfileScreen() {
   const organizer = data.organizer;
   const website = organizer.websiteUrl?.startsWith('https://') ? organizer.websiteUrl : null;
   const cardWidth = width - gutter * 2;
-  // Cover: the next real flyer, otherwise any real flyer of the organizer, the logo, and as last resort the
-  // event's symbol picture – the top never stays empty. A dedicated cover picture needs data (Jacint).
+  // Cover: the organizer's own cover picture (SQL 37, set in Spots Studio), otherwise the next real flyer, any real flyer,
+  // the logo, and as last resort the event's symbol picture – the top never stays empty.
   const realFlyer = [...groups.upcoming, ...groups.past].find((event) => !event.imageIsPlaceholder);
-  const cover = realFlyer?.image ?? (organizer.avatarUrl ? { uri: organizer.avatarUrl } : null) ?? groups.highlight?.image ?? groups.past[0]?.image ?? null;
+  const ownCover = organizer.coverUrl ? { uri: organizer.coverUrl } : null;
+  const cover = ownCover ?? realFlyer?.image ?? (organizer.avatarUrl ? { uri: organizer.avatarUrl } : null) ?? groups.highlight?.image ?? groups.past[0]?.image ?? null;
   const highlightTicket = groups.highlight ? ticketLink(groups.highlight) : null;
   const hasStories = groups.stories.length > 0;
   const shownPast = allPast ? groups.past : groups.past.slice(0, PAST_PREVIEW);
   const noEvents = !groups.highlight && groups.past.length === 0;
   const closeStory = () => { setStory(null); setStoriesWatched(true); };
-  const bio = organizer.biography ? splitBio(organizer.biography) : null;
+  // Motto: the organizer's own (SQL 37), otherwise the first sentence of the biography.
+  const bio = organizer.motto ? { motto: organizer.motto, rest: organizer.biography?.trim() ?? '' } : organizer.biography ? splitBio(organizer.biography) : null;
   const programme = groups.others.slice(0, PROGRAM_PREVIEW);
   const dayEvents = calendarDate ? groups.upcoming.filter((event) => dayKey(new Date(event.startsAt)) === calendarDate) : [];
   const openCalendar = () => { setCalendarDate(calendarDays[0] ?? null); setCalendarOpen(true); };
@@ -133,7 +135,7 @@ export default function OrganizerProfileScreen() {
         scrollEventThrottle={16} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}>
         {/* Cover: the next flyer, blurred, fading into the page. */}
         <View style={[styles.cover, { height: insets.top + 230 }]}>
-          {cover && <Image source={cover} resizeMode="cover" blurRadius={realFlyer ? 24 : 12} style={StyleSheet.absoluteFill} />}
+          {cover && <Image source={cover} resizeMode="cover" blurRadius={ownCover ? 0 : realFlyer ? 24 : 12} style={StyleSheet.absoluteFill} />}
           <LinearGradient pointerEvents="none" colors={cover ? ['#0a090cb3', '#0a090c33', '#0a090ccc', colors.background] : ['#3a1530', '#1d1020', colors.background]} locations={cover ? [0, 0.3, 0.75, 1] : [0, 0.55, 1]} style={StyleSheet.absoluteFill} />
         </View>
 

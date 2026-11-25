@@ -5,12 +5,13 @@ import {
   type MyOrganizer, type OrganizerInvite, type OrganizerMember,
 } from '../organizer/organizerApi';
 import { dayFormat } from './format';
+import { shareInvite } from './share';
 import { studio, studioType } from './theme';
-import { Card, Input, Message, Pill, StudioButton, studioStyles } from './ui';
+import { Card, ConfirmSheet, Input, Message, Pill, StudioButton, studioStyles } from './ui';
 
 /**
- * Team eines Clubs (SQL 35). Der Besitzer sieht die Mitglieder, erzeugt Einladungscodes und entfernt Mitglieder.
- * Mitglieder sehen nur einen Hinweis. Einfache Oberfläche – Design offen für Noyan.
+ * Team (SQL 35). Der Besitzer sieht die Mitglieder, lädt über das Teilen-Menü ein und entfernt Mitglieder (mit Rückfrage).
+ * Die Einladung ist ein Code mit kurzer Anleitung; ein Link, der die App öffnet, braucht das App-Schema (Plan, Abschnitt 7).
  */
 export function TeamCard({ organizer }: { organizer: MyOrganizer }) {
   const owner = organizer.role === 'owner';
@@ -18,6 +19,7 @@ export function TeamCard({ organizer }: { organizer: MyOrganizer }) {
   const [invites, setInvites] = useState<OrganizerInvite[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<OrganizerMember | null>(null);
 
   const load = useCallback(() => {
     if (!owner) return;
@@ -29,39 +31,49 @@ export function TeamCard({ organizer }: { organizer: MyOrganizer }) {
 
   async function run(key: string, task: () => Promise<unknown>) {
     setBusy(key); setError(null);
-    try { await task(); load(); }
-    catch (failure) { setError(failure instanceof Error ? failure.message : 'Hat nicht geklappt.'); }
+    try { await task(); load(); return true; }
+    catch (failure) { setError(failure instanceof Error ? failure.message : 'Hat nicht geklappt.'); return false; }
     finally { setBusy(null); }
   }
 
-  if (!owner) return <Card><Text style={studioStyles.muted}>Du gehörst zum Team dieses Clubs. Mitglieder verwaltet der Besitzer des Clubs.</Text></Card>;
+  /** Neuen Code erzeugen und gleich das Teilen-Menü öffnen. */
+  async function invite() {
+    let code: string | null = null;
+    const done = await run('new', async () => { code = (await createInvite(organizer.id)).code; });
+    if (done && code) await shareInvite(code, organizer.displayName);
+  }
+
+  if (!owner) return <Card><Text style={studioStyles.muted}>Ihr gehört zum Team. Mitglieder verwaltet der Besitzer des Profils.</Text></Card>;
 
   return <Card>
-    <Text style={studioStyles.muted}>Team-Mitglieder können Events, Storys und Bilder des Clubs bearbeiten. Antrag, Ansprechperson und Team bleiben beim Besitzer.</Text>
     {members === null && <Text style={studioStyles.muted}>Lädt …</Text>}
     {members?.map((member) => <View key={member.userId} style={styles.row}>
       <View style={styles.copy}>
         <Text style={studioStyles.body} numberOfLines={1}>{member.email}</Text>
         <Pill label={member.role === 'owner' ? 'Besitzer' : 'Mitglied'} tone={member.role === 'owner' ? 'accent' : 'muted'} />
       </View>
-      {member.role === 'editor' && <StudioButton small variant="danger" label="Entfernen" loading={busy === member.userId} disabled={!!busy}
-        onPress={() => void run(member.userId, () => removeMember(organizer.id, member.userId))} />}
+      {member.role === 'editor' && <StudioButton small variant="ghost" label="Entfernen" disabled={!!busy} onPress={() => setRemoving(member)} />}
     </View>)}
 
-    {invites.map((invite) => <View key={invite.code} style={styles.invite}>
+    {invites.map((item) => <View key={item.code} style={styles.invite}>
       <View style={styles.copy}>
-        <Text selectable accessibilityLabel={`Einladungscode ${formatInviteCode(invite.code)}`} style={styles.code}>{formatInviteCode(invite.code)}</Text>
-        <Text style={studioStyles.muted}>Gültig bis {dayFormat.format(new Date(invite.expiresAt))}, einmal nutzbar</Text>
+        <Text selectable accessibilityLabel={`Einladungscode ${formatInviteCode(item.code)}`} style={styles.code}>{formatInviteCode(item.code)}</Text>
+        <Text style={studioStyles.muted}>Offen bis {dayFormat.format(new Date(item.expiresAt))}</Text>
       </View>
-      <StudioButton small variant="ghost" label="Zurückziehen" loading={busy === invite.code} disabled={!!busy} onPress={() => void run(invite.code, () => revokeInvite(invite.code))} />
+      <StudioButton small variant="secondary" icon="share" label="Teilen" disabled={!!busy} onPress={() => void shareInvite(item.code, organizer.displayName)} />
+      <StudioButton small variant="ghost" label="Löschen" loading={busy === item.code} disabled={!!busy} onPress={() => void run(item.code, () => revokeInvite(item.code))} />
     </View>)}
-    <StudioButton small variant="secondary" label="Einladungscode erstellen" loading={busy === 'new'} disabled={!!busy} onPress={() => void run('new', () => createInvite(organizer.id))} />
-    <Text style={studioStyles.muted}>Gebt den Code nur an die Person weiter, die ihr einladen wollt. Sie registriert sich als Veranstalter mit „Ich habe einen Einladungscode“ und gibt ihn nach dem Anmelden ein.</Text>
-    <Message error={error} />
+    <StudioButton variant="secondary" icon="users" label="Mitglied einladen" loading={busy === 'new'} disabled={!!busy} onPress={() => void invite()} />
+    {!removing && <Message error={error} />}
+
+    <ConfirmSheet visible={!!removing} title="Mitglied entfernen?" text={removing ? `${removing.email} kann eure Events und Bilder dann nicht mehr bearbeiten.` : undefined}
+      confirmLabel="Entfernen" danger busy={!!removing && busy === removing.userId} error={error}
+      onConfirm={() => { if (removing) void run(removing.userId, () => removeMember(organizer.id, removing.userId)).then((done) => { if (done) setRemoving(null); }); }}
+      onClose={() => { setRemoving(null); setError(null); }} />
   </Card>;
 }
 
-/** Für Veranstalter-Konten ohne Club: Einladungscode eines Clubs einlösen. */
+/** Für Veranstalter-Konten ohne Profil: Einladungscode eines Teams einlösen. */
 export function RedeemInviteCard({ onJoined }: { onJoined: () => void }) {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
@@ -73,10 +85,8 @@ export function RedeemInviteCard({ onJoined }: { onJoined: () => void }) {
     catch (failure) { setError(failure instanceof Error ? failure.message : 'Einlösen hat nicht geklappt.'); setBusy(false); }
   }
   return <Card>
-    <Text style={studioStyles.heading}>Einladung von einem Club?</Text>
-    <Text style={studioStyles.muted}>Wenn ihr zum Team eines Clubs gehört, der schon bei Spots ist, gebt hier den Einladungscode ein.</Text>
-    <Input label="Einladungscode" value={code} onChange={setCode} placeholder="XXXX-XXXX-XXXX" maxLength={20} editable={!busy} autoComplete="off" />
-    <Message error={error} />
+    <Text style={studioStyles.heading}>Ihr habt eine Einladung?</Text>
+    <Input label="Einladungscode" value={code} onChange={setCode} placeholder="XXXX-XXXX-XXXX" maxLength={20} editable={!busy} autoComplete="off" error={error} />
     <StudioButton variant="secondary" label="Code einlösen" loading={busy} onPress={() => void redeem()} />
   </Card>;
 }
@@ -84,6 +94,6 @@ export function RedeemInviteCard({ onJoined }: { onJoined: () => void }) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   copy: { flex: 1, gap: 6, minWidth: 0 },
-  invite: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: studio.radiusSmall, borderWidth: 1, borderColor: studio.line, backgroundColor: studio.bg },
-  code: { ...studioType.heading, color: studio.accent, letterSpacing: 1.5, fontVariant: ['tabular-nums'] },
+  invite: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: studio.radiusSmall, borderWidth: 1, borderColor: studio.line, backgroundColor: studio.bg },
+  code: { ...studioType.heading, fontSize: 16, color: studio.accent, letterSpacing: 1.2, fontVariant: ['tabular-nums'] },
 });

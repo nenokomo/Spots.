@@ -1,9 +1,9 @@
-import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { squircle } from '../../constants/theme';
 import type { OrganizerEvent } from '../organizer/organizerApi';
 import { eventState, timeFormat } from './format';
+import { openEvent } from './routes';
 import { studio, studioType } from './theme';
 import { Pill } from './ui';
 
@@ -11,16 +11,11 @@ const day = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '
 const month = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', month: 'short' });
 const weekday = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short' });
 
-/**
- * Ein Event als Zeile: Datumsblock, Titel, Ort, Status, Flyer. Tippen öffnet die Seite des Events.
- * `hints` zeigt bei kommenden Events, was noch fehlt (Flyer, Ticket-Link).
- */
-export function EventCard({ event, hints = false }: { event: OrganizerEvent; hints?: boolean }) {
+/** Ein Event als Zeile: Datumsblock, Titel, Ort, Status, Flyer. Tippen öffnet die Eventseite. */
+export function EventCard({ event }: { event: OrganizerEvent }) {
   const start = new Date(event.startsAt);
   const state = eventState(event);
-  const missing = hints && event.status === 'scheduled' ? [!event.imageUrl && 'Flyer fehlt', !event.ticketUrl && 'Kein Ticket-Link'].filter((text): text is string => !!text) : [];
-  return <Pressable accessibilityRole="button" accessibilityLabel={`${event.title} bearbeiten`}
-    onPress={() => router.push({ pathname: '/studio/event/[id]', params: { id: event.id } })}
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${event.title} öffnen`} onPress={() => openEvent(event.id)}
     style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
     <View style={[styles.date, event.status === 'cancelled' && styles.dateOff]}>
       <Text style={styles.weekday}>{weekday.format(start).replace('.', '').toUpperCase()}</Text>
@@ -30,14 +25,11 @@ export function EventCard({ event, hints = false }: { event: OrganizerEvent; hin
     <View style={styles.copy}>
       <Text numberOfLines={2} style={styles.title}>{event.title}</Text>
       <Text numberOfLines={1} style={styles.meta}>{timeFormat.format(start)} Uhr{event.venueName ? ` · ${event.venueName}` : ''}</Text>
-      <View style={styles.status}>
-        <Pill label={state.label} tone={state.tone} />
-        {missing.map((text) => <Text key={text} style={styles.missing}>{text}</Text>)}
-      </View>
+      <Pill label={state.label} tone={state.tone} />
     </View>
     {event.imageUrl
       ? <Image source={{ uri: event.imageUrl }} style={styles.flyer} accessibilityLabel={`Flyer: ${event.title}`} />
-      : <View style={[styles.flyer, styles.noFlyer]}><Icon name="camera" size={16} color={studio.faint} /><Text style={styles.noFlyerText}>Flyer</Text></View>}
+      : <View style={[styles.flyer, styles.noFlyer]}><Icon name="image" size={18} color={studio.faint} /></View>}
   </Pressable>;
 }
 
@@ -52,9 +44,6 @@ const styles = StyleSheet.create({
   copy: { flex: 1, gap: 6 },
   title: { ...studioType.heading, fontSize: 16, lineHeight: 21, color: studio.text },
   meta: { ...studioType.small, color: studio.muted },
-  status: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 10, rowGap: 4 },
-  missing: { ...studioType.small, fontSize: 12, color: studio.amber },
   flyer: { width: 54, height: 70, borderRadius: 10, backgroundColor: studio.panelHigh },
-  noFlyer: { alignItems: 'center', justifyContent: 'center', gap: 2, borderWidth: 1, borderColor: studio.line, borderStyle: 'dashed', backgroundColor: 'transparent' },
-  noFlyerText: { ...studioType.label, fontSize: 9, color: studio.faint },
+  noFlyer: { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: studio.line, borderStyle: 'dashed', backgroundColor: 'transparent' },
 });

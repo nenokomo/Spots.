@@ -1,1 +1,1 @@
-export { default } from '../../../features/studio/EventEditorScreen';
+export { default } from '../../../features/studio/EventScreen';

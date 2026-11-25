@@ -40,7 +40,8 @@
           "cameraPermission": "Spots braucht die Kamera, damit du Shots von Events posten kannst.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }

@@ -5,9 +5,9 @@ import { createAccountActions } from '../accounts/auth';
 import { getAccountClient } from '../accounts/client';
 import { setGuestMode } from '../accounts/guestMode';
 import { useAccountSession } from '../accounts/useAccountSession';
-import { Card, Message, StudioButton, studioStyles } from './ui';
+import { Card, ConfirmSheet, Message, StudioButton, studioStyles } from './ui';
 
-/** Konto des angemeldeten Veranstalters: abmelden und (zweistufig) löschen. `member` = Team-Mitglied ohne eigenen Club. */
+/** Konto des angemeldeten Veranstalters: abmelden und löschen (mit Rückfrage). `member` = Team-Mitglied ohne eigenes Profil. */
 export function AccountCard({ member }: { member: boolean }) {
   const { session } = useAccountSession();
   const [confirm, setConfirm] = useState(false);
@@ -19,15 +19,14 @@ export function AccountCard({ member }: { member: boolean }) {
     catch (failure) { setError(failure instanceof Error ? failure.message : 'Hat nicht geklappt.'); setBusy(false); }
   }
   return <Card>
-    <Text style={studioStyles.muted}>Angemeldet als {session?.user.email}</Text>
+    <Text style={studioStyles.muted}>{session?.user.email}</Text>
     <StudioButton variant="secondary" label="Abmelden" disabled={busy} onPress={() => void act(() => createAccountActions(getAccountClient()).signOut())} />
-    {confirm ? <>
-      <Text style={studioStyles.body}>{member
-        ? 'Dein Konto wird endgültig gelöscht. Der Club und seine Events bleiben bestehen. Das lässt sich nicht rückgängig machen.'
-        : 'Euer Konto wird endgültig gelöscht. Der Club und seine Events werden ausgeblendet, nicht gelöscht. Ansprechperson und Telefon werden gelöscht. Das lässt sich nicht rückgängig machen.'}</Text>
-      <StudioButton variant="danger" label="Konto endgültig löschen" loading={busy} onPress={() => void act(() => createAccountActions(getAccountClient()).deleteAccount())} />
-      <StudioButton variant="ghost" label="Abbrechen" disabled={busy} onPress={() => setConfirm(false)} />
-    </> : <StudioButton variant="ghost" label="Konto löschen" disabled={busy} onPress={() => setConfirm(true)} />}
-    <Message error={error} />
+    <StudioButton variant="ghost" label="Konto löschen" disabled={busy} onPress={() => { setError(null); setConfirm(true); }} />
+    {!confirm && <Message error={error} />}
+    <ConfirmSheet visible={confirm} title="Konto endgültig löschen?" danger confirmLabel="Konto löschen" busy={busy} error={error}
+      text={member
+        ? 'Das Profil des Veranstalters und seine Events bleiben bestehen. Das lässt sich nicht rückgängig machen.'
+        : 'Euer Profil und eure Events werden ausgeblendet, nicht gelöscht. Ansprechperson und Telefon werden gelöscht. Das lässt sich nicht rückgängig machen.'}
+      onConfirm={() => void act(() => createAccountActions(getAccountClient()).deleteAccount())} onClose={() => { if (!busy) setConfirm(false); }} />
   </Card>;
 }

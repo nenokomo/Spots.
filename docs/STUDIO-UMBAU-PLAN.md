@@ -55,7 +55,7 @@ Vorher bekamen alle fünf Momente gleich viel Gewicht, und der wichtigste (1) wa
   4. **Tickets** – ein Abschnitt: Online-Tickets (Link) / Abendkasse / Eintritt frei, darunter optional Preise.
   5. **Vorschau** – „So sehen Gäste das Event“, dann **„Veröffentlichen“** oder „Als Entwurf speichern“.
   Zurück-Pfeil oben links, Warnung bei ungespeicherten Änderungen, Fehler direkt am Feld. Ein früheres Event kann als Vorlage dienen (Duplizieren).
-- **Seite bearbeiten** (`/studio/page`): Logo, Titelbild, Name, Motto, Beschreibung, Adresse, Links.
+- **Profil bearbeiten** (`/studio/page`): Logo, Titelbild, Name, Motto, Beschreibung, Adresse, Links.
 - **Einstellungen** (`/studio/settings`): Ansprechperson, Konto (abmelden, löschen mit Rückfrage).
 
 ### Regeln für die Oberfläche

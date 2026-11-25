@@ -72,8 +72,11 @@ test('studio: never sets is_published on organizers, events stay drafts before a
   const api = fs.readFileSync(path.join(__dirname, '../src/features/organizer/organizerApi.ts'), 'utf8');
   const updateBlock = api.slice(api.indexOf('export async function updateOrganizerProfile'), api.indexOf('export async function submitOrganizer'));
   assert.ok(!updateBlock.includes('is_published'), 'profile update must not touch is_published');
-  const editor = fs.readFileSync(path.join(__dirname, '../src/features/studio/EventEditorScreen.tsx'), 'utf8');
-  assert.match(editor, /isPublished: status === 'scheduled' && approved && live/);
+  // Speichern (Schritte „Event anlegen/bearbeiten“) und die Eventseite (Veröffentlichen, Absagen): vor der Freigabe nie öffentlich.
+  for (const file of ['EventWizardScreen.tsx', 'EventScreen.tsx']) {
+    const source = fs.readFileSync(path.join(__dirname, '../src/features/studio', file), 'utf8');
+    assert.match(source, /isPublished: status === 'scheduled' && approved && live/, file);
+  }
   const profile = fs.readFileSync(path.join(__dirname, '../src/screens/ProfileScreen.tsx'), 'utf8');
   assert.ok(!profile.includes('/dashboard') && !profile.includes('Veranstalter-Bereich'), 'private accounts cannot become organizers');
   const studioLayout = fs.readFileSync(path.join(__dirname, '../src/features/studio/StudioLayout.tsx'), 'utf8');
@@ -108,8 +111,9 @@ test('event page address: street with number and postcode with city, nothing wit
 });
 
 test('event editor: end time is required and an own address is turned into a map position', () => {
-  const editor = fs.readFileSync(path.join(__dirname, '../src/features/studio/EventEditorScreen.tsx'), 'utf8');
-  assert.match(editor, /!endTime\.trim\(\) \? 'Bitte das Ende eingeben/);
+  const form = fs.readFileSync(path.join(__dirname, '../src/features/studio/eventForm.ts'), 'utf8');
+  assert.match(form, /if \(!form\.endTime\.trim\(\)\) errors\.endTime = 'Bitte das Ende wählen\.'/);
+  const editor = fs.readFileSync(path.join(__dirname, '../src/features/studio/EventWizardScreen.tsx'), 'utf8');
   assert.match(editor, /await geocodeAddress\(place\)/);
 });
 

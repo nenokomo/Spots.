@@ -1,1 +1,1 @@
-export { default } from '../../../features/studio/ClubScreen';
+export { default } from '../../../features/studio/ProfileScreen';

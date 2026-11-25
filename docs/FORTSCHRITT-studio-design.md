@@ -1,5 +1,7 @@
 # Fortschritt – Spots Studio Design (Noyan)
 
+> **Abgelöst am 25.11.2026:** Der Aufbau unten (vier Reiter) wurde durch den Umbau ersetzt. Aktuell: [STUDIO-UMBAU-PLAN.md](STUDIO-UMBAU-PLAN.md) und [FORTSCHRITT-studio-umbau.md](FORTSCHRITT-studio-umbau.md). Diese Datei bleibt als Geschichte der Runden 1–4.
+
 Stand: 23.11.2026. Branch `design/studio` (enthält `main` vom 19.11.: Jacints Moderation, Team, Ticketarten).
 
 ## Aktueller Aufbau (23.11., Runde 4: Studio neu strukturiert)

@@ -7,7 +7,8 @@ import { useAccountType } from './useAccountType';
 
 /**
  * /studio: nur für Veranstalter-Konten. Private Konten und Abgemeldete landen in der Besucher-App.
- * Aufbau: die vier Reiter ((tabs): Events · Story · Einnahmen · Profil) und darüber nur die Seite eines Events.
+ * Aufbau (docs/STUDIO-UMBAU-PLAN.md): die Reiter ((tabs): Übersicht · Events · ＋ · Zahlen · Profil) und darüber
+ * die Eventseite, „Event anlegen/bearbeiten“, „Profil bearbeiten“ und die Einstellungen.
  */
 export default function StudioLayout() {
   const account = useAccountSession();
@@ -23,6 +24,10 @@ export default function StudioLayout() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: studio.bg } }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="event/[id]" />
+      {/* Kein Wischen zurück: Eingaben sollen nicht versehentlich verloren gehen (der Pfeil fragt nach). */}
+      <Stack.Screen name="edit/[id]" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="page" />
+      <Stack.Screen name="settings" />
     </Stack>
   </StudioProvider>;
 }

@@ -8,6 +8,7 @@ Stand: 24.11.2026 (abends). Diese Datei beschreibt nur den **aktuellen** Stand. 
 |---|---|---|
 | `main` | Gemeinsamer Stand mit allem bisher Fertigen, inkl. neuem Studio-Design, Website und Kontofunktionen im Entwicklungsmodus | gepusht |
 | `design/studio` | Noyans laufender Design-Branch, zurzeit vollständig in `main` enthalten | gepusht |
+| `design/studio-umbau` | Umbau von Spots Studio (25.11.): fünf Reiter, Event anlegen in Schritten, Story über das Profilbild, Zahlen mit Trichter. Plan: [docs/STUDIO-UMBAU-PLAN.md](docs/STUDIO-UMBAU-PLAN.md) | lokal, nicht gepusht, nicht auf dem Handy geprüft |
 
 Am 24.11. aufgeräumt: alle 27 Branches, die vollständig in `main` steckten, auf GitHub gelöscht. Neue Arbeit startet immer als eigener Branch vom aktuellen `main` (`git pull origin main`, dann `backend/<thema>` oder `design/<thema>`).
 
@@ -19,7 +20,7 @@ Am 24.11. aufgeräumt: alle 27 Branches, die vollständig in `main` steckten, au
 - **Entdecken** (Design Noyan): Story-Kacheln und Story-Ansicht im Snapchat-Stil (Tippen = Bilder, nach dem letzten von vorn; Hochwischen = nächster Veranstalter; Ziehen nach unten/links/rechts = schließen, die Story wird dabei kleiner); „Heute“ zeigt dieselben Events wie das Radar (auch laufende); Suchleiste schlägt ab 3 Buchstaben Städte vor. Unterer Bereich ohne Suche/Filter: **Veranstalter der gewählten Stadt als Story-Kacheln** (SQL 33; eigene Story-Bilder, sonst Logo und Name; Knopf „Zum Profil“), mit Suche oder Genre-/Datumsfilter: „Passende Events“. Kachel-Design offen für Noyan.
 - **Eventseite** (Design Noyan): bei jedem Event gleich aufgebaut – rundes Bild oben (Veranstalter mit Event-Story 24 h, sonst Eventbild), Beschreibung, Tickets, Karten-Vorschau mit Adresse (SQL 29), **SHOTS** von Gästen (Bild-Button „Poste einen SHOT“, Discokugel-Button, melden, keine Zahlen) und Kamera-Ansicht mit Runterziehen (Kamera und Upload: Jacint). Zählt Aufrufe und Ticket-Klicks für die Studio-Statistik.
 - **Startseite** (`/account`): Ohne Konto startet die App mit „Wie nutzt du Spots?“ – **Privat**, **Veranstalter** oder „Als Gast fortfahren“; danach Anmelden, „Passwort vergessen?“, „Neues Konto erstellen“ / „Club registrieren“ (Kontoart aus der Auswahl). Gast gilt nur bis zum nächsten App-Start. Sperre über `Stack.Protected` in `src/app/_layout.tsx`. Profil: unten Abmelden und Konto löschen. Merkliste mit Konto (lokale TEST-Events bleiben auf dem Gerät). Produktion: nur Anmelden + Gast.
-- **Spots Studio** (`/studio`, nur Veranstalter-Konten; Aufbau Noyan 23.11., [docs/FORTSCHRITT-studio-design.md](docs/FORTSCHRITT-studio-design.md)): vier Reiter – **Events** (anlegen/bearbeiten/absagen, Freigabe-Stand; eigene Adresse → Kartenposition über OpenStreetMap oder Ort aus dem Adressbuch, Ende Pflicht, Flyer-Upload, „Live in Spots“ erst nach Freigabe), **Story** (einziger Ort zum Posten: Entdecken oder Eventseite), **Einnahmen** (Aufrufe, Gemerkt, Ticket-Klicks, SHOTS pro Event; Einnahmen und verkaufte Tickets noch ohne Daten), **Profil** (Veranstalterseite, Team, private Ansprechperson, Konto). Veranstalter sehen die Besucher-App nicht; private Konten kommen nicht ins Studio.
+- **Spots Studio** (`/studio`, nur Veranstalter-Konten; in `main`: vier Reiter Events · Story · Einnahmen · Profil, [docs/FORTSCHRITT-studio-design.md](docs/FORTSCHRITT-studio-design.md)). **Auf `design/studio-umbau` neu aufgebaut** (Noyan und Jacint, 25.11., [Plan](docs/STUDIO-UMBAU-PLAN.md), [Stand](docs/FORTSCHRITT-studio-umbau.md)): fünf Reiter **Übersicht** (nächstes Event mit Checkliste) · **Events** · **＋** (neues Event in vier Schritten mit Vorschau, Datums- und Zeitauswahl, Genre als Auswahl) · **Zahlen** (Trichter, Verlauf, Vergleich) · **Profil** (Vorschau, Bilder, Team; Einstellungen hinter dem Zahnrad). Eventseite mit Story über das Profilbild mit „+“, Duplizieren, Teilen, Rückfrage vor Absagen und Löschen. Veranstalter sehen die Besucher-App nicht; private Konten kommen nicht ins Studio.
 - **Admin-Bereich `/admin`** (Admin-Rolle): Event-Entwürfe, Veranstalter-Anträge (freigeben, ablehnen, sperren), Shots, Story-Bilder (ausblenden, entfernen), Orte, Meldungen.
 - **Moderation, Team, Tickets** ([docs/FORTSCHRITT-moderation.md](docs/FORTSCHRITT-moderation.md), in `main`): Story-Bilder melden; im Studio Bilder zu eigenen Events ausblenden, Team per Einladungscode, Ticketarten pro Event. Auf dem Handy von Jacint bestätigt (19.11.).
 - **Produktion**: veröffentlichte App nur mit Team-Anmeldung, Admin für das Team. Im Entwicklungsmodus (`npx expo start`, `__DEV__`) zeigt die App auch gegen die Produktion alle Kontofunktionen (Registrierung, Studio, Merkliste im Konto, Konto löschen) – echte Daten, keine Test-Events anlegen. Club-Konto dort noch nicht angelegt: [docs/PRODUKTION-RUNDE-2.md](docs/PRODUKTION-RUNDE-2.md), Abschnitt „Stufe 1“.
@@ -45,14 +46,14 @@ Spots Studio gehört zur Spots-Familie (`src/features/studio/theme.ts`: gleicher
 - Eingebauter Supabase-Mailversand: **nur 2 Mails pro Stunde** und nur an Supabase-Team-Adressen; deutsche Mailtexte erst mit eigenem Mailserver (SMTP).
 - Rücksprung aus Mails in **Expo Go**: Supabase lehnt Adressen mit IP (`exp://192.168…`) immer ab (Quellcode Supabase Auth, Erlaubt-Liste wird gar nicht geprüft) und nimmt dann `localhost:3000`. Zum Testen Expo mit `--tunnel` starten (`exp://….exp.direct` passt zu `exp://**`). Die echte App (`meine-app://`, später `spots://`) ist nicht betroffen.
 - Kartenposition von Club-Events kommt aus OpenStreetMap (Nominatim) und kann etwas daneben liegen; die Adresse steht auf der Eventseite. Datenschutz: Event-Adressen gehen beim Speichern an Nominatim.
-- Studio in der neuen Struktur (23.11.) noch nicht auf dem Handy geprüft. Einnahmen und verkaufte Tickets brauchen Daten vom Backend (Entscheidung offen).
+- Studio-Umbau (`design/studio-umbau`, 25.11.) noch nicht auf dem Handy geprüft: nur Typecheck, Lint, App-Tests und Probe-Bündel. Einnahmen und verkaufte Tickets brauchen Daten vom Backend (Entscheidung offen); bis dahin heißt der Reiter „Zahlen“.
 - Radar: Events ohne Endzeit (meist Ticketmaster-Konzerte) gelten vier Stunden ab Beginn als laufend – eine Annahme, kein bestätigtes Ende.
-- Motto, Titelbild, Beiträge anlegen und Statistik-Verlauf: Datenbank und Datenzugriff fertig (in `main`, [docs/FORTSCHRITT-profil-beitraege-zahlen.md](docs/FORTSCHRITT-profil-beitraege-zahlen.md)), Oberflächen offen für Noyan; mit einem Club-Konto noch nicht ausprobiert.
+- Motto, Titelbild und Statistik-Verlauf haben auf `design/studio-umbau` eine Oberfläche; Beiträge anlegen ist weiter offen ([docs/FORTSCHRITT-profil-beitraege-zahlen.md](docs/FORTSCHRITT-profil-beitraege-zahlen.md)). Mit einem Club-Konto noch nicht ausprobiert.
 
 ## Fehlt noch
 
 - Eigener Mailserver (Domain, SMTP), deutsche Mailtexte eintragen.
-- Studio: mehrere Clubs pro Konto; Oberflächen für Beiträge, Motto/Titelbild und Verlauf.
+- Studio: mehrere Clubs pro Konto; Oberfläche für Beiträge; die Backend-Punkte aus [docs/STUDIO-UMBAU-PLAN.md](docs/STUDIO-UMBAU-PLAN.md), Abschnitt 7 (Vormerken, Push, Veranstalter ohne festen Ort, Schutz privater Adressen, Teilen mit Link).
 - Shots: Live-Kamera und Videos (Development Build).
 - Produktion: Datenbank, Function und Aufräum-Zeitplan eingerichtet; offen sind Dashboard-Einstellungen (Teil C) und Konten für alle (Teil D, erst mit Mailserver und Rechtstexten), siehe [docs/PRODUKTION-RUNDE-2.md](docs/PRODUKTION-RUNDE-2.md).
 - Rechtliches: Entwürfe in [docs/entwuerfe/](docs/entwuerfe/README.md) (am 23.11. mit dem Code abgeglichen) prüfen lassen; Links zu den Texten in die App. Ticketverkauf über Spots (Idee: Zahlungsdienst mit Marktplatz, Club bleibt Verkäufer) ist nur besprochen, nichts gebaut.
@@ -60,6 +61,6 @@ Spots Studio gehört zur Spots-Familie (`src/features/studio/theme.ts`: gleicher
 
 ## Nächste empfohlene Schritte
 
-1. Noyan: neues Studio auf dem Handy prüfen; Design der Registrieren-Seite. Jacint: Verkaufszahlen für „Einnahmen“ klären.
+1. Noyan: Studio-Umbau (`design/studio-umbau`) auf dem Handy prüfen, danach Pull Request nach `main`; Design der Registrieren-Seite. Jacint: Punkte aus dem Umbau-Plan, Abschnitt 7, und Verkaufszahlen klären.
 2. Studio-Ablauf komplett durchspielen: Club → Freigabe → Event live → Story → Einnahmen.
 3. Mailserver und Domain klären, dann Produktions-Runde für Konten und Veranstalter planen.

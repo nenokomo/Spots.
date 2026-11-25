@@ -1,7 +1,8 @@
 import { View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-export type IconName = 'radar' | 'search' | 'profile' | 'pin' | 'chevron' | 'down' | 'sliders' | 'clock' | 'locate' | 'close' | 'back' | 'calendar' | 'share' | 'ticket' | 'camera' | 'bookmark' | 'heart' | 'map' | 'grid' | 'headphones' | 'wave' | 'cocktail';
+export type IconName = 'radar' | 'search' | 'profile' | 'pin' | 'chevron' | 'down' | 'sliders' | 'clock' | 'locate' | 'close' | 'back' | 'calendar' | 'share' | 'ticket' | 'camera' | 'bookmark' | 'heart' | 'map' | 'grid' | 'headphones' | 'wave' | 'cocktail'
+  | 'plus' | 'check' | 'edit' | 'copy' | 'eye' | 'image' | 'trash' | 'users' | 'chart' | 'home' | 'info' | 'link';
 
 export function Icon({ name, size = 22, color = '#d4bcd8', filled = false }: { name: IconName; size?: number; color?: string; filled?: boolean }) {
   // Wrapped in a View so it stacks above absolutely positioned backdrops on web as it does natively.
@@ -30,6 +31,18 @@ export function Icon({ name, size = 22, color = '#d4bcd8', filled = false }: { n
       {name === 'headphones' && <Path d="M4 14v-3a8 8 0 0 1 16 0v3M4 12h3v8H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1Zm16 0h-3v8h3a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1Z" />}
       {name === 'wave' && <Path d="M2 12h4l3-8 4 16 3-12 2 4h4" />}
       {name === 'cocktail' && <Path d="m3 3 9 10 9-10H3Zm9 10v8m-5 0h10M6 6h12" />}
+      {name === 'plus' && <Path d="M12 5v14M5 12h14" />}
+      {name === 'check' && <Path d="m5 12.5 4.5 4.5L19 7.5" />}
+      {name === 'edit' && <Path d="M4 20h4L19 9l-4-4L4 16v4Zm9-13 4 4" />}
+      {name === 'copy' && <Path d="M9 9h11v11H9ZM15 9V4H4v11h5" />}
+      {name === 'eye' && <><Path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><Circle cx="12" cy="12" r="3" /></>}
+      {name === 'image' && <><Path d="M4 5h16v14H4Zm0 11 4.5-4.5 4 4 3-3L20 16" /><Circle cx="9" cy="9.5" r="1.5" /></>}
+      {name === 'trash' && <Path d="M4 7h16M10 7V4h4v3M6 7l1 13h10l1-13M10 11v5m4-5v5" />}
+      {name === 'users' && <><Circle cx="9" cy="8" r="3.2" /><Path d="M3 20v-1a6 6 0 0 1 12 0v1M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14.3a6 6 0 0 1 3 4.7v1" /></>}
+      {name === 'chart' && <Path d="M5 20v-8M12 20V4M19 20v-5" />}
+      {name === 'home' && <Path d="m4 11 8-7 8 7v9h-5v-6H9v6H4Z" />}
+      {name === 'info' && <><Circle cx="12" cy="12" r="9" /><Path d="M12 11v5M12 7.8v.2" /></>}
+      {name === 'link' && <Path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />}
     </Svg>
     </View>
   );
