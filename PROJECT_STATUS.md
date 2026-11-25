@@ -8,7 +8,7 @@ Stand: 24.11.2026 (abends). Diese Datei beschreibt nur den **aktuellen** Stand. 
 |---|---|---|
 | `main` | Gemeinsamer Stand mit allem bisher Fertigen, inkl. neuem Studio-Design, Website und Kontofunktionen im Entwicklungsmodus | gepusht |
 | `design/studio` | Noyans laufender Design-Branch, zurzeit vollständig in `main` enthalten | gepusht |
-| `design/studio-umbau` | Umbau von Spots Studio (25.11.): fünf Reiter, Event anlegen in Schritten, Story über das Profilbild, Zahlen mit Trichter. Plan: [docs/STUDIO-UMBAU-PLAN.md](docs/STUDIO-UMBAU-PLAN.md) | lokal, nicht gepusht, nicht auf dem Handy geprüft |
+| `design/studio-umbau` | Umbau von Spots Studio (25.11.): fünf Reiter, Event anlegen in Schritten, Story über das Profilbild, Zahlen mit Trichter. Plan: [docs/STUDIO-UMBAU-PLAN.md](docs/STUDIO-UMBAU-PLAN.md) | gepusht, noch kein Pull Request, nicht auf dem Handy geprüft |
 
 Am 24.11. aufgeräumt: alle 27 Branches, die vollständig in `main` steckten, auf GitHub gelöscht. Neue Arbeit startet immer als eigener Branch vom aktuellen `main` (`git pull origin main`, dann `backend/<thema>` oder `design/<thema>`).
 
