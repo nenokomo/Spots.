@@ -46,5 +46,6 @@ Betrifft Noyans Design (`src/features/studio/`, `src/components/Icon.tsx`, `src/
 
 - Handy-Test durch Noyan (Liste oben). Erster Test: Rückmeldungen in Schritt 2 umgesetzt.
 - Alles aus dem Plan, Abschnitt 7 („Daten nötig von Jacint“): Vormerken zur Veröffentlichung, Push-Benachrichtigungen, Veranstalter ohne festen Ort, Schutz für private Adressen, Teilen und Einladen mit echtem Link, Verkaufszahlen.
+- Entwürfe löschen geht noch nicht: Die Datenbank erlaubt Veranstaltern kein Löschen von Events (Plan, Abschnitt 7, Punkt 8 – Daten nötig von Jacint).
 - Registrieren-Seite: Dort steht weiter „Name des Clubs“ (`OrganizerSignupFields.tsx`, gemeinsam mit der Startseite). Wortwahl und Design dieser Seite sind ein eigener Schritt.
 - Beiträge im Studio anlegen (Daten sind da, Oberfläche fehlt weiter).

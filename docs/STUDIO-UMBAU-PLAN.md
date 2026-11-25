@@ -140,7 +140,8 @@ Diese Punkte gehen nicht allein in der Oberfläche. Die App ist so gebaut, dass 
 5. **Teilen mit Link.** Events aus dem Studio haben keine Web-Adresse. „Teilen“ schickt deshalb Titel, Zeit, Ort und den Ticket-Link als Text. Für einen echten Link braucht es eine Event-Seite auf der Website und das App-Schema `spots://` (Release-Grundlagen). Danach auch: Flyer direkt in die Instagram-Story.
 6. **Einladung per Link.** Das Team wird jetzt über das Teilen-Menü eingeladen (Text mit Code). Ein Link, der die App öffnet und den Code einträgt, braucht dasselbe wie Punkt 5.
 7. **Verkaufszahlen** (wie bisher offen): verkaufte Tickets und Einnahmen pro Event. Erst dann kommt „Einnahmen“ zurück in den Reiter Zahlen.
-8. **Später (Wettbewerb):** Gästeliste und Einlass-Scan (RA, Shotgun), Promoter-Links mit Auswertung (Shotgun), Ticketverkauf über Spots.
+8. **Entwürfe löschen.** Im Studio gibt es nur „Event absagen“; ein Entwurf bleibt danach als „Abgesagt“ in der Liste. Die Datenbank erlaubt Veranstaltern bei Events nur Anlegen und Ändern, kein Löschen (SQL 15: `spots_event_insert`, `spots_event_edit`). Wunsch (Noyan): Entwürfe, die nie veröffentlicht waren, endgültig löschen. Braucht: Recht und Regel zum Löschen eigener, nie veröffentlichter Events samt ihrer Ticketarten. Danach in der App: „Entwurf löschen“ mit Rückfrage auf der Eventseite unter „Nur für euch“.
+9. **Später (Wettbewerb):** Gästeliste und Einlass-Scan (RA, Shotgun), Promoter-Links mit Auswertung (Shotgun), Ticketverkauf über Spots.
 
 ## 8. Quellen des Vergleichs
 
