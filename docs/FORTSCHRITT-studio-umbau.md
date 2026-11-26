@@ -1,6 +1,6 @@
 # Fortschritt – Spots Studio Umbau
 
-Branch: **`design/studio-einfacher`** (Schritt 3, lokal, nicht gepusht). Die Fassung davor (Schritte 0–2) liegt auf `design/studio-umbau` – dorthin zurück, falls Schritt 3 nicht gefällt. Plan und Begründung: [STUDIO-UMBAU-PLAN.md](STUDIO-UMBAU-PLAN.md).
+Branch: **`design/studio-einfacher`** (Schritte 3 und 4, gepusht, noch kein Pull Request). Die Fassung davor (Schritte 0–2) liegt auf `design/studio-umbau` (ebenfalls gepusht) – dorthin zurück, falls die neue Fassung nicht gefällt. Plan und Begründung: [STUDIO-UMBAU-PLAN.md](STUDIO-UMBAU-PLAN.md).
 Diese Datei wird nach jedem Teilschritt aktualisiert und mit committet. Bei „mach weiter“: zuerst diese Datei lesen, dann mit `git status` und `git log` prüfen, was wirklich fertig ist.
 
 Betrifft Noyans Design (`src/features/studio/`, `src/components/Icon.tsx`, `src/screens/EventDetailScreen.tsx`, `src/screens/OrganizerProfileScreen.tsx`) und – mit Zustimmung von Jacint am 25.11. – Jacints Bereich, wo vorhandene Datenaufrufe im Studio anders zusammengesetzt werden (`tests/`, Ticketarten beim Speichern eines Events). Keine neue SQL, keine neuen Datenbank-Funktionen.

@@ -8,8 +8,8 @@ Stand: 24.11.2026 (abends). Diese Datei beschreibt nur den **aktuellen** Stand. 
 |---|---|---|
 | `main` | Gemeinsamer Stand mit allem bisher Fertigen, inkl. neuem Studio-Design, Website und Kontofunktionen im Entwicklungsmodus | gepusht |
 | `design/studio` | Noyans laufender Design-Branch, zurzeit vollständig in `main` enthalten | gepusht |
-| `design/studio-umbau` | Umbau von Spots Studio (25.11.), Schritte 0–2: fünf Tabs, Eventseite und Profil wie beim Gast mit Stiften. Plan: [docs/STUDIO-UMBAU-PLAN.md](docs/STUDIO-UMBAU-PLAN.md) | erste Fassung gepusht, letzte zwei Commits lokal |
-| `design/studio-einfacher` | Schritt 3 darauf: „Die Seite ist das Formular“, drei Tabs und eigenes ＋, „Verwalten“, Vorgaben vom letzten Event, Feinschliff | lokal, nicht gepusht, nicht auf dem Handy geprüft |
+| `design/studio-umbau` | Umbau von Spots Studio (25.11.), Schritte 0–2: fünf Tabs, Eventseite und Profil wie beim Gast mit Stiften. Plan: [docs/STUDIO-UMBAU-PLAN.md](docs/STUDIO-UMBAU-PLAN.md) | gepusht |
+| `design/studio-einfacher` | Schritt 3 darauf: „Die Seite ist das Formular“, drei Tabs und eigenes ＋, „Verwalten“, Vorgaben vom letzten Event, Feinschliff (Rückmeldung, Skelette, Beiträge, Registrieren) | gepusht, noch kein Pull Request; nur im Handy-Format der Web-Vorschau angesehen, nicht auf einem Gerät |
 
 Am 24.11. aufgeräumt: alle 27 Branches, die vollständig in `main` steckten, auf GitHub gelöscht. Neue Arbeit startet immer als eigener Branch vom aktuellen `main` (`git pull origin main`, dann `backend/<thema>` oder `design/<thema>`).
 
